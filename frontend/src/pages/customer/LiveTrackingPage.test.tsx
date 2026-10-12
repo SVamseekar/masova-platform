@@ -18,13 +18,19 @@ vi.mock('@/hooks/useOrderTrackingWebSocket', () => ({
   }),
 }));
 
-vi.mock('@/components/backgrounds/AnimatedBackground', () => ({
-  default: () => <div data-testid="animated-background" />,
+vi.mock('@/apps/PublicWebsite/components/BrowseShell', () => ({
+  default: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
 
-vi.mock('@/components/common/AppHeader', () => ({
-  default: () => <div data-testid="app-header" />,
+vi.mock('./useCustomerOrder', async () => ({
+  ...(await vi.importActual('./useCustomerOrder')),
+  useCustomerOrder: () => ({ order: { orderNumber: '2041', storeId: 'DOM001', createdAt: '2026-10-10T14:28:00Z' }, isLoading: false, isError: false, limited: false }),
 }));
+
+vi.mock('@/store/api/storeApi', async () => {
+  const actual = await vi.importActual('@/store/api/storeApi');
+  return { ...actual, useGetActiveStoresQuery: () => ({ data: [{ id: 's1', storeCode: 'DOM001', name: 'MaSoVa Berlin Mitte', address: { street: 'Torstraße 72', city: 'Berlin', latitude: 52.53, longitude: 13.4 } }] }) };
+});
 
 vi.mock('@/components/delivery/DriverTrackingMap', () => ({
   DriverTrackingMap: () => <div data-testid="driver-tracking-map" />,
@@ -69,99 +75,87 @@ describe('LiveTrackingPage', () => {
   });
 
   it('shows loading state while tracking data is being fetched', () => {
-    mockUseTrackOrderQuery.mockReturnValue({
-      data: undefined,
-      isLoading: true,
-      error: null,
-      refetch: vi.fn(),
-    });
-
+    mockUseTrackOrderQuery.mockReturnValue({ data: undefined, isLoading: true, error: null });
     renderAsCustomer(<LiveTrackingPage />);
-    expect(screen.getByText('Loading tracking information...')).toBeInTheDocument();
+    expect(screen.getByText('Loading tracking information…')).toBeInTheDocument();
   });
 
-  it('shows error state when tracking data is not available', () => {
-    mockUseTrackOrderQuery.mockReturnValue({
-      data: undefined,
-      isLoading: false,
-      error: { status: 404 },
-      refetch: vi.fn(),
-    });
-
+  it('explains when tracking is not available yet and offers a retry', () => {
+    const refetch = vi.fn();
+    mockUseTrackOrderQuery.mockReturnValue({ data: undefined, isLoading: false, error: { status: 404 }, refetch });
     renderAsCustomer(<LiveTrackingPage />);
-    expect(screen.getByText('Tracking Not Available')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Tracking not available' })).toBeInTheDocument();
+    screen.getByRole('button', { name: 'Check again' }).click();
+    expect(refetch).toHaveBeenCalled();
   });
 
-  it('shows unavailable message for non-delivery orders (PICKUP)', () => {
-    mockUseTrackOrderQuery.mockReturnValue({
-      data: { ...mockTrackingData, orderType: 'PICKUP' },
-      isLoading: false,
-      error: null,
-      refetch: vi.fn(),
-    });
-
+  it('reports a failed first load as a load failure, not as a missing driver', () => {
+    mockUseTrackOrderQuery.mockReturnValue({ data: undefined, isLoading: false, error: { status: 500 }, refetch: vi.fn() });
     renderAsCustomer(<LiveTrackingPage />);
-    expect(screen.getByText('Live Tracking Unavailable')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Tracking could not be loaded' })).toBeInTheDocument();
+  });
+
+  it('keeps the last known tracking view when a later poll fails', () => {
+    mockUseTrackOrderQuery.mockReturnValue({ data: mockTrackingData, isLoading: false, error: { status: 500 } });
+    renderAsCustomer(<LiveTrackingPage />);
+    expect(screen.getByText('Rajesh Kumar')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Tracking not available' })).not.toBeInTheDocument();
+  });
+
+  it('shows a cancelled delivery as cancelled', () => {
+    mockUseTrackOrderQuery.mockReturnValue({ data: { ...mockTrackingData, status: 'CANCELLED' }, isLoading: false, error: null });
+    renderAsCustomer(<LiveTrackingPage />);
+    expect(screen.getByText('Cancelled')).toBeInTheDocument();
+    expect(screen.getByText('Order cancelled')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /Call driver/ })).not.toBeInTheDocument();
+  });
+
+  it('shows unavailable message for pickup orders', () => {
+    mockUseTrackOrderQuery.mockReturnValue({ data: { ...mockTrackingData, orderType: 'PICKUP' }, isLoading: false, error: null });
+    renderAsCustomer(<LiveTrackingPage />);
     expect(screen.getByText('Live tracking is not available for pickup orders.')).toBeInTheDocument();
   });
 
-  it('renders Live Tracking heading for delivery orders', () => {
-    mockUseTrackOrderQuery.mockReturnValue({
-      data: mockTrackingData,
-      isLoading: false,
-      error: null,
-      refetch: vi.fn(),
-    });
-
+  it('shows the order, driver, stage and store for a delivery in transit', () => {
+    mockUseTrackOrderQuery.mockReturnValue({ data: mockTrackingData, isLoading: false, error: null });
     renderAsCustomer(<LiveTrackingPage />);
-    expect(screen.getByText('Live Tracking')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Order #2041' })).toBeInTheDocument();
+    expect(screen.getByText('Rajesh Kumar')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Call driver Rajesh Kumar' })).toHaveAttribute('href', 'tel:+919876543210');
+    expect(screen.getByText('Berlin Mitte')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'View order details' })).toHaveAttribute('href', '/tracking/order-abc-123');
+    expect(screen.getByTestId('driver-tracking-map')).toBeInTheDocument();
+    expect(screen.getByText('Out for delivery', { selector: 'li' })).toHaveAttribute('aria-current', 'step');
   });
 
-  it('displays driver name', () => {
-    mockUseTrackOrderQuery.mockReturnValue({
-      data: mockTrackingData,
-      isLoading: false,
-      error: null,
-      refetch: vi.fn(),
-    });
-
+  it('states that position updates are polled when the live connection is down', () => {
+    mockUseTrackOrderQuery.mockReturnValue({ data: mockTrackingData, isLoading: false, error: null });
     renderAsCustomer(<LiveTrackingPage />);
-    expect(screen.getByText('Your Driver')).toBeInTheDocument();
+    expect(screen.getByText('GPS · Updating every 10 seconds')).toBeInTheDocument();
   });
 
-  it('displays Call Driver button', () => {
-    mockUseTrackOrderQuery.mockReturnValue({
-      data: mockTrackingData,
-      isLoading: false,
-      error: null,
-      refetch: vi.fn(),
-    });
-
+  it('shows the estimated arrival in minutes', () => {
+    mockUseTrackOrderQuery.mockReturnValue({ data: mockTrackingData, isLoading: false, error: null });
     renderAsCustomer(<LiveTrackingPage />);
-    expect(screen.getByText(/Call Driver/)).toBeInTheDocument();
+    expect(screen.getByText('Estimated arrival')).toBeInTheDocument();
+    expect(screen.getByText('15 minutes')).toBeInTheDocument();
   });
 
-  it('shows Polling Mode when WebSocket is not connected', () => {
-    mockUseTrackOrderQuery.mockReturnValue({
-      data: mockTrackingData,
-      isLoading: false,
-      error: null,
-      refetch: vi.fn(),
-    });
-
+  it('waits honestly for a position instead of drawing a map without one', () => {
+    mockUseTrackOrderQuery.mockReturnValue({ data: { ...mockTrackingData, currentLocation: null }, isLoading: false, error: null });
     renderAsCustomer(<LiveTrackingPage />);
-    expect(screen.getByText('Polling Mode')).toBeInTheDocument();
+    expect(screen.getByText("Waiting for the driver's position")).toBeInTheDocument();
+    expect(screen.queryByTestId('driver-tracking-map')).not.toBeInTheDocument();
   });
 
-  it('shows Estimated Arrival when available', () => {
-    mockUseTrackOrderQuery.mockReturnValue({
-      data: mockTrackingData,
-      isLoading: false,
-      error: null,
-      refetch: vi.fn(),
-    });
-
+  it('shows the delivery code and hides calling once delivered', () => {
+    mockUseTrackOrderQuery.mockReturnValue({ data: { ...mockTrackingData, deliveryOtp: '4821' }, isLoading: false, error: null });
+    const view = renderAsCustomer(<LiveTrackingPage />);
+    expect(screen.getByText('4821')).toBeInTheDocument();
+    view.unmount();
+    mockUseTrackOrderQuery.mockReturnValue({ data: { ...mockTrackingData, status: 'DELIVERED', deliveryOtp: '4821' }, isLoading: false, error: null });
     renderAsCustomer(<LiveTrackingPage />);
-    expect(screen.getByText('Estimated Arrival')).toBeInTheDocument();
+    expect(screen.queryByText('4821')).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /Call driver/ })).not.toBeInTheDocument();
   });
 });

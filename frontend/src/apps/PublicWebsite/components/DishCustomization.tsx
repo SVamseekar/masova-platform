@@ -8,7 +8,7 @@ import { addToCart } from '../../../store/slices/cartSlice';
 import { ALLERGEN_LABELS } from '../../../constants/allergens';
 import { apiPriceToCartMajor, formatApiPrice } from '../../../utils/currency';
 import { revampCssVariables } from '../../../styles/design-tokens';
-import { DishImage } from './DishCard';
+import { DishImage, DishRating } from './DishCard';
 
 const NOTES_MAX = 100;
 // 'None' is the default and sends no request, so the choice can always be undone.
@@ -51,7 +51,7 @@ export default function DishCustomization({ item: listedItem, currency, locale, 
           {spiced && <fieldset><legend>Spice level <span>(optional)</span></legend><div className="browse-spice">{SPICE_CHOICES.map(([level, text]) => <label key={text} className="browse-pill-option"><input type="radio" name="dish-spice" checked={spice === level} onChange={() => setSpice(level)} /><span>{text}</span></label>)}</div></fieldset>}
           <div className="browse-quantity-block"><strong id="dish-quantity-label">Quantity</strong><div className="browse-quantity" role="group" aria-labelledby="dish-quantity-label"><button type="button" aria-label="Decrease quantity" disabled={quantity <= 1} onClick={() => setQuantity(current => current - 1)}><Minus size={18} /></button><output aria-live="polite">{quantity}</output><button type="button" aria-label="Increase quantity" disabled={quantity >= 99} onClick={() => setQuantity(current => current + 1)}><Plus size={18} /></button></div></div>
         </div>
-        <div className="browse-customization-main"><h2 id="dish-title">{item.name}</h2><strong className="browse-customization-price">{formatApiPrice(item.basePrice, currency, locale)}</strong><p>{item.description}</p>
+        <div className="browse-customization-main"><h2 id="dish-title">{item.name}</h2><div className="browse-customization-price"><strong>{formatApiPrice(item.basePrice, currency, locale)}</strong><DishRating item={item} withCount /></div><p>{item.description}</p>
           <div className="browse-badges">{item.allergens?.map(allergen => <span key={allergen}>{ALLERGEN_LABELS[allergen]}</span>)}</div>
           {!!flagged.length && <p className="browse-warning" role="alert">Contains allergens you've flagged: {flagged.map(allergen => ALLERGEN_LABELS[allergen]).join(', ')}</p>}
           {!item.allergensDeclared && <p className="browse-warning">Allergen information not confirmed. Ask the store before ordering.</p>}

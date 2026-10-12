@@ -1,599 +1,191 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useTrackOrderQuery, OrderItem } from '../../store/api/orderApi';
+import React, { useEffect, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import { ArrowLeft, Check, CircleAlert, CircleHelp, Clock, Copy, CreditCard, MapPin, PackageCheck, Star, Store as StoreIcon, Truck } from 'lucide-react';
+import BrowseShell from '../../apps/PublicWebsite/components/BrowseShell';
+import { storeDisplayName } from '../../apps/PublicWebsite/components/CustomerStoreSelector';
 import { useTrackOrderQuery as useDeliveryTrackQuery } from '../../store/api/deliveryApi';
 import { useCreateReviewMutation } from '../../store/api/reviewApi';
-import { useAppDispatch, useAppSelector } from '../../store/hooks';
-import { clearCart, selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
+import { useGetActiveStoresQuery } from '../../store/api/storeApi';
+import { useAppSelector } from '../../store/hooks';
+import { selectCartLocale } from '../../store/slices/cartSlice';
 import { formatMajorAmount } from '../../utils/currency';
-import { formatOrderAmount } from '../../utils/orderMoney';
-import CustomerPageHeader from '../../components/common/CustomerPageHeader';
-import { DriverTrackingMap } from '../../components/delivery/DriverTrackingMap';
-import { useOrderTrackingWebSocket } from '../../hooks/useOrderTrackingWebSocket';
-import { OrderTrackingUpdate } from '../../services/websocketService';
-import type { OrderStatus } from '../../types/order';
+import RatingDialog from '../../components/delivery/RatingDialog';
+import { SUPPORT_EMAIL } from '../../apps/ProductSite/constants';
+import { getApiErrorMessage } from '../utils/apiError';
+import { displayOrderNumber, TERMINAL_STATUSES, useCustomerOrder } from './useCustomerOrder';
+import './Tracking.css';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-type StepDef = { status: OrderStatus; label: string; description: string };
+type Tone = 'warning' | 'info' | 'success' | 'error';
+interface Step { label: string; statuses: string[]; note?: string }
 
-const SHARED_STEPS: StepDef[] = [
-  { status: 'RECEIVED',  label: 'Order Placed', description: 'Restaurant received your order' },
-  { status: 'PREPARING', label: 'Preparing',    description: 'Kitchen is getting started'     },
-  { status: 'OVEN',      label: 'In the Oven',  description: 'Your food is cooking'           },
-  { status: 'BAKED',     label: 'Baked',        description: 'Fresh out of the oven'          },
-  { status: 'READY',     label: 'Ready',        description: 'Packed and ready to go'         },
+const KITCHEN: Step[] = [
+  { label: 'Received', statuses: ['RECEIVED'] },
+  { label: 'Preparing', statuses: ['PREPARING'] },
+  { label: 'In oven', statuses: ['OVEN', 'BAKED'] },
+  { label: 'Ready', statuses: ['READY'] },
 ];
+const STEPS: Record<string, Step[]> = {
+  DELIVERY: [...KITCHEN, { label: 'Dispatched', statuses: ['DISPATCHED'], note: 'Awaiting pickup' }, { label: 'Out for delivery', statuses: ['OUT_FOR_DELIVERY'] }, { label: 'Delivered', statuses: ['DELIVERED', 'COMPLETED'] }],
+  TAKEAWAY: [...KITCHEN, { label: 'Collected', statuses: ['COMPLETED', 'DELIVERED'] }],
+  DINE_IN: [...KITCHEN, { label: 'Served', statuses: ['SERVED', 'COMPLETED'] }],
+};
+/** Used when the public tracking view does not say how the order is fulfilled. */
+const NEUTRAL_STEPS: Step[] = [...KITCHEN, { label: 'Completed', statuses: ['DISPATCHED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'SERVED', 'COMPLETED'] }];
 
-const DELIVERY_STEPS: StepDef[] = [
-  ...SHARED_STEPS,
-  { status: 'DISPATCHED',       label: 'Dispatched',       description: 'Driver is heading to the restaurant' },
-  { status: 'OUT_FOR_DELIVERY', label: 'Out for Delivery', description: 'Driver is on the way to you'         },
-  { status: 'DELIVERED',        label: 'Delivered',        description: 'Enjoy your meal!'                    },
-];
-
-const DINE_IN_STEPS: StepDef[] = [
-  ...SHARED_STEPS,
-  { status: 'SERVED', label: 'Served', description: 'Enjoy your meal at your table!' },
-];
-
-const TAKEAWAY_STEPS: StepDef[] = [
-  ...SHARED_STEPS,
-  { status: 'COMPLETED', label: 'Ready for Pickup', description: 'Please collect your order' },
-];
-
-const getOrderSteps = (orderType?: string): StepDef[] => {
-  if (orderType === 'DINE_IN') return DINE_IN_STEPS;
-  if (orderType === 'PICKUP' || orderType === 'COLLECTION' || orderType === 'TAKEAWAY') return TAKEAWAY_STEPS;
-  return DELIVERY_STEPS; // Default to delivery steps
+const STATUS_COPY: Record<string, { chip: string; tone: Tone; title: string; text: string }> = {
+  RECEIVED: { chip: 'Received', tone: 'info', title: 'Your order has been received', text: 'The kitchen will start on it shortly.' },
+  PREPARING: { chip: 'Preparing', tone: 'warning', title: 'Your food is being prepared', text: 'The kitchen is working on your order.' },
+  OVEN: { chip: 'In oven', tone: 'warning', title: 'Your food is in the oven', text: 'It will be ready soon.' },
+  BAKED: { chip: 'In oven', tone: 'warning', title: 'Your food is out of the oven', text: 'It is being finished and packed.' },
+  READY: { chip: 'Ready', tone: 'success', title: 'Your order is ready', text: 'It is packed and waiting.' },
+  DISPATCHED: { chip: 'Dispatched', tone: 'info', title: 'A driver has been assigned', text: 'Your driver is collecting the order from the store.' },
+  OUT_FOR_DELIVERY: { chip: 'Out for delivery', tone: 'success', title: 'Your order is on its way', text: 'Follow the driver on the live map.' },
+  DELIVERED: { chip: 'Delivered', tone: 'success', title: 'Your order was delivered', text: 'Enjoy your meal.' },
+  SERVED: { chip: 'Served', tone: 'success', title: 'Your order was served', text: 'Enjoy your meal.' },
+  COMPLETED: { chip: 'Completed', tone: 'success', title: 'Your order is complete', text: 'Thank you for ordering with MaSoVa.' },
+  CANCELLED: { chip: 'Cancelled', tone: 'error', title: 'This order was cancelled', text: 'Contact the store if you did not expect this.' },
 };
 
-// ─── Inline SVG icons ─────────────────────────────────────────────────────────
-const IconCheck = ({ size = 14, color = 'currentColor' }: { size?: number; color?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="20 6 9 17 4 12" />
-  </svg>
-);
+const stepsFor = (type?: string) => !type ? NEUTRAL_STEPS : type === 'DINE_IN' ? STEPS.DINE_IN : type === 'DELIVERY' ? STEPS.DELIVERY : STEPS.TAKEAWAY;
 
-const IconTruck = ({ size = 20, color = 'currentColor' }: { size?: number; color?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="1" y="3" width="15" height="13" rx="2" /><path d="M16 8h4l3 3v5h-7V8z" />
-    <circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" />
-  </svg>
-);
-
-const IconPhone = ({ size = 14, color = 'currentColor' }: { size?: number; color?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.12 1.22 2 2 0 012.1 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.16 6.16l1.27-.45a2 2 0 012.11.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z" />
-  </svg>
-);
-
-const IconStar = ({ size = 14, filled = false, color = 'var(--gold)' }: { size?: number; filled?: boolean; color?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill={filled ? color : 'none'} stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-  </svg>
-);
-
-const IconClock = ({ size = 14, color = 'currentColor' }: { size?: number; color?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
-  </svg>
-);
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
-const OrderMeta: React.FC<{ label: string; value: string }> = ({ label, value }) => (
-  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 10 }}>
-    <span style={{ fontSize: '0.78rem', color: 'var(--text-3)', flexShrink: 0 }}>{label}</span>
-    <span style={{ fontSize: '0.82rem', color: 'var(--text-2)', textAlign: 'right', fontWeight: 500 }}>{value}</span>
-  </div>
-);
-
-// ─── Rating Dialog ────────────────────────────────────────────────────────────
-const RatingDialog: React.FC<{
-  open: boolean;
-  driverName?: string;
-  onClose: () => void;
-  onSubmit: (rating: number, comment: string) => void;
-}> = ({ open, driverName, onClose, onSubmit }) => {
-  const [rating, setRating] = useState(0);
-  const [hovered, setHovered] = useState(0);
-  const [comment, setComment] = useState('');
-  if (!open) return null;
-  return (
-    <div
-      onClick={onClose}
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: 24 }}
-    >
-      <div
-        onClick={e => e.stopPropagation()}
-        style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 20, padding: '32px 28px', width: '100%', maxWidth: 420, textAlign: 'center' }}
-      >
-        <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'rgba(212,168,67,0.1)', border: '1px solid rgba(212,168,67,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-          <IconTruck size={22} color="var(--gold)" />
-        </div>
-        <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-1)', marginBottom: 4 }}>Rate your delivery</h3>
-        <p style={{ fontSize: '0.82rem', color: 'var(--text-3)', marginBottom: 24 }}>{driverName ? `How was ${driverName}'s service?` : 'How was your delivery?'}</p>
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: 20 }}>
-          {[1, 2, 3, 4, 5].map(n => (
-            <button key={n} onClick={() => setRating(n)} onMouseEnter={() => setHovered(n)} onMouseLeave={() => setHovered(0)}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, transition: 'transform 0.1s', transform: (hovered || rating) >= n ? 'scale(1.2)' : 'scale(1)' }}>
-              <IconStar size={28} filled={(hovered || rating) >= n} />
-            </button>
-          ))}
-        </div>
-        <textarea
-          value={comment}
-          onChange={e => setComment(e.target.value)}
-          placeholder="Any comments? (optional)"
-          rows={3}
-          style={{ width: '100%', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px', fontSize: '0.85rem', color: 'var(--text-1)', fontFamily: 'var(--font-body)', resize: 'none', outline: 'none', boxSizing: 'border-box', marginBottom: 20 }}
-        />
-        <div style={{ display: 'flex', gap: 10 }}>
-          <button onClick={onClose} style={{ flex: 1, background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-2)', borderRadius: 'var(--radius-pill)', padding: '11px', fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer' }}>Skip</button>
-          <button onClick={() => { if (rating > 0) { onSubmit(rating, comment); onClose(); } }}
-            style={{ flex: 2, background: rating > 0 ? 'var(--gold)' : 'var(--surface-2)', color: rating > 0 ? '#000' : 'var(--text-3)', border: 'none', borderRadius: 'var(--radius-pill)', padding: '11px', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '0.875rem', cursor: rating > 0 ? 'pointer' : 'default', transition: 'all 0.15s' }}>
-            Submit Rating
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// ─── Main Component ───────────────────────────────────────────────────────────
+/** Board 06 panel 3. */
 const TrackingPage: React.FC = () => {
-  const { t } = useTranslation();
   const { orderId } = useParams<{ orderId: string }>();
-  const navigate = useNavigate();
-  const dispatch = useAppDispatch();
-  const currentUser = useAppSelector((state) => state.auth.user);
-  const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
-  const [elapsedTime, setElapsedTime] = useState(0);
-  const [ratingOpen, setRatingOpen] = useState(false);
+  const signedIn = useAppSelector(state => state.auth.isAuthenticated);
+  const { order, isLoading, isError, notFound, refetch, limited } = useCustomerOrder(orderId);
+  const stores = useGetActiveStoresQuery();
   const [createReview] = useCreateReviewMutation();
-  const [liveDriverLocation, setLiveDriverLocation] = useState<{ latitude: number; longitude: number } | null>(null);
-  const [liveStatus, setLiveStatus] = useState<string | null>(null);
-  const mapRef = useRef<HTMLDivElement>(null);
+  const [ratingOpen, setRatingOpen] = useState(false);
+  const [ratingState, setRatingState] = useState<'idle' | 'sent' | 'failed'>('idle');
+  const [ratingError, setRatingError] = useState('');
+  const [copied, setCopied] = useState(false);
 
-  // Order-service poll (status + order details)
-  const { data: order, isLoading } = useTrackOrderQuery(orderId || '', {
-    skip: !orderId,
-    pollingInterval: 10000,
-  });
+  const status = order?.status ?? '';
+  const enRoute = status === 'DISPATCHED' || status === 'OUT_FOR_DELIVERY';
+  const delivery = useDeliveryTrackQuery(orderId || '', { skip: !orderId || !enRoute, pollingInterval: 10000 });
 
-  // Delivery-service poll (driver location + ETA) — once a driver is assigned and en route
-  const isDispatched = order?.status === 'DISPATCHED' || order?.status === 'OUT_FOR_DELIVERY';
-  const { data: delivery, isLoading: deliveryLoading } = useDeliveryTrackQuery(orderId!, {
-    skip: !orderId || !isDispatched,
-    pollingInterval: 8000,
-  });
-
-  // WebSocket for real-time location pushes
-  const { isConnected: wsConnected } = useOrderTrackingWebSocket({
-    orderId: orderId || '',
-    onOrderUpdate: (update: OrderTrackingUpdate) => {
-      if (update.status) setLiveStatus(update.status);
-      if (update.driverLocation) setLiveDriverLocation(update.driverLocation);
-    },
-    enabled: !!orderId && isDispatched,
-  });
-
-  // Normalize driver location — WS gives {latitude, longitude}, delivery API gives GeoJSON {type, coordinates:[lng,lat]}
-  const effectiveDriverLocation: { latitude: number; longitude: number } | null = liveDriverLocation
-    ?? (delivery?.currentLocation
-      ? { latitude: delivery.currentLocation.coordinates[1], longitude: delivery.currentLocation.coordinates[0] }
-      : null);
-  const effectiveStatus = liveStatus || order?.status;
-
-  useEffect(() => { dispatch(clearCart()); }, [dispatch]);
-  useEffect(() => { if (orderId) sessionStorage.setItem('activeOrderId', orderId); }, [orderId]);
+  // The header's order link follows the active order until it reaches a final state.
   useEffect(() => {
-    if (order?.status === 'DELIVERED') setTimeout(() => sessionStorage.removeItem('activeOrderId'), 60000);
-  }, [order?.status]);
+    if (!orderId || !status) return;
+    if (TERMINAL_STATUSES.includes(status)) {
+      if (sessionStorage.getItem('activeOrderId') === orderId) sessionStorage.removeItem('activeOrderId');
+    } else {
+      sessionStorage.setItem('activeOrderId', orderId);
+    }
+  }, [orderId, status]);
 
-  useEffect(() => {
-    if (!order?.createdAt) return;
-    const tick = () => setElapsedTime(Math.floor((Date.now() - new Date(order.createdAt).getTime()) / 60000));
-    tick();
-    const id = setInterval(tick, 60000);
-    return () => clearInterval(id);
-  }, [order?.createdAt]);
+  const back = <Link className="track-back" to={signedIn ? '/customer/orders' : '/menu'}><ArrowLeft size={16} aria-hidden="true" />{signedIn ? 'Back to orders' : 'Back to menu'}</Link>;
 
-  // ── Status helpers ──────────────────────────────────────────────────────────
-  const orderSteps = getOrderSteps(order?.orderType);
-  const currentStepIndex = order
-    ? orderSteps.findIndex(s => s.status === (effectiveStatus || order.status))
-    : 0;
-  const isDelivered = effectiveStatus === 'DELIVERED' || effectiveStatus === 'COMPLETED' || effectiveStatus === 'SERVED';
-  const shortId = orderId ? orderId.slice(-8).toUpperCase() : '';
+  if (isLoading) return <BrowseShell><main className="track-page">{back}<div className="track-state" role="status"><Clock size={36} aria-hidden="true" /><h1>Loading your order…</h1></div></main></BrowseShell>;
+  if (!order || !orderId) return <BrowseShell><main className="track-page">{back}<div className="track-state" role="alert"><CircleAlert size={36} aria-hidden="true" /><h1>{isError && !notFound ? 'Your order could not be loaded' : 'Order not found'}</h1><p>{isError && !notFound ? 'Check your connection and try again.' : 'Check the link in your confirmation, or contact the store.'}</p>{isError && !notFound ? <button type="button" className="browse-primary" onClick={() => refetch()}>Try again</button> : <Link className="browse-primary" to="/menu">Browse menu</Link>}</div></main></BrowseShell>;
 
-  const etaMinutes = delivery?.estimatedArrival
-    ? Math.max(0, Math.round((new Date(delivery.estimatedArrival).getTime() - Date.now()) / 60000))
-    : null;
+  const steps = stepsFor(order.orderType);
+  const stepIndex = steps.findIndex(step => step.statuses.includes(status));
+  const cancelled = status === 'CANCELLED';
+  const finished = TERMINAL_STATUSES.includes(status) && !cancelled;
+  const copy = STATUS_COPY[status] ?? { chip: status.toLowerCase().replace(/_/g, ' '), tone: 'info' as Tone, title: 'Order status updated', text: '' };
+  const store = stores.data?.find(candidate => candidate.id === order.storeId || candidate.storeCode === order.storeId);
+  const currency = order.currency || 'EUR';
+  const money = (value: number) => formatMajorAmount(value, currency, locale);
+  const placed = new Date(order.createdAt);
+  const placedText = Number.isNaN(placed.getTime()) ? '' : `${placed.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })} · ${placed.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
+  const vat = order.totalVatAmount ?? order.tax;
+  const otp = delivery.data?.deliveryOtp;
 
-  // ── Loading ─────────────────────────────────────────────────────────────────
-  if (isLoading) {
-    return (
-      <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', flexDirection: 'column', fontFamily: 'var(--font-body)' }}>
-        <CustomerPageHeader onBack={() => navigate('/menu')} breadcrumb="Track Order" />
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ width: 44, height: 44, border: '3px solid var(--border)', borderTopColor: 'var(--gold)', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 16px' }} />
-            <p style={{ color: 'var(--text-3)', fontSize: '0.9rem' }}>Loading your order…</p>
-          </div>
-        </div>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+  const copyNumber = async () => {
+    try {
+      await navigator.clipboard.writeText(order.orderNumber);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      console.warn('Order number could not be copied', error);
+    }
+  };
+
+  const submitRating = async (rating: number, feedback: string) => {
+    try {
+      await createReview({ orderId, overallRating: rating, comment: feedback, ...(order.orderType === 'DELIVERY' ? { deliveryRating: rating } : {}) }).unwrap();
+      setRatingState('sent');
+      setRatingOpen(false);
+    } catch (error) {
+      console.error('Rating was not saved', error);
+      setRatingError(getApiErrorMessage(error, 'Your rating was not saved.'));
+      setRatingState('failed');
+      setRatingOpen(false);
+    }
+  };
+
+  return <BrowseShell>
+    <main className="track-page">
+      {back}
+      <div className="track-title">
+        <h1>Order #{displayOrderNumber(order.orderNumber)}<button type="button" className="track-copy" onClick={copyNumber} aria-label="Copy order number"><Copy size={18} aria-hidden="true" /></button></h1>
+        <span className="track-chip" data-tone={copy.tone}>{copy.chip}</span>
       </div>
-    );
-  }
+      <p className="track-date">{placedText}<span role="status" className="sr-only">{copied ? 'Order number copied' : ''}</span></p>
 
-  if (!order || !orderId) {
-    return (
-      <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', flexDirection: 'column', fontFamily: 'var(--font-body)' }}>
-        <CustomerPageHeader onBack={() => navigate('/menu')} breadcrumb="Track Order" />
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 24px' }}>
-          <div style={{ textAlign: 'center', maxWidth: 400 }}>
-            <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(239,68,68,0.1)', border: '2px solid rgba(239,68,68,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--red-light)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
-              </svg>
-            </div>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-1)', marginBottom: 10 }}>Order Not Found</h2>
-            <p style={{ color: 'var(--text-3)', fontSize: '0.9rem', marginBottom: 28, lineHeight: 1.6 }}>We couldn't find this order. Check your confirmation email or contact support.</p>
-            <button onClick={() => navigate('/menu')} style={{ padding: '12px 28px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg, var(--red), var(--red-light))', color: 'var(--text-1)', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer' }}>Back to Menu</button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const activeStep = orderSteps[currentStepIndex];
-
-  return (
-    <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', flexDirection: 'column', fontFamily: 'var(--font-body)' }}>
-      <CustomerPageHeader onBack={() => navigate('/menu')} breadcrumb="Track Order" />
-
-      <div style={{ flex: 1, padding: '28px 20px 60px', maxWidth: 1120, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
-
-        {/* ── Hero status bar ──────────────────────────────────────────────── */}
-        <div style={{
-          background: isDelivered ? 'rgba(34,197,94,0.07)' : isDispatched ? 'rgba(59,130,246,0.07)' : 'rgba(212,175,55,0.06)',
-          border: `1px solid ${isDelivered ? 'rgba(34,197,94,0.2)' : isDispatched ? 'rgba(59,130,246,0.2)' : 'rgba(212,175,55,0.2)'}`,
-          borderRadius: 18, padding: '22px 28px', marginBottom: 28,
-          display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap',
-        }}>
-          {/* Animated icon for dispatched, otherwise static */}
-          <div style={{
-            width: 56, height: 56, borderRadius: '50%', flexShrink: 0,
-            background: isDelivered ? 'rgba(34,197,94,0.12)' : isDispatched ? 'rgba(59,130,246,0.12)' : 'rgba(212,175,55,0.1)',
-            border: `2px solid ${isDelivered ? 'rgba(34,197,94,0.4)' : isDispatched ? 'rgba(59,130,246,0.35)' : 'rgba(212,175,55,0.35)'}`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            animation: isDispatched && !isDelivered ? 'pulse-truck 2s ease-in-out infinite' : 'none',
-          }}>
-            <IconTruck size={24} color={isDelivered ? 'var(--success-light)' : isDispatched ? 'var(--info-light)' : 'var(--gold)'} />
-          </div>
-
-          <div style={{ flex: 1, minWidth: 180 }}>
-            <p style={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: 4 }}>Current Status</p>
-            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-1)', marginBottom: 2 }}>
-              {activeStep?.label ?? (effectiveStatus || order.status)}
-            </h1>
-            <p style={{ fontSize: '0.84rem', color: 'var(--text-3)', display: 'flex', alignItems: 'center', gap: 6 }}>
-              {activeStep?.description}
-              {elapsedTime > 0 && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><IconClock size={12} color="var(--text-3)" />{elapsedTime}m ago</span>}
-            </p>
-          </div>
-
-          {/* Right: ETA chip (delivery) or step chip (others) */}
-          {isDispatched && !isDelivered ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-end', flexShrink: 0 }}>
-              {etaMinutes !== null && (
-                <div style={{ background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.25)', borderRadius: 12, padding: '10px 18px', textAlign: 'center' }}>
-                  <p style={{ fontSize: '0.64rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: 2 }}>Arrives in</p>
-                  <p style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', fontWeight: 800, color: 'var(--info-light)' }}>{etaMinutes} min</p>
-                  {delivery?.distanceRemaining && (
-                    <p style={{ fontSize: '0.7rem', color: 'var(--text-3)' }}>{delivery.distanceRemaining.toFixed(1)} km away</p>
-                  )}
-                </div>
-              )}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ width: 7, height: 7, borderRadius: '50%', background: wsConnected ? 'var(--success-light)' : 'var(--warning)', display: 'inline-block', boxShadow: wsConnected ? '0 0 0 3px rgba(74,222,128,0.2)' : 'none' }} />
-                <span style={{ fontSize: '0.68rem', color: wsConnected ? 'var(--success-light)' : 'var(--warning)', fontWeight: 600 }}>{wsConnected ? 'Live' : 'Polling'}</span>
-              </div>
-            </div>
-          ) : !isDelivered ? (
-            <div style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.25)', borderRadius: 10, padding: '10px 18px', textAlign: 'center', flexShrink: 0 }}>
-              <p style={{ fontSize: '0.64rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: 2 }}>ETA</p>
-              <p style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', fontWeight: 800, color: 'var(--gold)' }}>
-                {currentStepIndex >= 0 ? orderSteps.slice(currentStepIndex).length * 5 + '–' + (orderSteps.slice(currentStepIndex).length * 5 + 5) + ' min' : '–'}
-              </p>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', gap: 8 }}>
-              <div style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 10, padding: '10px 18px', textAlign: 'center' }}>
-                <p style={{ fontSize: '0.64rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: 2 }}>Status</p>
-                <p style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--success-light)' }}>Delivered</p>
-              </div>
-            </div>
-          )}
+      <section className="track-card" aria-label="Order progress">
+        <div className="track-store">
+          <span className="track-store-mark"><StoreIcon size={24} aria-hidden="true" /></span>
+          <div className="track-store-text"><strong>{store ? storeDisplayName(store.name) : 'Your MaSoVa store'}</strong>{store?.address && <span>{[store.address.street, store.address.city].filter(Boolean).join(', ')}</span>}</div>
+          <div className="track-actions"><a className="track-action" href={`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('Help with order ' + order.orderNumber)}`}><CircleHelp size={18} aria-hidden="true" />Need help?</a></div>
         </div>
 
-        {/* ── DISPATCHED: Live delivery panel ─────────────────────────────── */}
-        {isDispatched && !isDelivered && (
-          <div style={{ marginBottom: 28 }}>
+        {!cancelled && <ol className="track-steps" aria-label="Order steps">
+          {steps.map((step, index) => {
+            const state = stepIndex < 0 ? 'todo' : index < stepIndex || (finished && index === stepIndex) ? 'done' : index === stepIndex ? 'current' : 'todo';
+            return <li key={step.label} data-state={state} aria-current={state === 'current' ? 'step' : undefined}>
+              <span className="track-dot">{state === 'done' && <Check size={14} strokeWidth={3} aria-hidden="true" />}</span>
+              <b>{step.label}</b>
+              <small>{state === 'current' ? 'Now' : state === 'todo' && step.note ? step.note : ''}<span className="sr-only">{state === 'done' ? ' Done' : state === 'todo' ? ' Not started' : ''}</span></small>
+            </li>;
+          })}
+        </ol>}
 
-            {/* Driver card */}
-            {(delivery?.driverName || deliveryLoading) && (
-              <div style={{
-                background: 'var(--surface)', border: '1px solid rgba(59,130,246,0.2)',
-                borderRadius: 16, padding: '22px 24px', marginBottom: 16,
-                display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap',
-              }}>
-                {/* Driver avatar */}
-                <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'rgba(59,130,246,0.1)', border: '2px solid rgba(59,130,246,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--info-light)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" /><circle cx="12" cy="7" r="4" />
-                  </svg>
-                </div>
+        <div className="track-banner" data-tone={copy.tone} role="status" style={cancelled ? { marginTop: 16 } : undefined}>
+          {cancelled ? <CircleAlert size={22} aria-hidden="true" /> : enRoute ? <Truck size={22} aria-hidden="true" /> : finished ? <PackageCheck size={22} aria-hidden="true" /> : <Clock size={22} aria-hidden="true" />}
+          <div><strong>{copy.title}</strong><span>{copy.text}</span></div>
+          {enRoute && order.orderType === 'DELIVERY' && <Link className="track-action" to={`/live-tracking/${encodeURIComponent(orderId)}`}><MapPin size={18} aria-hidden="true" />Track live delivery</Link>}
+          {finished && signedIn && ratingState === 'idle' && <button type="button" className="track-action" onClick={() => setRatingOpen(true)}><Star size={18} aria-hidden="true" />Rate your order</button>}
+        </div>
+        {ratingState === 'sent' && <p role="status">Thank you. Your rating was saved.</p>}
+        {ratingState === 'failed' && <p role="alert">{ratingError} <button type="button" onClick={() => { setRatingState('idle'); setRatingOpen(true); }}>Try again</button></p>}
 
-                <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: 4 }}>Your Driver</p>
-                  <p style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-1)', marginBottom: 2 }}>
-                    {deliveryLoading ? '—' : (delivery?.driverName || 'Driver Assigned')}
-                  </p>
-                  <p style={{ fontSize: '0.8rem', color: 'var(--text-3)' }}>
-                    {delivery?.driverPhone || ''}
-                    {delivery?.distanceRemaining ? ` · ${delivery.distanceRemaining.toFixed(1)} km away` : ''}
-                  </p>
-                </div>
+        {enRoute && delivery.isError && <p role="alert">Your delivery code could not be loaded. <button type="button" onClick={() => delivery.refetch()}>Try again</button></p>}
+        {otp && enRoute && <div className="track-banner" data-tone="info">
+          <PackageCheck size={22} aria-hidden="true" />
+          <div><strong>Delivery code</strong><span>Give this code to your driver when the order arrives.</span></div>
+          <span className="track-otp" aria-label={`Delivery code ${otp.split('').join(' ')}`}>{otp}</span>
+        </div>}
 
-                {/* Call + Rate actions */}
-                <div style={{ display: 'flex', gap: 10, flexShrink: 0 }}>
-                  {delivery?.driverPhone && (
-                    <a
-                      href={`tel:${delivery.driverPhone}`}
-                      style={{
-                        display: 'inline-flex', alignItems: 'center', gap: 7,
-                        padding: '9px 18px', borderRadius: 'var(--radius-pill)',
-                        background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.3)',
-                        color: 'var(--success-light)', fontSize: '0.85rem', fontWeight: 700, textDecoration: 'none',
-                      }}
-                    >
-                      <IconPhone size={13} color="var(--success-light)" />
-                      Call Driver
-                    </a>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Live map */}
-            <div ref={mapRef} style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid var(--border)', background: 'var(--surface)', position: 'relative' }}>
-              {effectiveDriverLocation && delivery?.destination ? (
-                <DriverTrackingMap
-                  driverPosition={[effectiveDriverLocation.latitude, effectiveDriverLocation.longitude]}
-                  restaurantPosition={[17.4399, 78.4983]}
-                  customerPosition={[
-                    delivery.destination.coordinates[1],
-                    delivery.destination.coordinates[0],
-                  ]}
-                  eta={etaMinutes !== null ? `${etaMinutes} min` : undefined}
-                  driverName={delivery?.driverName}
-                  height="440px"
-                  autoCenter
-                />
-              ) : (
-                /* Map placeholder while driver location loads */
-                <div style={{ height: 260, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, padding: 24 }}>
-                  <div style={{ width: 40, height: 40, borderRadius: '50%', border: '2px solid var(--border)', borderTopColor: 'var(--info-light)', animation: 'spin 1s linear infinite' }} />
-                  <div style={{ textAlign: 'center' }}>
-                    <p style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-2)', marginBottom: 4 }}>Connecting to driver…</p>
-                    <p style={{ fontSize: '0.78rem', color: 'var(--text-3)' }}>Driver location will appear once GPS signal is received</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Map label overlay */}
-              {effectiveDriverLocation && (
-                <div style={{ position: 'absolute', top: 12, left: 12, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', borderRadius: 8, padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 6, zIndex: 500 }}>
-                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--success-light)', display: 'inline-block', animation: 'blink 1.4s ease-in-out infinite' }} />
-                  <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-1)' }}>Live driver location</span>
-                </div>
-              )}
-            </div>
-
-            {/* Delivery address strip */}
-            {order.deliveryAddress && (
-              <div style={{ marginTop: 12, padding: '14px 18px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-                <div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(212,168,67,0.1)', border: '1px solid rgba(212,168,67,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" /><circle cx="12" cy="10" r="3" />
-                  </svg>
-                </div>
-                <div>
-                  <p style={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: 4 }}>Delivering to</p>
-                  <p style={{ fontSize: '0.88rem', color: 'var(--text-1)', fontWeight: 500, lineHeight: 1.5 }}>
-                    {[order.deliveryAddress.street, order.deliveryAddress.city, order.deliveryAddress.state, order.deliveryAddress.pincode].filter(Boolean).join(', ')}
-                  </p>
-                </div>
-              </div>
-            )}
+        <div className="track-columns">
+          <div className="track-card">
+            <h2>Order items</h2>
+            <ul className="track-lines">{order.items.map((item, index) => <li key={`${item.menuItemId}-${index}`}>
+              <span className="track-qty">{item.quantity} ×</span>
+              <span>{item.name}{(item.variant || !!item.customizations?.length) && <small>{[item.variant, ...(item.customizations || [])].filter(Boolean).join(', ')}</small>}{item.notes && <small>Note: {item.notes}</small>}</span>
+              {!limited && <span>{money(item.price * item.quantity)}</span>}
+            </li>)}</ul>
           </div>
-        )}
-
-        {/* ── Delivered: Rating prompt ─────────────────────────────────────── */}
-        {isDelivered && (
-          <div style={{ marginBottom: 28, background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 16, padding: '22px 24px', display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-            <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <IconCheck size={22} color="var(--success-light)" />
-            </div>
-            <div style={{ flex: 1 }}>
-              <p style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-1)', marginBottom: 2 }}>Your order has arrived!</p>
-              <p style={{ fontSize: '0.82rem', color: 'var(--text-3)' }}>Hope you enjoy your meal. Rate your experience below.</p>
-            </div>
-            <button onClick={() => setRatingOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '10px 20px', borderRadius: 'var(--radius-pill)', background: 'rgba(212,168,67,0.12)', border: '1px solid rgba(212,168,67,0.3)', color: 'var(--gold)', fontSize: '0.875rem', fontWeight: 700, cursor: 'pointer', flexShrink: 0, transition: 'all 0.15s' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(212,168,67,0.2)'; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(212,168,67,0.12)'; }}
-            >
-              <IconStar size={14} color="var(--gold)" />
-              Rate Delivery
-            </button>
-          </div>
-        )}
-
-        {/* ── Two-column: Timeline + Order summary ─────────────────────────── */}
-        <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-
-          {/* LEFT: Progress timeline */}
-          <div style={{ flex: '1 1 320px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: '22px 20px' }}>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-1)', marginBottom: 22, letterSpacing: '0.02em' }}>Order Progress</h2>
-
-            <div style={{ position: 'relative' }}>
-              {orderSteps.map((step, index) => {
-                const isCompleted = index < currentStepIndex;
-                const isActive = index === currentStepIndex;
-                const isFuture = index > currentStepIndex;
-                const lineColor = isCompleted ? 'rgba(34,197,94,0.4)' : 'var(--border)';
-
-                return (
-                  <div key={step.status} style={{ display: 'flex', gap: 14, position: 'relative' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 30, flexShrink: 0 }}>
-                      <div style={{
-                        width: 30, height: 30, borderRadius: '50%', flexShrink: 0,
-                        background: isCompleted ? 'rgba(34,197,94,0.12)' : isActive ? (isDispatched ? 'rgba(59,130,246,0.12)' : 'rgba(212,175,55,0.12)') : 'transparent',
-                        border: `2px solid ${isCompleted ? 'rgba(34,197,94,0.5)' : isActive ? (isDispatched ? 'rgba(59,130,246,0.5)' : 'rgba(212,175,55,0.5)') : 'var(--border)'}`,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        color: isCompleted ? 'var(--success-light)' : isActive ? (isDispatched ? 'var(--info-light)' : 'var(--gold)') : 'var(--text-3)',
-                        position: 'relative', zIndex: 1, transition: 'all 0.3s',
-                        boxShadow: isActive ? (isDispatched ? '0 0 0 4px rgba(59,130,246,0.1)' : '0 0 0 4px rgba(212,175,55,0.1)') : 'none',
-                        animation: isActive && isDispatched ? 'pulse-ring-blue 2s ease-in-out infinite' : 'none',
-                      }}>
-                        {isCompleted
-                          ? <IconCheck size={13} color="var(--success-light)" />
-                          : <span style={{ fontSize: '0.7rem', fontWeight: 700, opacity: isFuture ? 0.4 : 1 }}>{index + 1}</span>
-                        }
-                      </div>
-                      {index < orderSteps.length - 1 && (
-                        <div style={{ width: 2, flex: 1, minHeight: 22, background: lineColor, margin: '3px 0', transition: 'background 0.4s' }} />
-                      )}
-                    </div>
-
-                    <div style={{ paddingBottom: index < orderSteps.length - 1 ? 20 : 0, paddingTop: 4 }}>
-                      <p style={{ fontSize: '0.875rem', fontWeight: isActive ? 700 : isCompleted ? 600 : 400, color: isActive ? 'var(--text-1)' : isCompleted ? 'var(--text-2)' : 'var(--text-3)', marginBottom: 2, transition: 'color 0.3s' }}>
-                        {step.label}
-                      </p>
-                      <p style={{ fontSize: '0.75rem', color: 'var(--text-3)', opacity: isFuture ? 0.45 : 0.85 }}>
-                        {step.description}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* RIGHT: Order summary */}
-          <div style={{ flex: '1 1 300px', position: 'sticky', top: 80, display: 'flex', flexDirection: 'column', gap: 14 }}>
-
-            {/* Reference card */}
-            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: '18px 22px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16, paddingBottom: 14, borderBottom: '1px solid var(--border)' }}>
-                <div>
-                  <p style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: 4 }}>Order Reference</p>
-                  <p style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 800, color: 'var(--gold)' }}>#{shortId}</p>
-                </div>
-                <span style={{
-                  background: isDelivered ? 'rgba(34,197,94,0.1)' : isDispatched ? 'rgba(59,130,246,0.1)' : 'rgba(212,175,55,0.08)',
-                  border: `1px solid ${isDelivered ? 'rgba(34,197,94,0.3)' : isDispatched ? 'rgba(59,130,246,0.25)' : 'rgba(212,175,55,0.25)'}`,
-                  color: isDelivered ? 'var(--success-light)' : isDispatched ? 'var(--info-light)' : 'var(--gold)',
-                  fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.04em', padding: '4px 10px', borderRadius: 20,
-                }}>
-                  {isDelivered ? 'Delivered' : isDispatched ? 'En Route' : 'Active'}
-                </span>
-              </div>
-              {order.customerName && <OrderMeta label="Customer" value={order.customerName} />}
-              {order.orderType && <OrderMeta label="Type" value={order.orderType} />}
-              {order.paymentMethod && <OrderMeta label="Payment" value={order.paymentMethod} />}
-            </div>
-
-            {/* Items */}
-            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: '18px 22px' }}>
-              <p style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: 14 }}>Items</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
-                {order.items?.map((item: OrderItem, idx: number) => (
-                  <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ width: 22, height: 22, borderRadius: 6, background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.2)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.68rem', fontWeight: 700, color: 'var(--gold)', flexShrink: 0 }}>{item.quantity}</span>
-                      <span style={{ fontSize: '0.86rem', color: 'var(--text-2)' }}>{item.name}</span>
-                    </div>
-                    <span style={{ fontSize: '0.86rem', fontWeight: 600, color: 'var(--text-1)', flexShrink: 0 }}>{formatOrderAmount(item.price * item.quantity, order, currency, locale)}</span>
-                  </div>
-                ))}
-              </div>
-              <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12, display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-1)' }}>{t('cart.total')}</span>
-                <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', fontWeight: 800, color: 'var(--gold)' }}>{formatOrderAmount(order.total ?? 0, order, currency, locale)}</span>
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <button onClick={() => navigate('/menu')} style={{ width: '100%', padding: 13, borderRadius: 10, border: 'none', background: 'linear-gradient(135deg, var(--red), var(--red-light))', color: 'var(--text-1)', fontSize: '0.875rem', fontWeight: 700, cursor: 'pointer', transition: 'opacity 0.2s' }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '0.88'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '1'; }}
-              >
-                Order Again
-              </button>
-              {isDelivered && currentUser && (
-                <button onClick={() => navigate('/customer-dashboard')} style={{ width: '100%', padding: 13, borderRadius: 10, border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-2)', fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer', transition: 'all 0.2s' }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-strong)'; (e.currentTarget as HTMLElement).style.color = 'var(--text-1)'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLElement).style.color = 'var(--text-2)'; }}
-                >
-                  View Order History
-                </button>
-              )}
-            </div>
+          <div className="track-card">
+            <h2>Total</h2>
+            {limited ? <p>Sign in to see the amounts for this order.</p> : <>
+              <dl className="track-totals">
+                <div><dt>Subtotal</dt><dd>{money(order.subtotal)}</dd></div>
+                {order.orderType === 'DELIVERY' && <div><dt>Delivery fee</dt><dd>{money(order.deliveryFee)}</dd></div>}
+                <div><dt>VAT</dt><dd>{money(vat)}</dd></div>
+                <div className="track-total"><dt>{order.paymentStatus === 'PAID' ? 'Total paid' : 'Total'}</dt><dd>{money(order.total)}</dd></div>
+              </dl>
+              <p className="track-paid"><CreditCard size={18} aria-hidden="true" />{order.paymentStatus === 'PAID' ? 'Paid' : order.paymentStatus === 'REFUNDED' ? 'Refunded' : order.paymentStatus === 'FAILED' ? 'Payment failed' : 'Payment pending'}{order.paymentMethod ? ` · ${order.paymentMethod === 'CASH' ? 'Cash' : order.paymentMethod === 'CARD' ? 'Card' : order.paymentMethod}` : ''}</p>
+            </>}
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Rating dialog */}
-      <RatingDialog
-        open={ratingOpen}
-        driverName={delivery?.driverName}
-        onClose={() => setRatingOpen(false)}
-        onSubmit={async (rating, comment) => {
-          if (!orderId) return;
-          try {
-            await createReview({
-              orderId,
-              overallRating: rating,
-              comment,
-              deliveryRating: rating,
-            }).unwrap();
-          } catch {
-            // Non-blocking — rating failure should not disrupt the post-order experience
-          }
-          setRatingOpen(false);
-        }}
-      />
-
-      <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes blink { 0%,100% { opacity:1; } 50% { opacity:0.3; } }
-        @keyframes pulse-truck {
-          0%,100% { box-shadow: 0 0 0 0 rgba(59,130,246,0); }
-          50%      { box-shadow: 0 0 0 8px rgba(59,130,246,0.15); }
-        }
-        @keyframes pulse-ring-blue {
-          0%   { box-shadow: 0 0 0 0 rgba(59,130,246,0.4); }
-          70%  { box-shadow: 0 0 0 8px rgba(59,130,246,0); }
-          100% { box-shadow: 0 0 0 0 rgba(59,130,246,0); }
-        }
-      `}</style>
-    </div>
-  );
+      {ratingOpen && <RatingDialog open onClose={() => setRatingOpen(false)} driverName={delivery.data?.driverName || 'your order'} orderId={orderId} onSubmit={submitRating} />}
+    </main>
+  </BrowseShell>;
 };
 
 export default TrackingPage;

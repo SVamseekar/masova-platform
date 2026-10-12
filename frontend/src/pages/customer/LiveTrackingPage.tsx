@@ -1,307 +1,127 @@
-import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-
+import React, { useCallback, useEffect, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import { ArrowLeft, ChevronRight, CircleAlert, Clock, MapPin, MessageCircle, Phone, Store as StoreIcon } from 'lucide-react';
+import BrowseShell from '../../apps/PublicWebsite/components/BrowseShell';
+import { storeDisplayName } from '../../apps/PublicWebsite/components/CustomerStoreSelector';
 import { useTrackOrderQuery } from '../../store/api/deliveryApi';
-import { useCreateReviewMutation } from '../../store/api/reviewApi';
-import AppHeader from '../../components/common/AppHeader';
+import { useGetActiveStoresQuery } from '../../store/api/storeApi';
 import { DriverTrackingMap } from '../../components/delivery/DriverTrackingMap';
-import RatingDialog from '../../components/delivery/RatingDialog';
 import { useOrderTrackingWebSocket } from '../../hooks/useOrderTrackingWebSocket';
 import { OrderTrackingUpdate } from '../../services/websocketService';
+import { SUPPORT_EMAIL } from '../../apps/ProductSite/constants';
+import { displayOrderNumber, useCustomerOrder } from './useCustomerOrder';
+import './Tracking.css';
 
+const STAGES = ['Dispatched', 'Out for delivery', 'Delivered'];
+const stageIndex = (status?: string) => {
+  const value = (status || '').toUpperCase();
+  if (['DELIVERED', 'COMPLETED'].includes(value)) return 2;
+  if (['OUT_FOR_DELIVERY', 'IN_TRANSIT', 'PICKED_UP'].includes(value)) return 1;
+  return 0;
+};
+/** The delivery service sends GeoJSON points ([lng, lat]); socket updates send latitude and longitude. */
+function toLatLng(point: unknown): { latitude: number; longitude: number } | null {
+  if (!point || typeof point !== 'object') return null;
+  const { coordinates, latitude, longitude } = point as { coordinates?: unknown; latitude?: unknown; longitude?: unknown };
+  if (Array.isArray(coordinates) && typeof coordinates[0] === 'number' && typeof coordinates[1] === 'number') return { latitude: coordinates[1], longitude: coordinates[0] };
+  if (typeof latitude === 'number' && typeof longitude === 'number') return { latitude, longitude };
+  return null;
+}
+const initials = (name: string) => name.split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0]?.toUpperCase()).join('');
+
+/** Board 06 panel 4. Live position comes from the delivery service; nothing is simulated. */
 const LiveTrackingPage: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>();
-  const navigate = useNavigate();
+  const [liveStatus, setLiveStatus] = useState<string | null>(null);
+  const [liveLocation, setLiveLocation] = useState<{ latitude: number; longitude: number } | null>(null);
 
-  const [ratingDialogOpen, setRatingDialogOpen] = useState(false);
-  const [createReview] = useCreateReviewMutation();
-  const [localStatus, setLocalStatus] = useState<string | null>(null);
-  const [localDriverLocation, setLocalDriverLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const onOrderUpdate = useCallback((update: OrderTrackingUpdate) => {
+    if (update.status) setLiveStatus(update.status);
+    if (update.driverLocation) setLiveLocation(update.driverLocation);
+  }, []);
+  const { isConnected } = useOrderTrackingWebSocket({ orderId: orderId || '', onOrderUpdate, enabled: !!orderId });
+  // Clock for the arrival countdown, refreshed between position updates.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 30000);
+    return () => window.clearInterval(timer);
+  }, []);
+  const tracking = useTrackOrderQuery(orderId || '', { skip: !orderId, pollingInterval: isConnected ? 30000 : 10000 });
+  const { order } = useCustomerOrder(orderId, 30000);
+  const stores = useGetActiveStoresQuery();
 
-  const { isConnected: wsConnected } = useOrderTrackingWebSocket({
-    orderId: orderId || '',
-    onOrderUpdate: (update: OrderTrackingUpdate) => {
-      setLocalStatus(update.status);
-      if (update.driverLocation) setLocalDriverLocation(update.driverLocation);
-    },
-    enabled: !!orderId,
-  });
+  const back = <Link className="track-back" to={orderId ? `/tracking/${encodeURIComponent(orderId)}` : '/menu'}><ArrowLeft size={16} aria-hidden="true" />Back to order</Link>;
+  const data = tracking.data;
 
-  const { data: trackingData, isLoading, error } = useTrackOrderQuery(orderId!, {
-    skip: !orderId,
-    pollingInterval: wsConnected ? 30000 : 10000,
-  });
-
-  const effectiveStatus = localStatus || trackingData?.status;
-  const effectiveDriverLocation = localDriverLocation || trackingData?.currentLocation;
-
-  const handleSubmitRating = async (rating: number, feedback: string) => {
-    if (!orderId) return;
-    try {
-      await createReview({
-        orderId,
-        overallRating: rating,
-        comment: feedback,
-        deliveryRating: rating,
-        driverId: trackingData?.driverId,
-      }).unwrap();
-      setRatingDialogOpen(false);
-    } catch (error) {
-      console.error('Failed to submit rating:', error);
-    }
-  };
-
-  const callDriver = () => {
-    if (trackingData?.driverPhone) window.location.href = `tel:${trackingData.driverPhone}`;
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status?.toUpperCase()) {
-      case 'PICKED_UP': return '#2196f3';
-      case 'IN_TRANSIT': return '#ff9800';
-      case 'DELIVERED': return 'var(--success-light)';
-      default: return 'var(--text-3)';
-    }
-  };
-
-  const _getStatusBg = (status: string) => {
-    switch (status?.toUpperCase()) {
-      case 'PICKED_UP': return 'rgba(var(--info-rgb), 0.13)';
-      case 'IN_TRANSIT': return 'rgba(var(--warning-rgb), 0.13)';
-      case 'DELIVERED': return 'rgba(var(--success-rgb), 0.13)';
-      default: return 'rgba(var(--text-3), 0.13)';
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <div style={{ minHeight: '100vh', background: 'var(--bg)', fontFamily: 'var(--font-body)' }}>
-        <AppHeader showPublicNav onCartClick={() => navigate('/menu')} />
-        <div style={{ textAlign: 'center', padding: '120px 0', color: 'var(--text-3)' }}>Loading tracking information...</div>
-      </div>
-    );
+  if (tracking.isLoading) return <BrowseShell><main className="track-page">{back}<div className="track-state" role="status"><Clock size={36} aria-hidden="true" /><h1>Loading tracking information…</h1></div></main></BrowseShell>;
+  if (!data) {
+    const waiting = !tracking.error || (tracking.error as { status?: number | string }).status === 404;
+    return <BrowseShell><main className="track-page">{back}<div className="track-state" role="alert"><CircleAlert size={36} aria-hidden="true" /><h1>{waiting ? 'Tracking not available' : 'Tracking could not be loaded'}</h1><p>{waiting ? 'Live tracking starts when a driver is assigned to your order.' : 'Check your connection and try again.'}</p><button type="button" className="browse-primary" onClick={() => tracking.refetch()}>Check again</button></div></main></BrowseShell>;
   }
+  if (data.orderType && data.orderType !== 'DELIVERY') return <BrowseShell><main className="track-page">{back}<div className="track-state" role="status"><CircleAlert size={36} aria-hidden="true" /><h1>Live tracking unavailable</h1><p>{data.orderType === 'PICKUP' ? 'Live tracking is not available for pickup orders.' : 'Live tracking is not available for dine-in orders.'}</p></div></main></BrowseShell>;
 
-  if (error || !trackingData) {
-    return (
-      <div style={{ minHeight: '100vh', background: 'var(--bg)', fontFamily: 'var(--font-body)' }}>
-        <AppHeader showPublicNav onCartClick={() => navigate('/menu')} />
-        <div style={{ maxWidth: '600px', margin: '80px auto', padding: '0 24px', textAlign: 'center' }}>
-          <div style={{ background: 'var(--surface)', borderRadius: 'var(--radius-card)', border: '1px solid var(--border)', padding: '48px 32px' }}>
-            <div style={{ fontSize: '3.5rem', marginBottom: '16px', opacity: 0.5 }}>📍</div>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-1)', marginBottom: '8px' }}>Tracking Not Available</h2>
-            <p style={{ color: 'var(--text-3)', fontSize: '0.9rem' }}>Unable to find tracking information for this order.</p>
-          </div>
-        </div>
+  // A socket status can go stale when the socket drops; the order's own final state wins.
+  const cancelled = [order?.status, data.status, liveStatus].some(value => (value || '').toUpperCase() === 'CANCELLED');
+  const status = [liveStatus, data.status, order?.status].map(value => (value || '').toUpperCase()).reduce((best, value) => stageIndex(value) > stageIndex(best) ? value : best, '');
+  const stage = stageIndex(status);
+  const delivered = stage === 2;
+  const driver = liveLocation ?? toLatLng(data.currentLocation);
+  const destinationPoint = toLatLng(data.destination);
+  const destination = destinationPoint ? [destinationPoint.latitude, destinationPoint.longitude] as [number, number] : null;
+  const store = stores.data?.find(candidate => candidate.id === order?.storeId || candidate.storeCode === order?.storeId);
+  const storePosition = store?.address?.latitude != null && store.address.longitude != null ? [store.address.latitude, store.address.longitude] as [number, number] : null;
+  const eta = data.estimatedArrival ? new Date(data.estimatedArrival) : null;
+  const etaMinutes = eta && !Number.isNaN(eta.getTime()) ? Math.max(0, Math.round((eta.getTime() - now) / 60000)) : null;
+  const updated = data.lastUpdated ? new Date(data.lastUpdated) : null;
+  const updatedText = updated && !Number.isNaN(updated.getTime()) ? updated.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : null;
+
+  return <BrowseShell>
+    <main className="track-page">
+      {back}
+      <div className="track-title">
+        <h1>{order ? `Order #${displayOrderNumber(order.orderNumber)}` : 'Live delivery'}</h1>
+        <span className="track-chip" data-tone={cancelled ? 'error' : stage === 0 ? 'info' : 'success'}>{cancelled ? 'Cancelled' : STAGES[stage]}</span>
       </div>
-    );
-  }
+      <p className="track-date">{order ? new Date(order.createdAt).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : ' '}</p>
 
-  if (trackingData.orderType && trackingData.orderType !== 'DELIVERY') {
-    return (
-      <div style={{ minHeight: '100vh', background: 'var(--bg)', fontFamily: 'var(--font-body)' }}>
-        <AppHeader showPublicNav onCartClick={() => navigate('/menu')} />
-        <div style={{ maxWidth: '600px', margin: '80px auto', padding: '0 24px', textAlign: 'center' }}>
-          <div style={{ background: 'var(--surface)', borderRadius: 'var(--radius-card)', border: '1px solid var(--border)', padding: '48px 32px' }}>
-            <div style={{ fontSize: '3.5rem', marginBottom: '16px', opacity: 0.5 }}>🚫</div>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-1)', marginBottom: '8px' }}>Live Tracking Unavailable</h2>
-            <p style={{ color: 'var(--text-3)', fontSize: '0.9rem', marginBottom: '8px' }}>
-              {trackingData.orderType === 'PICKUP' ? 'Live tracking is not available for pickup orders.' : 'Live tracking is not available for dine-in orders.'}
-            </p>
-            <p style={{ color: 'var(--text-3)', fontSize: '0.8rem' }}>Live driver tracking is only available for delivery orders.</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', fontFamily: 'var(--font-body)', color: 'var(--text-1)' }}>
-      <AppHeader showPublicNav onCartClick={() => navigate('/menu')} />
-
-      <div style={{ maxWidth: '900px', margin: '0 auto', padding: '48px 24px' }}>
-        {/* WS indicator */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '6px', marginBottom: '24px' }}>
-          <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: wsConnected ? 'var(--success-light)' : 'var(--text-3)', display: 'inline-block' }} />
-          <span style={{ fontSize: '0.72rem', color: wsConnected ? 'var(--success-light)' : 'var(--text-3)' }}>
-            {wsConnected ? 'Live Updates' : 'Polling Mode'}
-          </span>
+      <div className="track-live">
+        <div className="track-side">
+          <section className="track-card track-map" aria-label="Delivery map">
+            <div className="track-map-status" data-live={isConnected} role="status"><strong>{isConnected ? 'GPS · Live' : 'GPS · Updating every 10 seconds'}</strong>{updatedText && <span>Last update: {updatedText}</span>}</div>
+            {driver && destination
+              ? <DriverTrackingMap driverPosition={[driver.latitude, driver.longitude]} restaurantPosition={storePosition ?? undefined} customerPosition={destination} eta={etaMinutes !== null ? `${etaMinutes} min` : undefined} driverName={data.driverName} height="420px" autoCenter />
+              : <div className="track-map-empty"><MapPin size={32} aria-hidden="true" /><strong>Waiting for the driver's position</strong><span>The map appears when the driver's phone shares a location.</span></div>}
+          </section>
+          <section className="track-card track-store">
+            <span className="track-store-mark"><StoreIcon size={24} aria-hidden="true" /></span>
+            <div className="track-store-text"><strong>{store ? storeDisplayName(store.name) : 'Your MaSoVa store'}</strong>{store?.address && <span>{[store.address.street, store.address.city].filter(Boolean).join(', ')}</span>}</div>
+            {orderId && <Link className="track-action" to={`/tracking/${encodeURIComponent(orderId)}`}>View order details</Link>}
+          </section>
         </div>
 
-        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '2.2rem', fontWeight: 900, color: 'var(--text-1)', margin: '0 0 4px 0' }}>
-          Live Tracking
-        </h1>
-        <p style={{ color: 'var(--text-3)', fontSize: '0.9rem', margin: '0 0 32px 0' }}>
-          Order #{orderId?.slice(-8).toUpperCase()}
-        </p>
-
-        {/* Status card */}
-        <div style={{
-          background: 'var(--surface)',
-          borderRadius: 'var(--radius-card)',
-          border: '1px solid var(--border)',
-          borderLeft: `4px solid ${getStatusColor(effectiveStatus || '')}`,
-          padding: '28px 24px',
-          marginBottom: '24px',
-          textAlign: 'center',
-        }}>
-          <div style={{ fontSize: '2rem', marginBottom: '10px' }}>
-            {effectiveStatus?.toUpperCase() === 'PICKED_UP' ? '📦'
-              : effectiveStatus?.toUpperCase() === 'IN_TRANSIT' ? '🚚'
-              : effectiveStatus?.toUpperCase() === 'DELIVERED' ? '✅' : '📍'}
-          </div>
-          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-1)', margin: '0 0 8px 0' }}>
-            {effectiveStatus?.replace(/_/g, ' ')}
-          </h2>
-          <span style={{
-            display: 'inline-block',
-            padding: '4px 14px',
-            borderRadius: 'var(--radius-pill)',
-            background: getStatusColor(effectiveStatus || '') + '22',
-            color: getStatusColor(effectiveStatus || ''),
-            fontSize: '0.75rem',
-            fontWeight: 700,
-            textTransform: 'uppercase',
-            letterSpacing: '0.06em',
-          }}>
-            {effectiveStatus?.toUpperCase()}
-          </span>
-
-
-          {/* OTP display for DISPATCHED status — anchored to REST trackingData to avoid WebSocket/poll race */}
-          {trackingData.status?.toUpperCase() === 'DISPATCHED' && trackingData.deliveryOtp && (
-            <div style={{
-              marginTop: '20px',
-              padding: '20px 24px',
-              background: 'rgba(var(--dp-success-rgb, 76, 175, 80), 0.08)',
-              border: '2px solid rgba(var(--dp-success-rgb, 76, 175, 80), 0.5)',
-              borderRadius: '12px',
-              textAlign: 'center',
-            }}>
-              <p style={{ margin: '0 0 8px', fontSize: '0.72rem', color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                Delivery OTP — Share with your driver
-              </p>
-              <p style={{ margin: '0 0 8px', fontFamily: 'var(--font-display)', fontSize: '2.5rem', fontWeight: 800, color: 'var(--dp-success, #4CAF50)', letterSpacing: '12px' }}>
-                {trackingData.deliveryOtp}
-              </p>
-              <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-3)' }}>Valid for 15 minutes</p>
+        <div className="track-side">
+          <section className="track-card" aria-label="Delivery driver">
+            <h2>Delivery driver</h2>
+            <div className="track-driver">
+              <span className="track-avatar" aria-hidden="true">{data.driverName ? initials(data.driverName) : '–'}</span>
+              <div><strong>{data.driverName || 'Driver being assigned'}</strong><span>{cancelled ? 'Order cancelled' : delivered ? 'Delivery complete' : 'Delivering your order'}</span></div>
+              {data.driverPhone && !delivered && !cancelled && <a className="track-call" href={`tel:${data.driverPhone}`} aria-label={`Call driver ${data.driverName || ''}`.trim()}><Phone size={20} aria-hidden="true" /></a>}
             </div>
-          )}
-
-          {trackingData.estimatedArrival && (
-            <div style={{
-              marginTop: '20px',
-              padding: '14px 20px',
-              background: 'var(--surface-2)',
-              borderRadius: '10px',
-              display: 'inline-block',
-            }}>
-              <p style={{ margin: '0 0 4px', fontSize: '0.72rem', color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Estimated Arrival</p>
-              <p style={{ margin: 0, fontFamily: 'var(--font-display)', fontSize: '1.6rem', fontWeight: 700, color: 'var(--gold)' }}>
-                {new Date(trackingData.estimatedArrival).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </p>
-              {trackingData.distanceRemaining && (
-                <p style={{ margin: '4px 0 0', fontSize: '0.78rem', color: 'var(--text-3)' }}>
-                  {trackingData.distanceRemaining.toFixed(2)} km away
-                </p>
-              )}
-            </div>
-          )}
+            {!delivered && !cancelled && <p className="track-eta"><small>Estimated arrival</small><strong>{etaMinutes !== null ? (etaMinutes <= 1 ? 'Arriving now' : `${etaMinutes} minutes`) : 'Calculating…'}</strong></p>}
+            <ol className="track-timeline" aria-label="Delivery progress">
+              {STAGES.map((label, index) => <li key={label} data-state={index < stage || (delivered && index === stage) ? 'done' : index === stage ? 'current' : 'todo'} aria-current={index === stage ? 'step' : undefined}>{label}</li>)}
+            </ol>
+            {data.deliveryOtp && !delivered && !cancelled && <div className="track-banner" data-tone="info" style={{ margin: '16px 0 0' }}><div><strong>Delivery code</strong><span>Give this code to your driver.</span></div><span className="track-otp">{data.deliveryOtp}</span></div>}
+          </section>
+          <a className="track-card track-help" href={`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('Help with delivery' + (order ? ' for order ' + order.orderNumber : ''))}`}>
+            <MessageCircle size={22} aria-hidden="true" />
+            <div><strong>Need help with your delivery?</strong><span>Send us a message</span></div>
+            <ChevronRight size={18} aria-hidden="true" />
+          </a>
         </div>
-
-        {/* Driver card */}
-        <div style={{
-          background: 'var(--surface)',
-          borderRadius: 'var(--radius-card)',
-          border: '1px solid var(--border)',
-          padding: '24px',
-          marginBottom: '24px',
-        }}>
-          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-1)', margin: '0 0 16px 0' }}>
-            Your Driver
-          </h2>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '12px', marginBottom: '20px' }}>
-            {[
-              { label: 'Name', value: trackingData.driverName },
-              { label: 'Phone', value: trackingData.driverPhone },
-              ...(effectiveDriverLocation ? [{ label: 'Last Updated', value: new Date(trackingData.lastUpdated).toLocaleTimeString() }] : []),
-            ].map((item) => (
-              <div key={item.label} style={{ background: 'var(--surface-2)', borderRadius: '10px', padding: '12px' }}>
-                <p style={{ margin: '0 0 4px', fontSize: '0.72rem', color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{item.label}</p>
-                <p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-1)' }}>{item.value}</p>
-              </div>
-            ))}
-          </div>
-
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <button
-              onClick={callDriver}
-              style={{
-                flex: 1, background: 'var(--dp-success, #2e7d32)', color: 'var(--text-1)', border: 'none',
-                borderRadius: 'var(--radius-pill)', padding: '11px',
-                fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer',
-                transition: 'var(--transition)',
-              }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--dp-success-light, #388e3c)'; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--dp-success, #2e7d32)'; }}
-            >
-              Call Driver
-            </button>
-            {effectiveStatus?.toUpperCase() === 'DELIVERED' && (
-              <button
-                onClick={() => setRatingDialogOpen(true)}
-                style={{
-                  flex: 1, background: 'var(--gold)', color: 'var(--bg)', border: 'none',
-                  borderRadius: 'var(--radius-pill)', padding: '11px',
-                  fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer',
-                  transition: 'var(--transition)',
-                }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--gold-light)'; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--gold)'; }}
-              >
-                Rate Delivery
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Live map */}
-        {effectiveDriverLocation && trackingData.destination &&
-          'latitude' in effectiveDriverLocation && 'longitude' in effectiveDriverLocation && (
-          <div style={{ borderRadius: 'var(--radius-card)', overflow: 'hidden', border: '1px solid var(--border)' }}>
-            <DriverTrackingMap
-              driverPosition={[effectiveDriverLocation.latitude, effectiveDriverLocation.longitude]}
-              restaurantPosition={[12.9716, 77.5946]}
-              customerPosition={[
-                trackingData.destination.coordinates[1],
-                trackingData.destination.coordinates[0],
-              ]}
-              eta={
-                trackingData.estimatedArrival
-                  ? (() => {
-                      const mins = Math.round((new Date(trackingData.estimatedArrival).getTime() - Date.now()) / 60000);
-                      return `${mins} min`;
-                    })()
-                  : undefined
-              }
-              driverName={trackingData.driverName}
-              height="450px"
-              autoCenter
-            />
-          </div>
-        )}
       </div>
-
-      <RatingDialog
-        open={ratingDialogOpen}
-        onClose={() => setRatingDialogOpen(false)}
-        driverName={trackingData.driverName}
-        orderId={orderId!}
-        onSubmit={handleSubmitRating}
-      />
-    </div>
-  );
+    </main>
+  </BrowseShell>;
 };
 
 export default LiveTrackingPage;

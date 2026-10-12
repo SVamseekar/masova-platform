@@ -134,6 +134,14 @@ public class MenuItem implements Serializable {
     @Field("isRecommended")
     private Boolean isRecommended = false;
 
+    /** Average customer rating from 1 to 5; null until the dish has ratings. */
+    @Field("averageRating")
+    private Double averageRating;
+
+    /** Number of ratings behind averageRating. */
+    @Field("ratingCount")
+    private Integer ratingCount;
+
     @Field("createdAt")
     private LocalDateTime createdAt = LocalDateTime.now();
 
@@ -248,6 +256,12 @@ public class MenuItem implements Serializable {
 
     public Boolean getIsRecommended() { return isRecommended; }
     public void setIsRecommended(Boolean isRecommended) { this.isRecommended = isRecommended; }
+
+    public Double getAverageRating() { return averageRating; }
+    public void setAverageRating(Double averageRating) { this.averageRating = averageRating; }
+
+    public Integer getRatingCount() { return ratingCount; }
+    public void setRatingCount(Integer ratingCount) { this.ratingCount = ratingCount; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

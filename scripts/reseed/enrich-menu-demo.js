@@ -1,4 +1,4 @@
-// Demo menu enrichment: allergens, dietary marks, pizza sizes and extras for the seeded dishes.
+// Demo menu enrichment: allergens, dietary marks, pizza sizes, extras and sample ratings for the seeded dishes.
 // Synthetic development data only. Run after seed-commerce.js:
 //   docker exec -i masova-mongodb mongosh --quiet < scripts/reseed/enrich-menu-demo.js
 // The seed marks every dish "allergens declared" with an empty list, which wrongly reads as
@@ -46,7 +46,7 @@ const DISHES = {
 
 let enriched = 0;
 for (const [name, [allergens, dietaryInfo]] of Object.entries(DISHES)) {
-  enriched += menu.updateMany({ name }, { $set: { allergens, dietaryInfo, allergensDeclared: true } }).modifiedCount;
+  enriched += menu.updateMany({ name, ratingCount: { $exists: false } }, { $set: { allergens, dietaryInfo, allergensDeclared: true } }).modifiedCount;
 }
 
 // A declared, empty allergen list on a dish this script does not know is not a real declaration.
@@ -69,4 +69,16 @@ const pizzas = menu.updateMany({ category: 'PIZZA' }, { $set: {
   ],
 } }).modifiedCount;
 
-print(`menu enrichment: ${enriched} dishes with allergens and dietary marks, ${undeclared} set to not declared, ${pizzas} pizzas with sizes and extras`);
+// Demo ratings: a stable value per dish name so every store shows the same sample figures.
+// Only dishes without a rating are touched, so recorded ratings are never overwritten.
+let rated = 0;
+for (const name of menu.distinct('name', { ratingCount: { $exists: false } })) {
+  if (typeof name !== 'string' || !name) continue;
+  let hash = 0;
+  for (const char of name) hash = (hash * 31 + char.charCodeAt(0)) % 9973;
+  const averageRating = 4.2 + (hash % 7) / 10;      // 4.2 to 4.8
+  const ratingCount = NumberInt(40 + (hash % 360)); // 40 to 399
+  rated += menu.updateMany({ name }, { $set: { averageRating, ratingCount } }).modifiedCount;
+}
+
+print(`menu enrichment: ${enriched} dishes with allergens and dietary marks, ${undeclared} set to not declared, ${pizzas} pizzas with sizes and extras, ${rated} dishes with demo ratings`);

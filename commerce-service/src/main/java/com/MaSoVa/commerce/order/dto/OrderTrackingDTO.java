@@ -16,6 +16,9 @@ public class OrderTrackingDTO {
     private String orderId;
     private String orderNumber;
     private String status;
+    private String orderType;
+    private String storeId;
+    private LocalDateTime createdAt;
     private LocalDateTime estimatedDeliveryTime;
     private List<TrackedItem> items = Collections.emptyList();
 
@@ -24,6 +27,9 @@ public class OrderTrackingDTO {
         dto.setOrderId(order.getId());
         dto.setOrderNumber(order.getOrderNumber());
         dto.setStatus(order.getStatus() != null ? order.getStatus().name() : null);
+        dto.setOrderType(order.getOrderType() != null ? order.getOrderType().name() : null);
+        dto.setStoreId(order.getStoreId());
+        dto.setCreatedAt(order.getCreatedAt());
         dto.setEstimatedDeliveryTime(order.getEstimatedDeliveryTime());
         if (order.getItems() != null) {
             dto.setItems(order.getItems().stream()
@@ -55,6 +61,30 @@ public class OrderTrackingDTO {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getOrderType() {
+        return orderType;
+    }
+
+    public void setOrderType(String orderType) {
+        this.orderType = orderType;
+    }
+
+    public String getStoreId() {
+        return storeId;
+    }
+
+    public void setStoreId(String storeId) {
+        this.storeId = storeId;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 
     public LocalDateTime getEstimatedDeliveryTime() {

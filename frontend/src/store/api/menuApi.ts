@@ -116,6 +116,9 @@ export interface MenuItem {
   displayOrder: number;
   tags?: string[];
   isRecommended: boolean;
+  /** Average customer rating from 1 to 5; absent until the dish has ratings. */
+  averageRating?: number;
+  ratingCount?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -160,6 +163,21 @@ export interface MenuStats {
   italianCount: number;
   pizzaCount: number;
   burgerCount: number;
+}
+
+/** A promotion a store advertises on the ordering site. Display content only. */
+export interface StoreOffer {
+  id: string;
+  storeId: string;
+  title: string;
+  description?: string;
+  badge?: string;
+  category?: string;
+  imageUrl?: string;
+  /** Last valid day, ISO date (yyyy-mm-dd). */
+  validUntil?: string;
+  appliesTo?: string;
+  redemption?: string;
 }
 
 type MenuItemApiResponse = Omit<MenuItem, 'id'> & { id?: string; _id?: string };
@@ -224,6 +242,9 @@ export const menuApi = createApi({
       query: (tag) => `/menu?tag=${encodeURIComponent(tag)}`,
       transformResponse: mapMenuItemsResponse,
       providesTags: ['Menu'],
+    }),
+    getStoreOffers: builder.query<StoreOffer[], string>({
+      query: (storeId) => `/menu/offers?storeId=${encodeURIComponent(storeId)}`,
     }),
 
     // Manager endpoints (auth required)
@@ -325,6 +346,7 @@ export const {
   useSearchMenuQuery,
   useLazySearchMenuQuery,
   useGetMenuByTagQuery,
+  useGetStoreOffersQuery,
 
   // Manager hooks
   useGetAllMenuItemsQuery,

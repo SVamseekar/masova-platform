@@ -9,9 +9,9 @@ import PublicMenuPage from '../../apps/PublicWebsite/PublicMenuPage';
 import PromotionsPage from '../../apps/PublicWebsite/PromotionsPage';
 import { Cuisine, DietaryType, MenuCategory, type MenuItem } from '../../store/api/menuApi';
 
-const mocks = vi.hoisted(() => ({ stores: vi.fn(), menu: vi.fn(), dish: vi.fn(), retry: vi.fn() }));
+const mocks = vi.hoisted(() => ({ stores: vi.fn(), menu: vi.fn(), dish: vi.fn(), retry: vi.fn(), offers: vi.fn() }));
 vi.mock('../../store/api/storeApi', async () => ({ ...await vi.importActual('../../store/api/storeApi'), useGetActiveStoresQuery: () => mocks.stores() }));
-vi.mock('../../store/api/menuApi', async () => ({ ...await vi.importActual('../../store/api/menuApi'), useGetAvailableMenuQuery: (...args: unknown[]) => mocks.menu(...args), useGetMenuItemQuery: (...args: unknown[]) => mocks.dish(...args) }));
+vi.mock('../../store/api/menuApi', async () => ({ ...await vi.importActual('../../store/api/menuApi'), useGetAvailableMenuQuery: (...args: unknown[]) => mocks.menu(...args), useGetMenuItemQuery: (...args: unknown[]) => mocks.dish(...args), useGetStoreOffersQuery: (...args: unknown[]) => mocks.offers(...args) }));
 
 const stores = [{ id: 'mongo-berlin', storeCode: 'DOM001', name: 'Berlin Mitte', status: 'ACTIVE', countryCode: 'DE', currency: 'EUR', locale: 'de-DE', address: { city: 'Berlin' }, operatingConfig: {} }, { id: 'mongo-other', storeCode: 'DOM002', name: 'Other store', status: 'ACTIVE', countryCode: 'DE', currency: 'EUR', locale: 'de-DE', operatingConfig: {} }];
 const pizza: MenuItem = { id: 'pizza', name: 'Margherita Pizza', description: 'Tomato and basil', cuisine: Cuisine.ITALIAN, category: MenuCategory.PIZZA, basePrice: 1200, variants: [{ name: 'Regular', priceModifier: 0 }, { name: 'Large', priceModifier: 400 }], customizations: [{ name: 'Olives', price: 200, isAvailable: true }], dietaryInfo: [DietaryType.VEGETARIAN], ingredients: ['Basil'], isAvailable: true, isRecommended: true, displayOrder: 0, storeId: 'DOM001', allergensDeclared: true, createdAt: '', updatedAt: '' };
@@ -117,11 +117,34 @@ describe('customer web browse workflow', () => {
     expect(sessionStorage.setItem).toHaveBeenCalledWith('masova.orderTypePreference', 'TAKEAWAY');
     expect(screen.getByText('No delivery fee for pickup orders')).toBeInTheDocument();
   });
-  it('shows truthful offers limitation without synthetic codes or countdown', () => {
-    render(<PromotionsPage />, '/promotions');
-    expect(screen.getByRole('heading', { name: 'Online offers unavailable' })).toBeInTheDocument();
-    expect(screen.queryByText('Any 2 Large Pizzas')).not.toBeInTheDocument();
+  it('lists the selected store\'s offers from the server and filters them by group', async () => {
+    mocks.offers.mockReturnValue({ data: [
+      { id: 'o1', storeId: 'DOM001', title: 'Pizza & drink combo', description: 'Any classic pizza + soft drink for €15.', badge: 'Meal deal', category: 'Pizza', validUntil: '2026-10-31', appliesTo: 'Classic pizzas only', redemption: 'Add both items to cart' },
+      { id: 'o2', storeId: 'DOM001', title: 'Healthy lunch deal', badge: 'Lunch special', category: 'Salads' },
+    ], isLoading: false, isError: false });
+    const user = userEvent.setup(); render(<PromotionsPage />, '/promotions');
+    expect(mocks.offers).toHaveBeenCalledWith('DOM001', { skip: false });
+    expect(screen.getByText('Great food, better together. Available at Berlin Mitte.')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Pizza & drink combo' })).toBeInTheDocument();
+    expect(screen.getByText('Valid until 31 Oct 2026')).toBeInTheDocument();
+    expect(screen.getByText('Meal deal')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Salads' }));
+    expect(screen.getByRole('button', { name: 'Salads' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.queryByRole('heading', { name: 'Pizza & drink combo' })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Healthy lunch deal' })).toBeInTheDocument();
+  });
+  it('states when a store has no offers and when offers fail to load, without inventing any', async () => {
+    mocks.offers.mockReturnValue({ data: [], isLoading: false, isError: false });
+    const empty = render(<PromotionsPage />, '/promotions');
+    expect(screen.getByRole('heading', { name: 'No offers right now' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Browse menu' })).toHaveAttribute('href', '/menu');
+    empty.unmount();
+    const refetch = vi.fn();
+    mocks.offers.mockReturnValue({ data: undefined, isLoading: false, isError: true, refetch });
+    const user = userEvent.setup(); render(<PromotionsPage />, '/promotions');
+    expect(screen.getByRole('alert')).toHaveTextContent('Offers could not be loaded.');
+    await user.click(screen.getByRole('button', { name: 'Retry offers' }));
+    expect(refetch).toHaveBeenCalled();
   });
   it('blocks stale dish verification and permits retry without fabricating add success', async () => {
     mocks.dish.mockReturnValue({ currentData: pizza, isFetching: false, isError: true, refetch: mocks.retry });
