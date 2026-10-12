@@ -24,8 +24,8 @@ const OPTIONAL = [
 export const OPEN_COOKIE_PREFERENCES_EVENT = 'cookie_consent_open'
 
 const SERVER_CONSENTS = [
-  { key: 'analytics', consentType: 'COOKIES', consentText: 'User consented to analytics tracking' },
-  { key: 'marketing', consentType: 'MARKETING', consentText: 'User consented to marketing communications' },
+  { key: 'analytics', consentType: 'ANALYTICS_TRACKING', consentText: 'User consented to analytics tracking' },
+  { key: 'marketing', consentType: 'MARKETING_COMMUNICATIONS', consentText: 'User consented to marketing communications' },
 ] as const
 
 // The legal documents stay readable before a choice is made.
@@ -103,6 +103,8 @@ export const CookieConsent: React.FC = () => {
           await revokeConsent({ userId, consentType }).unwrap()
         }
       } catch (error) {
+        // 404 on a revoke means the server holds no granted consent, which is the state asked for.
+        if (!prefs[key] && (error as { status?: number })?.status === 404) return
         console.error(`Cookie consent ${consentType} was saved on this device but not recorded on the server`, error)
       }
     }))

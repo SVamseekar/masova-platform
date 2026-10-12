@@ -1,23 +1,31 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
 import baseQueryWithAuth from './baseQueryWithAuth';
 
+/** Values of the backend ConsentType enum. */
 export type ConsentType =
-  | 'TERMS_OF_SERVICE'
+  | 'TERMS_AND_CONDITIONS'
   | 'PRIVACY_POLICY'
-  | 'MARKETING'
-  | 'SMS'
-  | 'EMAIL'
-  | 'COOKIES'
-  | 'DATA_PROCESSING';
+  | 'COOKIE_POLICY'
+  | 'MARKETING_COMMUNICATIONS'
+  | 'DATA_PROCESSING'
+  | 'THIRD_PARTY_SHARING'
+  | 'ANALYTICS_TRACKING'
+  | 'PERSONALIZATION'
+  | 'LOCATION_TRACKING'
+  | 'NOTIFICATIONS'
+  | 'PROFILING';
 
+/** Processing action a manager applies to a request. */
 export type GdprRequestType = 'access' | 'erasure' | 'portability' | 'rectification';
+/** Values of the backend GdprRequestType enum that a person can file. */
+export type GdprRequestKind = 'ACCESS' | 'RECTIFICATION' | 'ERASURE' | 'DATA_PORTABILITY';
 
 export interface GdprConsent {
   id: string;
   userId: string;
   consentType: ConsentType;
   version: string;
-  granted: boolean;
+  status: 'GRANTED' | 'REVOKED' | 'WITHDRAWN' | 'EXPIRED' | 'PENDING';
   grantedAt?: string;
   revokedAt?: string;
   consentText?: string;
@@ -30,6 +38,9 @@ export interface GdprDataRequest {
   status: string;
   reason?: string;
   createdAt: string;
+  requestedAt?: string;
+  completedAt?: string;
+  dueDate?: string;
   processedAt?: string;
 }
 
@@ -51,13 +62,16 @@ export interface GdprConsentRequest {
 
 export interface GdprDataRequestDto {
   userId: string;
-  requestType: GdprRequestType;
+  requestType: GdprRequestKind;
   reason?: string;
 }
 
 export interface GdprExportPackage {
   userId: string;
   exportedAt: string;
+  /** False when a service that holds part of the data could not be read. */
+  complete?: boolean;
+  errors?: string[];
   profile?: Record<string, unknown>;
   orders?: unknown[];
   consents?: GdprConsent[];

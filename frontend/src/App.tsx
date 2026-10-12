@@ -35,6 +35,7 @@ const PaymentFailedPage = React.lazy(() => import('./pages/customer/PaymentFaile
 const TrackingPage = React.lazy(() => import('./pages/customer/TrackingPage'));
 const LiveTrackingPage = React.lazy(() => import('./pages/customer/LiveTrackingPage'));
 const CustomerOrdersPage = React.lazy(() => import('./pages/customer/CustomerOrdersPage'));
+const ReviewOrderPage = React.lazy(() => import('./pages/customer/ReviewOrderPage'));
 const PublicRatingPage = React.lazy(() => import('./pages/PublicRatingPage'));
 const CustomerDashboard = React.lazy(() => import('./pages/customer/CustomerDashboard'));
 const ProfilePage = React.lazy(() => import('./pages/customer/ProfilePage'));
@@ -44,7 +45,7 @@ const KitchenDisplayPage = React.lazy(() => import('./pages/kitchen/KitchenDispl
 const DriverDashboard = React.lazy(() => import('./pages/driver/DriverDashboard'));
 const POSSystem = React.lazy(() => import('./apps/POSSystem/POSSystem'));
 const KioskSetupPage = React.lazy(() => import('./pages/kiosk/KioskSetupPage'));
-const GdprRequests = React.lazy(() => import('./pages/GdprRequests').then(m => ({ default: m.GdprRequests })));
+const PrivacyPage = React.lazy(() => import('./pages/customer/PrivacyPage'));
 const PrivacyPolicy = React.lazy(() => import('./pages/PrivacyPolicy').then(m => ({ default: m.PrivacyPolicy })));
 const TermsOfService = React.lazy(() => import('./pages/TermsOfService').then(m => ({ default: m.TermsOfService })));
 const CookiePolicy = React.lazy(() => import('./pages/CookiePolicy').then(m => ({ default: m.CookiePolicy })));
@@ -145,6 +146,14 @@ const App: React.FC = () => {
                     }
                   />
                   <Route
+                    path="/customer/orders/:orderId/review"
+                    element={
+                      <ProtectedRoute allowedRoles={['CUSTOMER']} requireAuth={true}>
+                        <CustomerLayout><ReviewOrderPage /></CustomerLayout>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
                     path="/customer/profile"
                     element={
                       <ProtectedRoute allowedRoles={['CUSTOMER']} requireAuth={true}>
@@ -160,7 +169,7 @@ const App: React.FC = () => {
                     path="/customer/gdpr"
                     element={
                       <ProtectedRoute allowedRoles={['CUSTOMER']} requireAuth={true}>
-                        <CustomerLayout><GdprRequests /></CustomerLayout>
+                        <CustomerLayout><PrivacyPage /></CustomerLayout>
                       </ProtectedRoute>
                     }
                   />

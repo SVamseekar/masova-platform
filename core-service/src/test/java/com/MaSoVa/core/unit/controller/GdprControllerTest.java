@@ -172,4 +172,18 @@ class GdprControllerTest extends BaseServiceTest {
                 .content("{\"type\":\"invalid\"}"))
             .andExpect(status().isBadRequest());
     }
+
+    @org.junit.jupiter.api.Test
+    @org.junit.jupiter.api.DisplayName("consent and request writes are limited to the user's own id, or a manager")
+    void writesAreBoundToTheCaller() {
+        java.util.List<String> guarded = java.util.List.of("grantConsent", "revokeConsent", "createRequest");
+        for (java.lang.reflect.Method method : GdprController.class.getDeclaredMethods()) {
+            if (!guarded.contains(method.getName())) continue;
+            org.springframework.security.access.prepost.PreAuthorize rule =
+                    method.getAnnotation(org.springframework.security.access.prepost.PreAuthorize.class);
+            org.assertj.core.api.Assertions.assertThat(rule).as(method.getName()).isNotNull();
+            org.assertj.core.api.Assertions.assertThat(rule.value()).as(method.getName())
+                    .contains("== authentication.name").contains("hasRole('MANAGER')");
+        }
+    }
 }

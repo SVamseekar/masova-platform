@@ -1,15 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import userEvent from '@testing-library/user-event';
 import { renderAsCustomer, renderWithProviders, screen, within } from '@/test/utils/testUtils';
 import TrackingPage from './TrackingPage';
 
-const mocks = vi.hoisted(() => ({ order: vi.fn(), createReview: vi.fn() }));
+const mocks = vi.hoisted(() => ({ order: vi.fn() }));
 
 vi.mock('./useCustomerOrder', async () => ({ ...(await vi.importActual('./useCustomerOrder')), useCustomerOrder: () => mocks.order() }));
-vi.mock('@/store/api/reviewApi', async () => ({ ...(await vi.importActual('@/store/api/reviewApi')), useCreateReviewMutation: () => [mocks.createReview] }));
 vi.mock('@/store/api/storeApi', async () => ({ ...(await vi.importActual('@/store/api/storeApi')), useGetActiveStoresQuery: () => ({ data: [{ id: 's1', storeCode: 'DOM001', name: 'MaSoVa Berlin Mitte', address: { street: 'Torstraße 72', city: 'Berlin' } }] }) }));
 vi.mock('@/apps/PublicWebsite/components/BrowseShell', () => ({ default: ({ children }: { children: React.ReactNode }) => <div>{children}</div> }));
-vi.mock('@/components/delivery/RatingDialog', () => ({ default: ({ onSubmit }: { onSubmit: (rating: number, feedback: string) => void }) => <button type="button" onClick={() => onSubmit(5, 'Great')}>Send five stars</button> }));
 vi.mock('react-router-dom', async () => ({ ...(await vi.importActual('react-router-dom')), useParams: () => ({ orderId: 'order-1' }) }));
 
 const order = {
@@ -22,7 +19,6 @@ const show = (overrides = {}, extra = {}) => mocks.order.mockReturnValue({ order
 describe('Order tracking', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.createReview.mockReturnValue({ unwrap: () => Promise.resolve({}) });
   });
 
   it('shows the order, its current step and server amounts', () => {
@@ -75,7 +71,7 @@ describe('Order tracking', () => {
     expect(screen.queryByText(/NaN/)).not.toBeInTheDocument();
     const steps = within(screen.getByRole('list', { name: 'Order steps' })).getAllByRole('listitem');
     expect(steps.map(step => step.querySelector('b')?.textContent)).toEqual(['Received', 'Preparing', 'In oven', 'Ready', 'Completed']);
-    expect(screen.queryByRole('button', { name: 'Rate your order' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Rate your order' })).not.toBeInTheDocument();
   });
 
   it('shows a cancelled order without progress steps', () => {
@@ -85,22 +81,14 @@ describe('Order tracking', () => {
     expect(screen.queryByRole('list', { name: 'Order steps' })).not.toBeInTheDocument();
   });
 
-  it('saves a rating for a delivered order and reports a failed save', async () => {
-    const user = userEvent.setup();
+  it('links a finished order to its review page for the signed-in owner only', () => {
     show({ status: 'DELIVERED' });
-    const view = renderAsCustomer(<TrackingPage />);
-    await user.click(screen.getByRole('button', { name: 'Rate your order' }));
-    await user.click(screen.getByRole('button', { name: 'Send five stars' }));
-    expect(mocks.createReview).toHaveBeenCalledWith(expect.objectContaining({ orderId: 'order-1', overallRating: 5, comment: 'Great' }));
-    expect(await screen.findByText('Thank you. Your rating was saved.')).toBeInTheDocument();
-    view.unmount();
-
-    vi.spyOn(console, 'error').mockImplementation(() => {});
-    mocks.createReview.mockReturnValue({ unwrap: () => Promise.reject({ status: 409, data: { message: 'You already reviewed this order.' } }) });
+    const owner = renderAsCustomer(<TrackingPage />);
+    expect(screen.getByRole('link', { name: 'Rate your order' })).toHaveAttribute('href', '/customer/orders/order-1/review');
+    owner.unmount();
+    show({ status: 'DELIVERED' }, { limited: true });
     renderAsCustomer(<TrackingPage />);
-    await user.click(screen.getByRole('button', { name: 'Rate your order' }));
-    await user.click(screen.getByRole('button', { name: 'Send five stars' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent('You already reviewed this order.');
+    expect(screen.queryByRole('link', { name: 'Rate your order' })).not.toBeInTheDocument();
   });
 
   it('distinguishes a failed load from a missing order', () => {

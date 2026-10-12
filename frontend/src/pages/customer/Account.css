@@ -85,3 +85,105 @@
   .account-recent li { grid-template-columns: 1fr auto auto; }
   .account-recent .account-muted { display: none; }
 }
+
+/* Profile, addresses, preferences and notifications (board 08, panels 1 and 2) */
+.account-section-title { margin: 0 0 14px; font-size: 18px; font-weight: 600; }
+.account-section-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 24px 0 12px; }
+.account-section-head .account-section-title { margin: 0; }
+.customer-browse .account-section-head .browse-primary { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 18px; }
+.account-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 16px; }
+.account-form label, .account-field { display: grid; gap: 6px; font-size: 13px; color: var(--masova-textSecondary); }
+.account-form input, .account-form select { width: 100%; font-size: 15px; color: var(--masova-text); }
+.account-form-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; align-items: center; gap: 16px; margin-top: 4px; }
+.customer-browse .account-form-actions .browse-primary { min-height: 44px; padding: 0 22px; }
+.account-form-dialog { grid-template-columns: 1fr; min-width: min(420px, 80vw); }
+.account-form-dialog h2 { margin: 0; }
+.account-field-error { color: var(--masova-errorText); font-size: 13px; }
+.account-notice { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 14px; color: var(--masova-successText); }
+.account-notice[data-tone="error"] { color: var(--masova-errorText); }
+.account-addresses { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
+.account-addresses .account-card { display: grid; gap: 10px; align-content: start; margin: 0; }
+.account-address-top { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 12px; }
+.account-address-top .track-chip { justify-self: start; padding: 4px 12px; font-size: 13px; }
+.customer-browse .account-link { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 4px; border: 0; background: none; color: var(--masova-text); font-size: 14px; cursor: pointer; }
+.customer-browse .account-link[data-tone="error"] { color: var(--masova-errorText); }
+.account-address-body { display: flex; gap: 14px; }
+.account-address-body p { margin: 0; font-size: 14px; line-height: 1.45; color: var(--masova-textSecondary); }
+.account-address-body strong { display: block; color: var(--masova-text); font-size: 15px; margin-bottom: 4px; }
+.account-address-mark { flex: none; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--masova-selectionSurface); }
+.customer-browse .account-secondary { justify-self: end; min-height: 44px; padding: 0 16px; border: 1px solid var(--masova-borderControl); border-radius: 8px; background: var(--masova-surface); color: var(--masova-text); cursor: pointer; }
+
+.account-pref-row { display: grid; grid-template-columns: 170px minmax(0, 1fr); align-items: center; gap: 12px; padding: 8px 0; font-size: 14px; }
+.account-pref-row small { display: block; color: var(--masova-textSecondary); font-size: 12px; }
+.account-pref-row > div { display: flex; flex-wrap: wrap; gap: 8px; }
+.customer-browse .account-choice { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border: 1px solid var(--masova-borderSubtle); border-radius: 8px; background: var(--masova-surface); color: var(--masova-text); font-size: 14px; cursor: pointer; }
+.customer-browse .account-choice[aria-pressed="true"], .customer-browse .account-choice:has(input:checked) { border-color: var(--masova-primary); box-shadow: inset 0 0 0 1px var(--masova-primary); background: color-mix(in srgb, var(--masova-primary) 6%, var(--masova-surface)); }
+.customer-browse .account-choice:has(input:focus-visible) { outline: 2px solid var(--masova-primary); outline-offset: 2px; }
+.customer-browse .account-choice[aria-pressed="true"] svg, .customer-browse .account-choice:has(input:checked) svg { color: var(--masova-primary); }
+.account-toggles { margin: 0 0 14px; padding: 0; list-style: none; border: 1px solid var(--masova-borderSubtle); border-radius: 10px; }
+.account-toggles li { display: grid; grid-template-columns: auto 190px minmax(0, 1fr) auto; align-items: center; gap: 14px; min-height: 52px; padding: 0 14px; border-top: 1px solid var(--masova-borderSubtle); font-size: 14px; }
+.account-toggles li:first-child { border-top: 0; }
+.account-toggles label { font-weight: 500; color: var(--masova-text); }
+.customer-browse .account-switch { appearance: none; position: relative; width: 44px; height: 26px; min-height: 0; padding: 0; border: 0; border-radius: 13px; background: var(--masova-borderControl); cursor: pointer; transition: background-color 150ms; }
+.account-switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: transform 150ms; }
+.customer-browse .account-switch:checked { background: var(--masova-successText); }
+.account-switch:checked::after { transform: translateX(18px); }
+@media (prefers-reduced-motion: reduce) { .customer-browse .account-switch, .account-switch::after { transition: none; } }
+@media (max-width: 720px) {
+  .account-form, .account-addresses { grid-template-columns: 1fr; }
+  .account-pref-row { grid-template-columns: 1fr; }
+  .account-toggles li { grid-template-columns: auto 1fr auto; padding: 8px 14px; }
+  .account-toggles li > .account-muted { grid-column: 2; grid-row: 2; }
+  .account-toggles li > .account-switch { grid-row: 1 / span 2; grid-column: 3; }
+}
+
+/* Privacy requests (board 08, panel 3) */
+.account-lead { max-width: 720px; margin: 0 0 18px; font-size: 14px; line-height: 1.5; color: var(--masova-textSecondary); }
+.account-main > .account-notice { margin-bottom: 14px; }
+.account-privacy { grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); }
+.account-consents, .account-rights { margin: 0; padding: 0; list-style: none; }
+.account-consents li { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 14px; min-height: 56px; border-top: 1px solid var(--masova-borderSubtle); font-size: 13px; color: var(--masova-textSecondary); }
+.account-consents li:first-child, .account-rights li:first-child { border-top: 0; }
+.account-consents strong, .account-rights strong { display: block; color: var(--masova-text); font-size: 14px; font-weight: 500; }
+.account-consent-state { display: inline-flex; align-items: center; gap: 8px; min-width: 104px; font-size: 14px; }
+.account-consent-state[data-on="true"] { color: var(--masova-text); }
+.account-consent-state[data-on="true"] svg { color: var(--masova-successText); }
+.account-rights li { border-top: 1px solid var(--masova-borderSubtle); }
+.customer-browse .account-rights button { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 14px; width: 100%; min-height: 56px; padding: 0; border: 0; background: none; text-align: left; font-size: 13px; color: var(--masova-textSecondary); cursor: pointer; }
+.account-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.account-table th { padding: 8px 10px; text-align: left; font-weight: 500; font-size: 13px; color: var(--masova-textSecondary); background: var(--masova-canvas); }
+.account-table td { padding: 10px; border-top: 1px solid var(--masova-borderSubtle); }
+.account-table .track-chip { padding: 4px 12px; font-size: 13px; }
+.account-form textarea { width: 100%; font: inherit; font-size: 15px; color: var(--masova-text); padding: 10px 12px; border: 1px solid var(--masova-borderControl); border-radius: 8px; resize: vertical; }
+@media (max-width: 720px) { .account-table thead { display: none; } .account-table tr { display: grid; padding: 8px 0; border-top: 1px solid var(--masova-borderSubtle); } .account-table td { border: 0; padding: 2px 0; } }
+
+/* Rate your order (board 08, panel 4) */
+.review-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.8fr); gap: 16px; align-items: start; }
+.review-order { display: grid; gap: 8px; }
+.review-order p { margin: 0; }
+.review-photo { aspect-ratio: 16 / 9; border-radius: 10px; overflow: hidden; background: var(--masova-selectionSurface); }
+.review-photo img, .review-photo > * { width: 100%; height: 100%; object-fit: cover; display: block; }
+.review-order-head { display: flex; align-items: center; gap: 12px; margin-top: 6px; }
+.review-order-head .track-chip { padding: 4px 12px; font-size: 13px; }
+.review-store { display: flex; gap: 10px; font-size: 13px; color: var(--masova-textSecondary); }
+.review-store strong { display: block; color: var(--masova-text); font-size: 14px; font-weight: 500; }
+.review-items { margin: 6px 0 0; padding: 10px 0 0; list-style: none; border-top: 1px solid var(--masova-borderSubtle); font-size: 14px; }
+.review-items li { display: grid; grid-template-columns: 28px 1fr auto; gap: 6px; padding: 3px 0; }
+.review-form h1 { margin: 0 0 4px; font-size: 20px; font-weight: 600; }
+.review-form > p { margin: 0 0 14px; }
+.review-stars { margin: 0 0 16px; padding: 0; border: 0; min-width: 0; }
+.review-stars legend { padding: 0; margin-bottom: 8px; font-size: 14px; font-weight: 600; }
+.review-stars > div { display: flex; align-items: center; gap: 6px; }
+.review-stars label { display: grid; place-items: center; min-width: 32px; min-height: 44px; color: var(--masova-borderControl); cursor: pointer; }
+.review-stars label[data-on="true"] { color: var(--masova-primary); }
+.review-stars label[data-on="true"] svg { fill: currentColor; }
+.review-stars label:has(input:focus-visible) { outline: 2px solid var(--masova-primary); outline-offset: 2px; border-radius: 6px; }
+.review-stars .track-chip { margin-left: 10px; padding: 4px 12px; font-size: 13px; }
+.review-stars .track-chip::before { display: none; }
+.review-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.review-comment { display: grid; gap: 8px; font-size: 14px; font-weight: 600; }
+.review-comment textarea { width: 100%; font: inherit; font-weight: 400; font-size: 15px; padding: 10px 12px; border: 1px solid var(--masova-borderControl); border-radius: 8px; color: var(--masova-text); resize: vertical; }
+.review-count { margin: 4px 0 12px; text-align: right; }
+.review-public { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 16px; margin-bottom: 14px; }
+.review-public label { display: grid; gap: 2px; font-size: 14px; }
+@media (max-width: 860px) { .review-layout, .review-pair { grid-template-columns: 1fr; } }

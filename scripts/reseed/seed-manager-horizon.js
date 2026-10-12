@@ -1239,14 +1239,15 @@ async function main() {
     custPool.slice(0, 40).map((c) => ({
       userId: c.userId,
       storeId: STORE,
-      consentType: 'MARKETING',
-      granted: true,
+      consentType: 'MARKETING_COMMUNICATIONS',
+      status: 'GRANTED',
+      version: '1.0',
       grantedAt: t0,
       notes: 'horizon',
     }))
   );
   await core.collection('gdpr_data_requests').insertMany([
-    { userId: custPool[0].userId, storeId: STORE, requestType: 'EXPORT', status: 'PENDING', notes: 'horizon', createdAt: t0 },
+    { userId: custPool[0].userId, storeId: STORE, requestType: 'DATA_PORTABILITY', status: 'PENDING', notes: 'horizon', createdAt: t0 },
     { userId: custPool[1].userId, storeId: STORE, requestType: 'ERASURE', status: 'PENDING', notes: 'horizon', createdAt: t0 },
   ]);
 

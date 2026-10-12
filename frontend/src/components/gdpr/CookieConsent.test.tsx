@@ -57,7 +57,7 @@ describe('Cookie preferences', () => {
     await user.click(screen.getByRole('switch', { name: 'Analytics cookies' }));
     await user.click(screen.getByRole('button', { name: 'Save preferences' }));
     expect(grantConsent).toHaveBeenCalledTimes(1);
-    expect(grantConsent).toHaveBeenCalledWith(expect.objectContaining({ userId: 'user-1', consentType: 'COOKIES' }));
+    expect(grantConsent).toHaveBeenCalledWith(expect.objectContaining({ userId: 'user-1', consentType: 'ANALYTICS_TRACKING' }));
   });
 
   it('stays closed after a choice and on legal documents', () => {
@@ -81,7 +81,7 @@ describe('Cookie preferences', () => {
     await user.click(analytics);
     await user.click(screen.getByRole('button', { name: 'Save preferences' }));
     expect(stored().analytics).toBe(false);
-    expect(revokeConsent).toHaveBeenCalledWith({ userId: 'user-1', consentType: 'COOKIES' });
+    expect(revokeConsent).toHaveBeenCalledWith({ userId: 'user-1', consentType: 'ANALYTICS_TRACKING' });
     expect(grantConsent).not.toHaveBeenCalled();
   });
 

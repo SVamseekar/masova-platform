@@ -3,14 +3,11 @@ import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, Check, CircleAlert, CircleHelp, Clock, Copy, CreditCard, MapPin, PackageCheck, Star, Store as StoreIcon, Truck } from 'lucide-react';
 import BrowseShell from '../../apps/PublicWebsite/components/BrowseShell';
 import { storeDisplayName } from '../../apps/PublicWebsite/components/CustomerStoreSelector';
-import { useCreateReviewMutation } from '../../store/api/reviewApi';
 import { useGetActiveStoresQuery } from '../../store/api/storeApi';
 import { useAppSelector } from '../../store/hooks';
 import { selectCartLocale } from '../../store/slices/cartSlice';
 import { formatMajorAmount } from '../../utils/currency';
-import RatingDialog from '../../components/delivery/RatingDialog';
 import { SUPPORT_EMAIL } from '../../apps/ProductSite/constants';
-import { getApiErrorMessage } from '../utils/apiError';
 import { displayOrderNumber, TERMINAL_STATUSES, useCustomerOrder } from './useCustomerOrder';
 import { statusCopy, stepsFor } from './orderStatus';
 import './Tracking.css';
@@ -22,10 +19,6 @@ const TrackingPage: React.FC = () => {
   const signedIn = useAppSelector(state => state.auth.isAuthenticated);
   const { order, isLoading, isError, notFound, refetch, limited } = useCustomerOrder(orderId);
   const stores = useGetActiveStoresQuery();
-  const [createReview] = useCreateReviewMutation();
-  const [ratingOpen, setRatingOpen] = useState(false);
-  const [ratingState, setRatingState] = useState<'idle' | 'sent' | 'failed'>('idle');
-  const [ratingError, setRatingError] = useState('');
   const [copied, setCopied] = useState(false);
 
   const status = order?.status ?? '';
@@ -70,18 +63,6 @@ const TrackingPage: React.FC = () => {
     }
   };
 
-  const submitRating = async (rating: number, feedback: string) => {
-    try {
-      await createReview({ orderId, overallRating: rating, comment: feedback, ...(order.orderType === 'DELIVERY' ? { deliveryRating: rating } : {}) }).unwrap();
-      setRatingState('sent');
-      setRatingOpen(false);
-    } catch (error) {
-      console.error('Rating was not saved', error);
-      setRatingError(getApiErrorMessage(error, 'Your rating was not saved.'));
-      setRatingState('failed');
-      setRatingOpen(false);
-    }
-  };
 
   return <BrowseShell>
     <main className="track-page">
@@ -114,10 +95,8 @@ const TrackingPage: React.FC = () => {
           {cancelled ? <CircleAlert size={22} aria-hidden="true" /> : enRoute ? <Truck size={22} aria-hidden="true" /> : finished ? <PackageCheck size={22} aria-hidden="true" /> : <Clock size={22} aria-hidden="true" />}
           <div><strong>{copy.title}</strong><span>{copy.text}</span></div>
           {enRoute && order.orderType === 'DELIVERY' && <Link className="track-action" to={`/live-tracking/${encodeURIComponent(orderId)}`}><MapPin size={18} aria-hidden="true" />Track live delivery</Link>}
-          {finished && signedIn && !limited && ratingState === 'idle' && <button type="button" className="track-action" onClick={() => setRatingOpen(true)}><Star size={18} aria-hidden="true" />Rate your order</button>}
+          {finished && signedIn && !limited && <Link className="track-action" to={`/customer/orders/${encodeURIComponent(orderId)}/review`}><Star size={18} aria-hidden="true" />Rate your order</Link>}
         </div>
-        {ratingState === 'sent' && <p role="status">Thank you. Your rating was saved.</p>}
-        {ratingState === 'failed' && <p role="alert">{ratingError} <button type="button" onClick={() => { setRatingState('idle'); setRatingOpen(true); }}>Try again</button></p>}
 
         {otp && enRoute && !limited && <div className="track-banner" data-tone="info">
           <PackageCheck size={22} aria-hidden="true" />
@@ -149,7 +128,6 @@ const TrackingPage: React.FC = () => {
         </div>
       </section>
 
-      {ratingOpen && <RatingDialog open onClose={() => setRatingOpen(false)} driverName={order.driverName || 'your order'} orderId={orderId} onSubmit={submitRating} />}
     </main>
   </BrowseShell>;
 };

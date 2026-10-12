@@ -127,7 +127,7 @@ const GdprManagerPage: React.FC<Props> = ({ storeId: _storeId }) => {
             >
               <option value="">— Choose customer —</option>
               {customers.map((c) => (
-                <option key={c.id} value={c.id}>
+                <option key={c.id} value={c.userId}>
                   {c.name} ({c.id.slice(-6)})
                 </option>
               ))}
@@ -199,7 +199,7 @@ const GdprManagerPage: React.FC<Props> = ({ storeId: _storeId }) => {
                       </td>
                       <td style={tableCellStyle}>{new Date(request.createdAt).toLocaleString()}</td>
                       <td style={tableCellStyle}>
-                        {request.processedAt ? new Date(request.processedAt).toLocaleString() : '—'}
+                        {request.completedAt ?? request.processedAt ? new Date(request.completedAt ?? request.processedAt ?? '').toLocaleString() : '—'}
                       </td>
                       <td style={tableCellStyle}>
                         {['PENDING', 'IN_PROGRESS'].includes(request.status.toUpperCase()) ? (
