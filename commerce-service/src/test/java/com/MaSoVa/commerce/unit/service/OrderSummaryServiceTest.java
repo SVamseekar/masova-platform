@@ -1,7 +1,11 @@
 package com.MaSoVa.commerce.unit.service;
 
 import com.MaSoVa.commerce.order.service.OrderSummaryService;
+import org.bson.Document;
 import org.junit.jupiter.api.Test;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 
 import java.lang.reflect.Method;
 import java.time.LocalDate;
@@ -12,6 +16,10 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class OrderSummaryServiceTest {
 
@@ -57,5 +65,20 @@ class OrderSummaryServiceTest {
                 .map(row -> LocalDate.parse(String.valueOf(row.get("date"))))
                 .allMatch(d -> !d.isBefore(rangeStartDate));
         assertThat(allDaysWithinFetchedRange).isTrue();
+    }
+
+    /**
+     * Reproduces: building the staff facet used List.of("", null), which throws a
+     * NullPointerException before any query runs, so every store-summary request failed.
+     */
+    @Test
+    void summarizeStoreBuildsPipelineAndHandlesEmptyResult() {
+        MongoTemplate mongoTemplate = mock(MongoTemplate.class);
+        when(mongoTemplate.aggregate(any(Aggregation.class), eq("orders"), eq(Document.class)))
+                .thenReturn(new AggregationResults<>(List.of(), new Document()));
+
+        Map<String, Object> summary = new OrderSummaryService(mongoTemplate).summarizeStore("DOM001", 30);
+
+        assertThat(summary).isNotNull();
     }
 }
