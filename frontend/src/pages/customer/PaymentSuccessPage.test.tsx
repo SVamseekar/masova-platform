@@ -32,8 +32,8 @@ describe('payment result', () => {
     mount('order_id=order-1&redirect_status=succeeded', { ...order, paymentStatus: 'PAID' });
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Payment successful!');
     expect(screen.getByText('#ORD1')).toBeInTheDocument();
-    expect(screen.getByText('Total paid').nextElementSibling).toHaveTextContent('11,51');
-    expect(screen.getByText('VAT').nextElementSibling).toHaveTextContent('0,62');
+    expect(screen.getByText('Total paid').nextElementSibling).toHaveTextContent('11.51');
+    expect(screen.getByText('VAT').nextElementSibling).toHaveTextContent('0.62');
   });
   it('reports an unconfirmed payment when the provider did not succeed', () => {
     mount('order_id=order-1&redirect_status=failed', order);
