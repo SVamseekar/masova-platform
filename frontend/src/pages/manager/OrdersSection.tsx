@@ -1,21 +1,12 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import AssignDriverModal from '../../components/modals/AssignDriverModal';
+import React, { useState } from 'react';
 
+import OrdersTab from './OrdersTab';
 const DeliveryManagementPage = React.lazy(() => import('./DeliveryManagementPage'));
 const AggregatorHubPage = React.lazy(() => import('./AggregatorHubPage'));
 import { t, cardStyle, tableHeaderStyle, tableCellStyle, sectionTitleStyle, statusBadge, selectStyle } from './manager-tokens';
 import { ManagerPageFrame, ManagerTabBar, ManagerLoadingBlock } from './components';
 import {
-  useGetStoreOrdersQuery,
   useGetRecentStoreOrdersQuery,
-  useUpdateOrderStatusMutation,
-  useUpdateOrderPriorityMutation,
-  useCancelOrderMutation,
-  useApproveCancelRequestMutation,
-  useRejectCancelRequestMutation,
-  useGetActiveDeliveriesCountQuery,
-  Order,
 } from '../../store/api/orderApi';
 import {
   useGetTransactionsByStoreIdQuery,
@@ -30,15 +21,9 @@ import {
   type TrackingResponse,
 } from '../../store/api/deliveryApi';
 import { getApiErrorMessage } from '../utils/apiError';
-import { useGetTodaySalesMetricsQuery } from '../../store/api/analyticsApi';
 import { useGetAvailableDriversQuery as useGetStoreDriversQuery } from '../../store/api/driverApi';
-import { ORDER_STATUS_CONFIG, ORDER_TYPE_CONFIG, PAYMENT_STATUS_CONFIG } from '../../types/order';
-import type { OrderStatus, OrderPriority } from '../../types/order';
 import { format } from 'date-fns';
 import { countActiveDeliveries } from './quickInfoMetrics';
-import { formatMajorAmount } from '../../utils/currency';
-import { useAppSelector } from '../../store/hooks';
-import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
 
 interface Props { storeId: string; activeTab: string; onTabChange: (tab: string) => void; }
 
@@ -88,400 +73,6 @@ const modalOverlay: React.CSSProperties = {
 };
 const modalBox: React.CSSProperties = {
   ...cardStyle, maxWidth: 600, width: '95%', maxHeight: '90vh', overflowY: 'auto' as const,
-};
-
-// ─── ORDERS TAB ───
-const OrdersTab = ({ storeId }: { storeId: string }) => {
-  const [searchParams] = useSearchParams();
-  const { data: orders = [], isLoading, isError, error, refetch } = useGetStoreOrdersQuery(storeId, {
-    skip: !storeId, pollingInterval: 30000,
-  });
-  const { data: todaySalesMetrics, refetch: refetchAnalytics } = useGetTodaySalesMetricsQuery(storeId, { skip: !storeId });
-  const { data: activeDeliveriesCount } = useGetActiveDeliveriesCountQuery(storeId, { skip: !storeId });
-  const currency = useAppSelector(selectCartCurrency);
-  const locale = useAppSelector(selectCartLocale);
-  const fmtCurrency = (v: number) => formatMajorAmount(v, currency, locale);
-  const [updateOrderStatus] = useUpdateOrderStatusMutation();
-  const [updateOrderPriority] = useUpdateOrderPriorityMutation();
-  const [cancelOrder] = useCancelOrderMutation();
-  const [approveCancelRequest, { isLoading: approvingCancel }] = useApproveCancelRequestMutation();
-  const [rejectCancelRequest, { isLoading: rejectingCancel }] = useRejectCancelRequestMutation();
-
-  const [statusFilter, setStatusFilter] = useState('');
-  const [typeFilter, setTypeFilter] = useState('');
-  const [search, setSearch] = useState(searchParams.get('q') || '');
-
-  // Header shell search (?q=) → sync into local filter
-  useEffect(() => {
-    const q = searchParams.get('q');
-    if (q != null) setSearch(q);
-  }, [searchParams]);
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [cancelOrderId, setCancelOrderId] = useState<string | null>(null);
-  const [cancelReason, setCancelReason] = useState('');
-  const [assignDriverModal, setAssignDriverModal] = useState<{ open: boolean; orderId: string }>({ open: false, orderId: '' });
-  const [rejectCancelOrderId, setRejectCancelOrderId] = useState<string | null>(null);
-  const [rejectCancelReason, setRejectCancelReason] = useState('');
-
-  const pendingCancelRequests = useMemo(
-    () => orders.filter((o) => o.cancellationRequested && o.status !== 'CANCELLED'),
-    [orders],
-  );
-
-  const filtered = useMemo(() => {
-    let list = [...orders];
-    if (statusFilter) list = list.filter(o => o.status === statusFilter);
-    if (typeFilter) list = list.filter(o => o.orderType === typeFilter);
-    if (search.trim()) {
-      const q = search.trim().toLowerCase();
-      list = list.filter(o =>
-        o.orderNumber?.toLowerCase().includes(q) ||
-        o.customerName?.toLowerCase().includes(q) ||
-        o.customerPhone?.toLowerCase().includes(q) ||
-        o.customerEmail?.toLowerCase().includes(q) ||
-        o.id?.toLowerCase().includes(q)
-      );
-    }
-    // Urgent first, then newest
-    return list.sort((a, b) => {
-      if (a.priority === 'URGENT' && b.priority !== 'URGENT') return -1;
-      if (b.priority === 'URGENT' && a.priority !== 'URGENT') return 1;
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    });
-  }, [orders, statusFilter, typeFilter, search]);
-
-  // Prefer list-derived totals so KPI cards match the table (not analytics-only counts).
-  const listRevenue = orders.reduce((s, o) => s + (Number(o.total) || 0), 0);
-  const stats = {
-    total: orders.length,
-    active: orders.filter(o => !['DELIVERED', 'SERVED', 'COMPLETED', 'CANCELLED'].includes(o.status)).length,
-    delivered: orders.filter(o => ['DELIVERED', 'SERVED', 'COMPLETED'].includes(o.status)).length,
-    revenue: listRevenue > 0 ? listRevenue : (todaySalesMetrics?.todaySales ?? 0),
-    activeDeliveries: (() => {
-      const fromList = countActiveDeliveries(orders);
-      return fromList > 0 ? fromList : (activeDeliveriesCount?.count ?? 0);
-    })(),
-  };
-
-  const handleStatusChange = async (orderId: string, status: OrderStatus) => {
-    try { await updateOrderStatus({ orderId, status }).unwrap(); refetch(); refetchAnalytics(); }
-    catch { alert('Failed to update status'); }
-  };
-
-  const handlePriorityChange = async (orderId: string, priority: OrderPriority) => {
-    try { await updateOrderPriority({ orderId, priority }).unwrap(); }
-    catch { alert('Failed to update priority'); }
-  };
-
-  const confirmCancel = async () => {
-    if (!cancelOrderId || !cancelReason.trim()) return;
-    try { await cancelOrder({ orderId: cancelOrderId, reason: cancelReason }).unwrap(); setCancelOrderId(null); setCancelReason(''); refetch(); refetchAnalytics(); }
-    catch { alert('Failed to cancel order'); }
-  };
-
-  const handleApproveCancelRequest = async (orderId: string) => {
-    try {
-      await approveCancelRequest(orderId).unwrap();
-      refetch();
-      refetchAnalytics();
-    } catch {
-      alert('Failed to approve cancellation');
-    }
-  };
-
-  const handleRejectCancelRequest = async () => {
-    if (!rejectCancelOrderId) return;
-    try {
-      await rejectCancelRequest({ orderId: rejectCancelOrderId, reason: rejectCancelReason || undefined }).unwrap();
-      setRejectCancelOrderId(null);
-      setRejectCancelReason('');
-      refetch();
-    } catch {
-      alert('Failed to reject cancellation request');
-    }
-  };
-
-  const handleAssignDriver = (orderId: string) => {
-    setAssignDriverModal({ open: true, orderId });
-  };
-
-  const fmtDate = (d: string) => new Date(d).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
-
-  return (
-    <>
-      {/* Pending Cancel Requests */}
-      <div style={{ ...cardStyle, marginBottom: 16, border: pendingCancelRequests.length ? `1px solid ${t.orange}` : undefined }}>
-        <h4 style={{ ...sectionTitleStyle, fontSize: 14, color: t.orange, marginBottom: 8 }}>
-          Pending Cancel Requests ({pendingCancelRequests.length})
-        </h4>
-        {isLoading && <p style={{ color: t.gray, fontSize: 13, padding: 8 }}>Loading orders...</p>}
-        {!isLoading && pendingCancelRequests.length === 0 && (
-          <p style={{ color: t.grayMuted, fontSize: 13, padding: 8 }}>No cancellation requests awaiting approval</p>
-        )}
-        {pendingCancelRequests.map((order) => (
-          <div
-            key={order.id}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0',
-              borderBottom: `1px solid ${t.grayLight}`, flexWrap: 'wrap',
-            }}
-          >
-            <div style={{ flex: 1, minWidth: 200 }}>
-              <div style={{ fontSize: 13, fontWeight: 600 }}>#{order.orderNumber} — {order.customerName}</div>
-              <div style={{ fontSize: 11, color: t.gray }}>
-                {order.cancellationRequestReason || 'No reason provided'}
-                {order.cancellationRequestedAt && ` · ${fmtDate(order.cancellationRequestedAt)}`}
-              </div>
-            </div>
-            <button
-              style={btn('success')}
-              onClick={() => handleApproveCancelRequest(order.id)}
-              disabled={approvingCancel || rejectingCancel}
-            >
-              {approvingCancel ? '...' : 'Approve'}
-            </button>
-            <button
-              style={btn('danger')}
-              onClick={() => { setRejectCancelOrderId(order.id); setRejectCancelReason(''); }}
-              disabled={approvingCancel || rejectingCancel}
-            >
-              Reject
-            </button>
-          </div>
-        ))}
-      </div>
-
-      {rejectCancelOrderId && (
-        <div style={modalOverlay} onClick={() => { setRejectCancelOrderId(null); setRejectCancelReason(''); }}>
-          <div style={{ ...modalBox, maxWidth: 440 }} onClick={e => e.stopPropagation()}>
-            <h3 style={{ ...sectionTitleStyle, fontSize: 16, color: t.red, marginBottom: 12 }}>Reject Cancel Request</h3>
-            <textarea
-              value={rejectCancelReason}
-              onChange={e => setRejectCancelReason(e.target.value)}
-              placeholder="Optional rejection reason..."
-              rows={3}
-              style={{ ...selectStyle, width: '100%', padding: 10, fontSize: 13, resize: 'vertical' }}
-            />
-            <div style={{ display: 'flex', gap: 8, marginTop: 12, justifyContent: 'flex-end' }}>
-              <button style={btn('secondary')} onClick={() => { setRejectCancelOrderId(null); setRejectCancelReason(''); }}>Back</button>
-              <button style={btn('danger')} onClick={handleRejectCancelRequest} disabled={rejectingCancel}>
-                {rejectingCancel ? 'Rejecting...' : 'Confirm Reject'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Stats row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 20 }}>
-        <div style={miniStat}><p style={statLabel}>Total Orders</p><p style={statValue()}>{stats.total}</p></div>
-        <div style={miniStat}><p style={statLabel}>Active</p><p style={statValue(t.orange)}>{stats.active}</p></div>
-        <div style={miniStat}><p style={statLabel}>Delivered</p><p style={statValue(t.green)}>{stats.delivered}</p></div>
-        <div style={miniStat}><p style={statLabel}>Revenue</p><p style={statValue(t.green)}>{fmtCurrency(stats.revenue)}</p></div>
-        <div style={miniStat}><p style={statLabel}>Deliveries</p><p style={statValue(t.blue)}>{stats.activeDeliveries}</p></div>
-      </div>
-
-      {/* Filters */}
-      <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
-        <input
-          placeholder="Search orders..."
-          value={search} onChange={e => setSearch(e.target.value)}
-          style={{ ...selectStyle, padding: '8px 12px', width: 220 }}
-        />
-        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={selectStyle}>
-          <option value="">All Statuses</option>
-          {Object.keys(ORDER_STATUS_CONFIG).map(s => <option key={s} value={s}>{ORDER_STATUS_CONFIG[s as OrderStatus].label}</option>)}
-        </select>
-        <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)} style={selectStyle}>
-          <option value="">All Types</option>
-          {Object.keys(ORDER_TYPE_CONFIG).map(t => <option key={t} value={t}>{ORDER_TYPE_CONFIG[t as keyof typeof ORDER_TYPE_CONFIG].label}</option>)}
-        </select>
-        {(statusFilter || typeFilter || search) && (
-          <button onClick={() => { setStatusFilter(''); setTypeFilter(''); setSearch(''); }} style={{ ...btn('secondary'), padding: '4px 10px' }}>Clear</button>
-        )}
-        <span style={{ marginLeft: 'auto', fontSize: 12, color: t.grayMuted }}>{filtered.length} orders</span>
-      </div>
-
-      {/* Table */}
-      {isError && (
-        <div style={{ ...cardStyle, textAlign: 'center', padding: 24, marginBottom: 12, border: `1px solid ${t.red}` }}>
-          <p style={{ color: t.red, marginBottom: 8 }}>Failed to load orders for this store.</p>
-          <button type="button" style={btn('primary')} onClick={() => void refetch()}>Retry</button>
-          <p style={{ fontSize: 11, color: t.grayMuted, marginTop: 8 }}>{getApiErrorMessage(error, '')}</p>
-        </div>
-      )}
-      {isLoading ? <p style={{ color: t.gray, textAlign: 'center', padding: 40 }}>Loading orders...</p> : filtered.length === 0 ? (
-        <div style={{ ...cardStyle, textAlign: 'center', padding: 40 }}>
-          <p style={{ color: t.grayMuted }}>
-            {orders.length === 0
-              ? 'No orders for this store yet.'
-              : 'No orders match the current search/filters.'}
-          </p>
-          {(statusFilter || typeFilter || search) && (
-            <button
-              type="button"
-              style={{ ...btn('secondary'), marginTop: 12 }}
-              onClick={() => { setStatusFilter(''); setTypeFilter(''); setSearch(''); }}
-            >
-              Clear filters
-            </button>
-          )}
-        </div>
-      ) : (
-        <div style={{ ...cardStyle, overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 920 }}>
-            <thead>
-              <tr>
-                {['Order', 'Customer', 'Type', 'Status', 'Payment', 'Total', 'Date', 'Actions'].map(h => (
-                  <th key={h} style={tableHeaderStyle}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map(order => (
-                <tr key={order.id} style={{ background: order.priority === 'URGENT' ? t.redLight : 'transparent' }}>
-                  <td style={tableCellStyle}>
-                    <span style={{ fontWeight: 700, color: t.orange }}>#{order.orderNumber}</span>
-                    {order.priority === 'URGENT' && <span style={{ marginLeft: 6, fontSize: 10, color: t.red, fontWeight: 700 }}>URGENT</span>}
-                  </td>
-                  <td style={tableCellStyle}>
-                    <div style={{ fontWeight: 500 }}>{order.customerName}</div>
-                    {order.customerPhone && <div style={{ fontSize: 11, color: t.grayMuted }}>{order.customerPhone}</div>}
-                  </td>
-                  <td style={tableCellStyle}>
-                    <span style={{ ...statusBadge(order.orderType), background: t.orangeLight, color: t.orange }}>
-                      {ORDER_TYPE_CONFIG[order.orderType]?.label || order.orderType}
-                    </span>
-                  </td>
-                  <td style={tableCellStyle}>
-                    {!['CANCELLED', 'DELIVERED', 'SERVED', 'COMPLETED'].includes(order.status) ? (
-                      <select value={order.status} onChange={e => handleStatusChange(order.id, e.target.value as OrderStatus)} style={selectStyle}>
-                        {['RECEIVED', 'PREPARING', 'OVEN', 'BAKED', 'READY', 'DISPATCHED', 'DELIVERED', 'SERVED', 'COMPLETED'].map(s => <option key={s} value={s}>{s}</option>)}
-                      </select>
-                    ) : (
-                      <span style={statusBadge(order.status)}>{ORDER_STATUS_CONFIG[order.status]?.label || order.status}</span>
-                    )}
-                  </td>
-                  <td style={tableCellStyle}>
-                    <span style={statusBadge(order.paymentStatus)}>{PAYMENT_STATUS_CONFIG[order.paymentStatus]?.label || order.paymentStatus}</span>
-                    {order.paymentMethod && <div style={{ fontSize: 10, color: t.grayMuted, marginTop: 2 }}>{order.paymentMethod}</div>}
-                  </td>
-                  <td style={{ ...tableCellStyle, fontWeight: 600 }}>{fmtCurrency(order.total)}</td>
-                  <td style={{ ...tableCellStyle, fontSize: 11 }}>{fmtDate(order.createdAt)}</td>
-                  <td style={{ ...tableCellStyle, width: 280, minWidth: 260 }}>
-                    <div style={{ display: 'flex', gap: 6, flexWrap: 'nowrap', alignItems: 'center', justifyContent: 'flex-end' }}>
-                      <button style={btn('primary')} onClick={() => setSelectedOrder(order)}>View</button>
-                      {!['CANCELLED', 'DELIVERED', 'SERVED', 'COMPLETED'].includes(order.status) && (
-                        <>
-                          {order.status === 'DISPATCHED' && order.orderType === 'DELIVERY' && (
-                            <button style={btn('success')} onClick={() => handleStatusChange(order.id, 'DELIVERED')}>Complete</button>
-                          )}
-                          {order.status === 'READY' && order.orderType === 'DINE_IN' && (
-                            <button style={btn('success')} onClick={() => handleStatusChange(order.id, 'SERVED')}>Served</button>
-                          )}
-                          {order.status === 'READY' && order.orderType === 'TAKEAWAY' && (
-                            <button style={btn('success')} onClick={() => handleStatusChange(order.id, 'COMPLETED')}>Picked Up</button>
-                          )}
-                          <button style={btn('secondary')} onClick={() => handlePriorityChange(order.id, order.priority === 'URGENT' ? 'NORMAL' : 'URGENT')}>
-                            {order.priority === 'URGENT' ? 'Normal' : 'Urgent'}
-                          </button>
-                          {order.orderType === 'DELIVERY' && !order.assignedDriverId && (
-                            <button style={btn('primary')} onClick={() => handleAssignDriver(order.id)}>Assign</button>
-                          )}
-                          <button style={btn('danger')} onClick={() => { setCancelOrderId(order.id); setCancelReason(''); }}>Cancel</button>
-                        </>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* Order Detail Modal */}
-      {selectedOrder && (
-        <div style={modalOverlay} onClick={() => setSelectedOrder(null)}>
-          <div style={modalBox} onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <h3 style={{ ...sectionTitleStyle, fontSize: 18, color: t.orange }}>Order #{selectedOrder.orderNumber}</h3>
-              <button onClick={() => setSelectedOrder(null)} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: t.gray }}>x</button>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16, fontSize: 13 }}>
-              <div><span style={{ color: t.gray }}>Customer: </span><strong>{selectedOrder.customerName}</strong></div>
-              {selectedOrder.customerPhone && <div><span style={{ color: t.gray }}>Phone: </span>{selectedOrder.customerPhone}</div>}
-              {selectedOrder.customerEmail && <div><span style={{ color: t.gray }}>Email: </span>{selectedOrder.customerEmail}</div>}
-              <div><span style={{ color: t.gray }}>Status: </span><span style={statusBadge(selectedOrder.status)}>{ORDER_STATUS_CONFIG[selectedOrder.status]?.label}</span></div>
-              <div><span style={{ color: t.gray }}>Type: </span>{ORDER_TYPE_CONFIG[selectedOrder.orderType]?.label}</div>
-              <div><span style={{ color: t.gray }}>Payment: </span><span style={statusBadge(selectedOrder.paymentStatus)}>{PAYMENT_STATUS_CONFIG[selectedOrder.paymentStatus]?.label}</span></div>
-              <div><span style={{ color: t.gray }}>Method: </span>{selectedOrder.paymentMethod || 'N/A'}</div>
-              <div><span style={{ color: t.gray }}>Created: </span>{fmtDate(selectedOrder.createdAt)}</div>
-              {selectedOrder.createdByStaffName && <div><span style={{ color: t.gray }}>Taken By: </span>{selectedOrder.createdByStaffName}</div>}
-            </div>
-            {/* Items */}
-            <h4 style={{ ...sectionTitleStyle, marginBottom: 8 }}>Items</h4>
-            <div style={{ background: t.bgMain, borderRadius: t.radius.md, padding: 12, marginBottom: 12 }}>
-              {selectedOrder.items.map((item, i) => (
-                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: i < selectedOrder.items.length - 1 ? `1px solid ${t.grayLight}` : 'none', fontSize: 13 }}>
-                  <div>
-                    <span style={{ fontWeight: 600, marginRight: 6 }}>{item.quantity}x</span>
-                    <span>{item.name}</span>
-                    {item.variant && <span style={{ fontSize: 11, color: t.grayMuted, marginLeft: 6 }}>({item.variant})</span>}
-                  </div>
-                  <span style={{ fontWeight: 600, color: t.orange }}>{fmtCurrency(item.price * item.quantity)}</span>
-                </div>
-              ))}
-            </div>
-            {/* Totals */}
-            <div style={{ borderTop: `2px solid ${t.grayLight}`, paddingTop: 12 }}>
-              {selectedOrder.deliveryFee > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 4 }}><span style={{ color: t.gray }}>Delivery Fee</span><span>{fmtCurrency(selectedOrder.deliveryFee)}</span></div>}
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, fontWeight: 700 }}><span>Total</span><span style={{ color: t.orange }}>{fmtCurrency(selectedOrder.total)}</span></div>
-            </div>
-            {/* Delivery Address */}
-            {selectedOrder.deliveryAddress && (
-              <div style={{ marginTop: 12, padding: 10, background: t.bgMain, borderRadius: t.radius.sm, fontSize: 12 }}>
-                <strong>Delivery: </strong>
-                {selectedOrder.deliveryAddress.street}, {selectedOrder.deliveryAddress.city}
-                {selectedOrder.deliveryAddress.pincode && ` ${selectedOrder.deliveryAddress.pincode}`}
-              </div>
-            )}
-            {selectedOrder.specialInstructions && (
-              <div style={{ marginTop: 8, padding: 10, background: t.orangeLight, borderRadius: t.radius.sm, fontSize: 12, color: t.orangeDark }}>
-                <strong>Instructions: </strong>{selectedOrder.specialInstructions}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Cancel Modal */}
-      {cancelOrderId && (
-        <div style={modalOverlay} onClick={() => { setCancelOrderId(null); setCancelReason(''); }}>
-          <div style={{ ...modalBox, maxWidth: 440 }} onClick={e => e.stopPropagation()}>
-            <h3 style={{ ...sectionTitleStyle, fontSize: 16, color: t.red, marginBottom: 12 }}>Cancel Order</h3>
-            <p style={{ fontSize: 13, color: t.gray, marginBottom: 12 }}>This action cannot be undone.</p>
-            <textarea
-              value={cancelReason} onChange={e => setCancelReason(e.target.value)}
-              placeholder="Reason for cancellation..."
-              rows={3}
-              style={{ ...selectStyle, width: '100%', padding: 10, fontSize: 13, resize: 'vertical' }}
-            />
-            <div style={{ display: 'flex', gap: 8, marginTop: 12, justifyContent: 'flex-end' }}>
-              <button style={btn('secondary')} onClick={() => { setCancelOrderId(null); setCancelReason(''); }}>Back</button>
-              <button style={{ ...btn('danger'), opacity: cancelReason.trim() ? 1 : 0.5 }} onClick={confirmCancel} disabled={!cancelReason.trim()}>Confirm Cancel</button>
-            </div>
-          </div>
-        </div>
-      )}
-      <AssignDriverModal
-        open={assignDriverModal.open}
-        orderId={assignDriverModal.orderId}
-        onClose={() => setAssignDriverModal({ open: false, orderId: '' })}
-        onAssigned={() => { refetch(); setAssignDriverModal({ open: false, orderId: '' }); }}
-      />
-    </>
-  );
 };
 
 // ─── PAYMENTS TAB ───
@@ -851,6 +442,14 @@ const DeliveriesTab = ({ storeId }: { storeId: string }) => {
 // ─── MAIN SECTION ───
 const OrdersSection: React.FC<Props> = ({ storeId, activeTab, onTabChange }) => {
   const currentTab = activeTab || 'orders';
+  const tabBar = (
+    <ManagerTabBar
+      tabs={tabs}
+      activeTab={currentTab}
+      onChange={onTabChange}
+      ariaLabel="Orders section tabs"
+    />
+  );
 
   return (
     <ManagerPageFrame
@@ -860,16 +459,10 @@ const OrdersSection: React.FC<Props> = ({ storeId, activeTab, onTabChange }) => 
       empty={!storeId}
       emptyTitle="Select a store"
       emptyDescription="Choose a store from the header to load orders and payments."
-      tabs={
-        <ManagerTabBar
-          tabs={tabs}
-          activeTab={currentTab}
-          onChange={onTabChange}
-          ariaLabel="Orders section tabs"
-        />
-      }
+      hideHeading={currentTab === 'orders'}
+      tabs={currentTab === 'orders' ? undefined : tabBar}
     >
-      {currentTab === 'orders' && <OrdersTab storeId={storeId} />}
+      {currentTab === 'orders' && <OrdersTab storeId={storeId} tabs={tabBar} />}
       {currentTab === 'payments' && <PaymentsTab storeId={storeId} />}
       {currentTab === 'refunds' && <RefundsTab storeId={storeId} />}
       {currentTab === 'deliveries' && <DeliveriesTab storeId={storeId} />}
