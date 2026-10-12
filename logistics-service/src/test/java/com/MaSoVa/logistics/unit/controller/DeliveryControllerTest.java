@@ -249,15 +249,16 @@ class DeliveryControllerTest extends BaseServiceTest {
     class TrackOrderForStaff {
 
         @Test
-        @DisplayName("returns the driver's contact details to store staff")
+        @DisplayName("returns the driver's contact details to staff of the caller's store")
         void returnsDriverContact() throws Exception {
             TrackingResponse tracking = TrackingResponse.builder()
                 .orderId("order-1")
                 .driver(TrackingResponse.DriverInfo.builder().driverId("driver-1").driverName("Jonas K.").driverPhone("+491511000005").build())
                 .build();
-            when(liveTrackingService.getOrderTracking("order-1")).thenReturn(tracking);
+            when(liveTrackingService.getOrderTrackingForStore("order-1", "DOM001")).thenReturn(tracking);
 
-            mockMvc.perform(get("/api/delivery/orders/order-1/tracking"))
+            mockMvc.perform(get("/api/delivery/orders/order-1/tracking")
+                    .header("X-User-Type", "MANAGER").header("X-User-Store-Id", "DOM001").header("X-Selected-Store-Id", "DOM001"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.driver.driverPhone").value("+491511000005"));
         }

@@ -84,6 +84,42 @@ class LiveTrackingServiceTest {
     }
 
     @Nested
+    @DisplayName("getOrderTrackingForStore")
+    class GetOrderTrackingForStore {
+
+        private void trackingInStore(String storeId) {
+            DeliveryTracking tracking = new DeliveryTracking();
+            tracking.setOrderId("order-1");
+            tracking.setStoreId(storeId);
+            tracking.setDriverId("driver-1");
+            tracking.setDriverPhone("9876543210");
+            when(deliveryTrackingRepository.findByOrderId("order-1")).thenReturn(Optional.of(tracking));
+        }
+
+        @Test
+        @DisplayName("returns tracking with driver contact for the delivery's own store")
+        void returnsForOwnStore() {
+            trackingInStore("DOM001");
+            when(driverLocationRepository.findTopByDriverIdOrderByTimestampDesc("driver-1")).thenReturn(Optional.empty());
+
+            TrackingResponse result = liveTrackingService.getOrderTrackingForStore("order-1", "dom001");
+
+            assertThat(result.getDriver().getDriverPhone()).isEqualTo("9876543210");
+        }
+
+        @Test
+        @DisplayName("refuses a delivery of another store, and a caller without a store")
+        void refusesOtherStore() {
+            trackingInStore("DOM001");
+
+            assertThatThrownBy(() -> liveTrackingService.getOrderTrackingForStore("order-1", "DOM002"))
+                .isInstanceOf(org.springframework.security.access.AccessDeniedException.class);
+            assertThatThrownBy(() -> liveTrackingService.getOrderTrackingForStore("order-1", null))
+                .isInstanceOf(org.springframework.security.access.AccessDeniedException.class);
+        }
+    }
+
+    @Nested
     @DisplayName("getOrderTracking")
     class GetOrderTracking {
 

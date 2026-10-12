@@ -1,6 +1,7 @@
 package com.MaSoVa.logistics.delivery.service;
 
 import com.MaSoVa.shared.exception.ResourceNotFoundException;
+import org.springframework.security.access.AccessDeniedException;
 import com.MaSoVa.logistics.delivery.dto.ETAResponse;
 import com.MaSoVa.logistics.delivery.dto.LocationUpdateRequest;
 import com.MaSoVa.logistics.delivery.dto.TrackingResponse;
@@ -64,6 +65,20 @@ public class LiveTrackingService {
         broadcastLocationUpdate(request.getDriverId(), savedLocation);
 
         log.debug("Location updated for driver: {}", request.getDriverId());
+    }
+
+    /**
+     * Tracking for store staff: the delivery must belong to the caller's store.
+     */
+    public TrackingResponse getOrderTrackingForStore(String orderId, String callerStoreId) {
+        DeliveryTracking tracking = deliveryTrackingRepository.findByOrderId(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Tracking not found for order: " + orderId));
+        if (callerStoreId == null || callerStoreId.isBlank() || !callerStoreId.equalsIgnoreCase(tracking.getStoreId())) {
+            log.warn("Store scope violation: store {} requested tracking of order {} (store {})",
+                    callerStoreId, orderId, tracking.getStoreId());
+            throw new AccessDeniedException("This delivery belongs to another store");
+        }
+        return getOrderTracking(orderId);
     }
 
     /**

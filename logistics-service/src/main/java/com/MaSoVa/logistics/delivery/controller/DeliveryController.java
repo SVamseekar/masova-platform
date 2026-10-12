@@ -208,13 +208,16 @@ public class DeliveryController {
 
     /**
      * GET /api/delivery/orders/{orderId}/tracking — store staff view of a delivery, with the
-     * driver's contact details that the public tracking route leaves out.
+     * driver's contact details that the public tracking route leaves out. Limited to deliveries of
+     * the caller's own store.
      */
     @GetMapping("/orders/{orderId}/tracking")
     @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
     @Operation(summary = "Track delivery by order ID with driver contact (store staff)")
-    public ResponseEntity<TrackingResponse> trackOrderForStaff(@PathVariable String orderId) {
-        return ResponseEntity.ok(liveTrackingService.getOrderTracking(orderId));
+    public ResponseEntity<TrackingResponse> trackOrderForStaff(@PathVariable String orderId, HttpServletRequest request) {
+        // Staff see deliveries of the store they are working in only.
+        String storeId = StoreContextUtil.getStoreIdFromHeaders(request);
+        return ResponseEntity.ok(liveTrackingService.getOrderTrackingForStore(orderId, storeId));
     }
 
     // ── VERIFICATION (OTP / PHOTO / SIGNATURE) ────────────────────────────────────
