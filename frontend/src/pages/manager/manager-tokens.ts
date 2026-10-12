@@ -1,29 +1,38 @@
 import React from 'react';
 
-// Reztro-style design tokens for manager dashboard
+// Manager design tokens. Key names are legacy (`orange` = brand primary); values follow
+// the approved design-tokens (canvas, forest, neutral selection, status surfaces).
 export const t = {
-  orange: '#FF6B35',
-  orangeLight: '#FFF5F0',
-  orangeDark: '#E55A2B',
-  bgMain: '#F4F4F5',
+  orange: '#C63F19',
+  orangeLight: '#FBEAE4',
+  orangeDark: '#AA3213',
+  bgMain: '#F6F5F1',
   white: '#FFFFFF',
-  black: '#18181B',
-  gray: '#52525B',
-  grayLight: '#E4E4E7',
-  grayMuted: '#A1A1AA',
-  beige: '#F4F4F5',
-  green: '#10B981',
-  greenLight: '#D1FAE5',
-  greenDark: '#065F46',
-  red: '#EF4444',
-  redLight: '#FEE2E2',
-  blue: '#3B82F6',
-  yellow: '#FBBF24',
-  font: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" as string,
+  black: '#18221F',
+  gray: '#55635A',
+  grayLight: '#DEDFD8',
+  grayMuted: '#66736A',
+  beige: '#F6F5F1',
+  green: '#17724B',
+  greenLight: '#E7F3EB',
+  greenDark: '#146342',
+  red: '#AA2424',
+  redLight: '#FCE9E7',
+  blue: '#17588B',
+  blueLight: '#E8F1FC',
+  yellow: '#8A5A0B',
+  warningLight: '#FFF1DA',
+  warningDark: '#7B4700',
+  forest: '#203D32',
+  focus: '#1D5F47',
+  borderControl: '#7E8980',
+  selection: '#ECEEEB',
+  font: "Geist, Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" as string,
   sidebarWidth: 240,
   rightSidebarWidth: 300,
   headerHeight: 68,
-  radius: { sm: 4, md: 8, lg: 10, xl: 12 },
+  tableRowHeight: 52,
+  radius: { sm: 8, md: 8, lg: 12, xl: 16 },
 } as const;
 
 export const cardStyle: React.CSSProperties = {
@@ -34,18 +43,19 @@ export const cardStyle: React.CSSProperties = {
 };
 
 export const tabStyle = (active: boolean): React.CSSProperties => ({
-  padding: '8px 20px', borderRadius: t.radius.md, border: 'none',
-  background: active ? t.orange : 'transparent', color: active ? t.white : t.gray,
-  fontWeight: active ? 600 : 500, fontSize: 13, cursor: 'pointer', fontFamily: t.font,
+  padding: '10px 4px', marginRight: 24, border: 'none', borderRadius: 0,
+  borderBottom: `2px solid ${active ? t.orange : 'transparent'}`,
+  background: 'transparent', color: active ? t.orange : t.gray,
+  fontWeight: active ? 600 : 500, fontSize: 14, cursor: 'pointer', fontFamily: t.font,
 });
 
 export const tableHeaderStyle: React.CSSProperties = {
   textAlign: 'left', padding: '10px 8px', fontSize: 12, fontWeight: 600, color: t.gray,
-  borderBottom: `2px solid ${t.grayLight}`,
+  borderBottom: `1px solid ${t.grayLight}`,
 };
 
 export const tableCellStyle: React.CSSProperties = {
-  padding: '14px 8px', fontSize: 13, color: t.black, borderBottom: `1px solid ${t.grayLight}`,
+  padding: '14px 8px', height: t.tableRowHeight, boxSizing: 'border-box', fontSize: 13, color: t.black, borderBottom: `1px solid ${t.grayLight}`,
 };
 
 export const sectionTitleStyle: React.CSSProperties = { fontSize: 15, fontWeight: 700, color: t.black, margin: 0 };
@@ -56,15 +66,14 @@ export const selectStyle: React.CSSProperties = {
 };
 
 export const modalOverlayStyle: React.CSSProperties = {
-  position: 'fixed', inset: 0, background: 'rgba(26, 26, 26, 0.45)',
+  position: 'fixed', inset: 0, background: 'rgba(24, 34, 31, 0.45)',
   display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1200,
-  backdropFilter: 'blur(6px)',
 };
 
 export const modalBoxStyle: React.CSSProperties = {
   background: t.white, borderRadius: t.radius.lg, padding: 24, width: '92%',
   maxWidth: 520, maxHeight: '88vh', overflowY: 'auto', fontFamily: t.font,
-  boxShadow: '0 24px 60px rgba(26,26,26,0.18)',
+  boxShadow: '0 24px 60px rgba(24,34,31,0.18)',
 };
 
 export const fieldLabelStyle: React.CSSProperties = {
@@ -96,16 +105,19 @@ export const ghostBtnStyle: React.CSSProperties = {
 };
 
 export const statusBadge = (status: string): React.CSSProperties => {
+  const ok = { bg: t.greenLight, color: t.greenDark };
+  const warn = { bg: t.warningLight, color: t.warningDark };
+  const info = { bg: t.blueLight, color: t.blue };
+  const bad = { bg: t.redLight, color: t.red };
   const map: Record<string, { bg: string; color: string }> = {
-    DELIVERED: { bg: t.greenLight, color: t.greenDark },
-    COMPLETED: { bg: t.greenLight, color: t.greenDark },
-    CANCELLED: { bg: t.black, color: t.white },
-    READY: { bg: t.orange, color: t.white },
-    PREPARING: { bg: t.orangeLight, color: t.orange },
-    PENDING: { bg: t.beige, color: t.black },
+    DELIVERED: ok, COMPLETED: ok, READY: ok, SUCCEEDED: ok, MATCHED: ok,
+    PREPARING: warn, OVEN: warn, BAKED: warn,
+    RECEIVED: info, DISPATCHED: info, OUT_FOR_DELIVERY: info,
+    CANCELLED: bad, FAILED: bad,
+    PENDING: { bg: t.selection, color: t.black },
   };
-  const s = map[status] || { bg: t.grayLight, color: t.gray };
-  return { padding: '5px 12px', borderRadius: 6, fontSize: 11, fontWeight: 600, background: s.bg, color: s.color };
+  const s = map[status?.toUpperCase?.()] || { bg: t.selection, color: t.gray };
+  return { padding: '4px 10px', borderRadius: 8, fontSize: 12, fontWeight: 600, background: s.bg, color: s.color };
 };
 
 // SVG Icons

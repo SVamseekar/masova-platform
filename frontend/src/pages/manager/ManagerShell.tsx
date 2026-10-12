@@ -11,6 +11,7 @@ import { setSelectedStore, setStoreCurrency, selectSelectedStoreId, selectSelect
 import { storeCurrencyPayload, resolveStoreMarket } from '../../utils/storeCurrency';
 import { useGetVersionQuery } from '../../store/api/systemApi';
 import { ManagerCopilotDrawer } from './ManagerCopilotDrawer';
+import MaSoVaBrand from '../../components/common/MaSoVaBrand';
 
 const DashboardSection = React.lazy(() => import('./DashboardSection'));
 const OrdersSection = React.lazy(() => import('./OrdersSection'));
@@ -20,7 +21,20 @@ const PeopleSection = React.lazy(() => import('./PeopleSection'));
 const AnalyticsSection = React.lazy(() => import('./AnalyticsSection'));
 const AIAgentsSection = React.lazy(() => import('./AIAgentsSection'));
 const FiscalCompliancePage = React.lazy(() => import('./FiscalCompliancePage'));
-const RightSidebar = React.lazy(() => import('./RightSidebar'));
+
+const FOCUS_RING_CSS = '.manager-shell *:focus-visible { outline: 2px solid #1D5F47 !important; outline-offset: 2px; }';
+
+const keyboardActivate = (action: () => void) => ({
+  onClick: action,
+  onKeyDown: (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      action();
+    }
+  },
+  role: 'menuitem' as const,
+  tabIndex: 0,
+});
 
 const sections = [
   { id: 'dashboard', label: 'Dashboard', icon: Icons.Grid },
@@ -35,13 +49,6 @@ const sections = [
 
 const SIDEBAR_EXPANDED = 240;
 const SIDEBAR_COLLAPSED = 72;
-
-// Glass style helpers
-const glass = (opacity = 0.6, blur = 20): React.CSSProperties => ({
-  background: `rgba(255, 255, 255, ${opacity})`,
-  backdropFilter: `blur(${blur}px)`,
-  WebkitBackdropFilter: `blur(${blur}px)`,
-});
 
 // eslint-disable-next-line react-refresh/only-export-components -- page component with HOC export
 function ManagerShell() {
@@ -135,47 +142,37 @@ function ManagerShell() {
   const sidebarWidth = sidebarOpen ? SIDEBAR_EXPANDED : SIDEBAR_COLLAPSED;
 
   return (
-    <div style={{
+    <div className="manager-shell" style={{
       display: 'flex', height: '100vh', width: '100vw', position: 'fixed', top: 0, left: 0,
       fontFamily: t.font,
-      background: `
-        radial-gradient(ellipse at 20% 50%, rgba(255, 107, 53, 0.08) 0%, transparent 50%),
-        radial-gradient(ellipse at 80% 20%, rgba(59, 130, 246, 0.06) 0%, transparent 50%),
-        radial-gradient(ellipse at 50% 80%, rgba(16, 185, 129, 0.05) 0%, transparent 50%),
-        linear-gradient(135deg, #f0ebe3 0%, #faf7f2 30%, #eef2f7 70%, #f5f0eb 100%)
-      `,
+      background: t.bgMain,
     }}>
+      <style>{FOCUS_RING_CSS}</style>
 
       {/* LEFT SIDEBAR */}
       <div style={{
         width: sidebarWidth,
-        ...glass(0.7, 24),
-        borderRight: '1px solid rgba(255,255,255,0.5)',
+        background: t.white,
+        borderRight: `1px solid ${t.grayLight}`,
         display: 'flex', flexDirection: 'column', flexShrink: 0,
         padding: sidebarOpen ? '24px 14px' : '24px 10px',
         overflowY: 'auto', overflowX: 'hidden',
-        transition: 'width 0.25s cubic-bezier(0.4, 0, 0.2, 1), padding 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-        boxShadow: '4px 0 30px rgba(0,0,0,0.03)',
+        transition: 'width 220ms cubic-bezier(0.2, 0, 0, 1), padding 220ms cubic-bezier(0.2, 0, 0, 1)',
       }}>
 
         {/* Logo + Collapse toggle */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: sidebarOpen ? 'space-between' : 'center', marginBottom: 32, minHeight: 36, paddingLeft: sidebarOpen ? 4 : 0 }}>
-          {sidebarOpen ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ width: 34, height: 34, borderRadius: 10, background: `linear-gradient(135deg, ${t.orange}, ${t.orangeDark})`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: t.white, fontWeight: 800, fontSize: 16, boxShadow: `0 4px 12px ${t.orange}40` }}>M</div>
-              <span style={{ fontSize: 19, fontWeight: 700, color: t.black }}>MaSoVa</span>
-            </div>
-          ) : (
-            <div style={{ width: 34, height: 34, borderRadius: 10, background: `linear-gradient(135deg, ${t.orange}, ${t.orangeDark})`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: t.white, fontWeight: 800, fontSize: 16, boxShadow: `0 4px 12px ${t.orange}40` }}>M</div>
-          )}
-          <div
+          <MaSoVaBrand size={sidebarOpen ? 32 : 36} wordmark={sidebarOpen} />
+          <button
+            type="button"
+            aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
             onClick={() => setSidebarOpen(!sidebarOpen)}
             style={{
-              width: 28, height: 28, borderRadius: 8,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: 28, height: 28, borderRadius: 8, border: 'none',
+              display: sidebarOpen ? 'flex' : 'none', alignItems: 'center', justifyContent: 'center',
               cursor: 'pointer', color: t.grayMuted,
-              background: 'rgba(0,0,0,0.04)',
-              transition: 'transform 0.25s ease',
+              background: 'transparent',
+              transition: 'transform 220ms ease',
               transform: sidebarOpen ? 'rotate(0deg)' : 'rotate(180deg)',
               flexShrink: 0,
               marginLeft: sidebarOpen ? 0 : 0,
@@ -183,7 +180,7 @@ function ManagerShell() {
             title={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
           >
             <Icons.ChevronLeft />
-          </div>
+          </button>
         </div>
 
         {/* Nav items */}
@@ -191,26 +188,26 @@ function ManagerShell() {
           {sections.map(s => {
             const isActive = activeSection === s.id;
             return (
-              <div
+              <button
                 key={s.id}
+                type="button"
                 onClick={() => setSection(s.id)}
                 title={!sidebarOpen ? s.label : undefined}
+                aria-label={s.label}
+                aria-current={isActive ? 'page' : undefined}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: 12,
+                  display: 'flex', alignItems: 'center', gap: 12, width: '100%', border: 'none',
                   padding: sidebarOpen ? '11px 14px' : '11px 0',
                   justifyContent: sidebarOpen ? 'flex-start' : 'center',
-                  borderRadius: 10,
-                  background: isActive ? `linear-gradient(135deg, ${t.orange}18, ${t.orange}10)` : 'transparent',
-                  color: isActive ? t.orange : t.gray,
+                  borderRadius: 8, fontFamily: t.font, textAlign: 'left',
+                  background: isActive ? t.selection : 'transparent',
+                  color: isActive ? t.black : t.gray,
                   fontWeight: isActive ? 600 : 500, fontSize: 14, cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                  position: 'relative',
                 }}
               >
-                {isActive && <div style={{ position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)', width: 3, height: 20, borderRadius: 2, background: t.orange }} />}
                 <s.icon />
                 {sidebarOpen && <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.label}</span>}
-              </div>
+              </button>
             );
           })}
         </div>
@@ -222,19 +219,21 @@ function ManagerShell() {
               v{versionInfo.version}
             </div>
           )}
-          <div
+          <button
+            type="button"
             onClick={handleLogout}
             title={!sidebarOpen ? 'Logout' : undefined}
+            aria-label="Logout"
             style={{
-              display: 'flex', alignItems: 'center', gap: 12,
+              display: 'flex', alignItems: 'center', gap: 12, width: '100%', border: 'none', background: 'transparent',
               padding: sidebarOpen ? '11px 14px' : '11px 0',
               justifyContent: sidebarOpen ? 'flex-start' : 'center',
-              borderRadius: 10, color: t.gray, fontWeight: 500, fontSize: 14, cursor: 'pointer',
+              borderRadius: 8, color: t.gray, fontWeight: 500, fontSize: 14, cursor: 'pointer', fontFamily: t.font,
             }}
           >
             <Icons.Logout />
             {sidebarOpen && <span>Logout</span>}
-          </div>
+          </button>
         </div>
       </div>
 
@@ -245,41 +244,38 @@ function ManagerShell() {
         <div style={{
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           padding: '14px 28px',
-          ...glass(0.65, 20),
-          borderBottom: '1px solid rgba(255,255,255,0.4)',
+          background: t.white,
+          borderBottom: `1px solid ${t.grayLight}`,
           flexShrink: 0, height: t.headerHeight,
-          boxShadow: '0 2px 20px rgba(0,0,0,0.03)',
           position: 'relative', zIndex: 50,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
             {/* Hamburger for collapsed sidebar on small or when collapsed */}
             {!sidebarOpen && (
-              <div
+              <button
+                type="button"
+                aria-label="Expand sidebar"
                 onClick={() => setSidebarOpen(true)}
-                style={{ width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: t.gray, background: 'rgba(0,0,0,0.04)' }}
+                style={{ width: 36, height: 36, borderRadius: 8, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: t.gray, background: t.selection }}
               >
                 <Icons.Menu />
-              </div>
+              </button>
             )}
-            <div>
-              <h1 style={{ fontSize: 21, fontWeight: 700, color: t.black, margin: 0 }}>
-                {sections.find(s => s.id === activeSection)?.label || 'Dashboard'}
-              </h1>
-              <p style={{ fontSize: 13, color: t.gray, margin: 0, fontWeight: 500 }}>
-                Hello {userName.split(' ')[0]}, welcome back!
-              </p>
-            </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             {/* Store Selector */}
             <div ref={storeRef} style={{ position: 'relative' }}>
-              <div
+              <button
+                type="button"
+                aria-haspopup="listbox"
+                aria-expanded={storeDropOpen}
+                aria-label="Select store"
                 onClick={() => { setStoreDropOpen(!storeDropOpen); setProfileOpen(false); setNotifOpen(false); }}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 8,
-                  padding: '7px 14px', borderRadius: 10,
-                  border: `1px solid ${storeDropOpen ? t.orange : 'rgba(0,0,0,0.08)'}`,
-                  background: 'rgba(255,255,255,0.5)', backdropFilter: 'blur(8px)',
+                  padding: '7px 14px', borderRadius: 8,
+                  border: `1px solid ${storeDropOpen ? t.focus : t.borderControl}`,
+                  background: t.white,
                   cursor: 'pointer', fontSize: 13, fontWeight: 600, color: t.black, fontFamily: t.font,
                   minWidth: 160, justifyContent: 'space-between',
                 }}
@@ -288,12 +284,12 @@ function ManagerShell() {
                   {storesLoading ? 'Loading...' : reduxStoreName || 'Select Store'}
                 </span>
                 <Icons.Down />
-              </div>
+              </button>
               {storeDropOpen && (
                 <div style={{
                   position: 'absolute', top: 44, left: 0, minWidth: 280, maxHeight: 320, overflowY: 'auto',
-                  ...glass(0.9, 24), borderRadius: 12, boxShadow: '0 8px 40px rgba(0,0,0,0.12)',
-                  border: '1px solid rgba(255,255,255,0.5)', zIndex: 100,
+                  background: t.white, borderRadius: 12, boxShadow: '0 8px 24px rgba(24,34,31,0.12)',
+                  border: `1px solid ${t.grayLight}`, zIndex: 100,
                 }}>
                   {stores.length === 0 ? (
                     <div style={{ padding: 16, textAlign: 'center', color: t.grayMuted, fontSize: 13 }}>No stores available</div>
@@ -302,20 +298,19 @@ function ManagerShell() {
                     return (
                       <div
                         key={store.id}
-                        onClick={() => handleStoreSelect(store.storeCode, store.name)}
+                        {...keyboardActivate(() => handleStoreSelect(store.storeCode, store.name))}
                         style={{
                           padding: '10px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                          background: isSel ? `${t.orange}10` : 'transparent',
+                          background: isSel ? t.selection : 'transparent',
                           borderBottom: '1px solid rgba(0,0,0,0.04)',
                         }}
                         onMouseEnter={e => { if (!isSel) e.currentTarget.style.background = 'rgba(0,0,0,0.03)'; }}
                         onMouseLeave={e => { if (!isSel) e.currentTarget.style.background = 'transparent'; }}
                       >
                         <div>
-                          <div style={{ fontSize: 13, fontWeight: isSel ? 600 : 500, color: isSel ? t.orange : t.black }}>{store.name}</div>
+                          <div style={{ fontSize: 13, fontWeight: isSel ? 600 : 500, color: t.black }}>{store.name}</div>
                           <div style={{ fontSize: 11, color: t.grayMuted }}>{store.address?.city}, {store.address?.state}</div>
                         </div>
-                        {isSel && <div style={{ width: 8, height: 8, borderRadius: 4, background: t.orange }} />}
                       </div>
                     );
                   })}
@@ -326,6 +321,7 @@ function ManagerShell() {
             <div style={{ position: 'relative' }}>
               <div style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: t.gray }}><Icons.Search /></div>
               <input
+                aria-label="Search orders"
                 placeholder="Search orders…"
                 value={headerSearch}
                 onChange={(e) => setHeaderSearch(e.target.value)}
@@ -341,51 +337,52 @@ function ManagerShell() {
                 }}
                 title="Press Enter to search orders by number, customer, phone, or email"
                 style={{
-                  padding: '9px 16px 9px 36px', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 10, fontSize: 14, width: 220,
-                  background: 'rgba(255,255,255,0.6)', outline: 'none', fontFamily: t.font,
-                  backdropFilter: 'blur(8px)',
+                  padding: '9px 16px 9px 36px', border: `1px solid ${t.borderControl}`, borderRadius: 8, fontSize: 14, width: 220,
+                  background: t.white, outline: 'none', fontFamily: t.font,
                 }}
               />
             </div>
             <ManagerCopilotDrawer storeId={storeId} />
             {/* Bell / Notifications */}
             <div ref={notifRef} style={{ position: 'relative' }}>
-              <div onClick={() => { setNotifOpen(!notifOpen); setProfileOpen(false); }} style={{ width: 38, height: 38, borderRadius: 10, border: `1px solid ${notifOpen ? t.orange : 'rgba(0,0,0,0.08)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: notifOpen ? t.orange : t.gray, background: 'rgba(255,255,255,0.5)' }}>
+              <button type="button" aria-label="Notifications" aria-expanded={notifOpen} onClick={() => { setNotifOpen(!notifOpen); setProfileOpen(false); }} style={{ width: 38, height: 38, borderRadius: 8, border: `1px solid ${notifOpen ? t.focus : t.grayLight}`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: notifOpen ? t.orange : t.gray, background: t.white }}>
                 <Icons.Bell />
-              </div>
+              </button>
               {notifOpen && (
-                <div style={{ position: 'absolute', top: 46, right: 0, width: 300, ...glass(0.85, 24), borderRadius: 12, boxShadow: '0 8px 40px rgba(0,0,0,0.12)', border: '1px solid rgba(255,255,255,0.5)', zIndex: 100, overflow: 'hidden' }}>
+                <div style={{ position: 'absolute', top: 46, right: 0, width: 300, background: t.white, borderRadius: 12, boxShadow: '0 8px 24px rgba(24,34,31,0.12)', border: `1px solid ${t.grayLight}`, zIndex: 100, overflow: 'hidden' }}>
                   <div style={{ padding: '14px 16px', borderBottom: '1px solid rgba(0,0,0,0.06)', fontWeight: 600, fontSize: 14, color: t.black }}>Notifications</div>
                   <div style={{ padding: 20, textAlign: 'center', color: t.grayMuted, fontSize: 13 }}>No new notifications</div>
                 </div>
               )}
             </div>
             {/* Settings */}
-            <div
+            <button
+              type="button"
+              aria-label="Store settings"
               onClick={() => { setSearchParams({ section: 'operations', tab: 'stores' }); }}
-              style={{ width: 38, height: 38, borderRadius: 10, border: '1px solid rgba(0,0,0,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: t.gray, background: 'rgba(255,255,255,0.5)' }}
+              style={{ width: 38, height: 38, borderRadius: 8, border: `1px solid ${t.grayLight}`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: t.gray, background: t.white }}
               title="Store Settings"
             >
               <Icons.Settings />
-            </div>
+            </button>
             {/* Profile Dropdown */}
             <div ref={profileRef} style={{ position: 'relative' }}>
-              <div onClick={() => { setProfileOpen(!profileOpen); setNotifOpen(false); }} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '5px 12px 5px 5px', border: `1px solid ${profileOpen ? t.orange : 'rgba(0,0,0,0.08)'}`, borderRadius: 10, cursor: 'pointer', background: 'rgba(255,255,255,0.5)' }}>
-                <div style={{ width: 30, height: 30, borderRadius: 8, background: `linear-gradient(135deg, ${t.orange}, ${t.orangeDark})`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: t.white, fontWeight: 700, fontSize: 11 }}>{initials}</div>
+              <button type="button" aria-haspopup="menu" aria-expanded={profileOpen} aria-label="Account menu" onClick={() => { setProfileOpen(!profileOpen); setNotifOpen(false); }} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '5px 12px 5px 5px', border: `1px solid ${profileOpen ? t.focus : t.grayLight}`, borderRadius: 8, cursor: 'pointer', background: t.white, fontFamily: t.font, textAlign: 'left' }}>
+                <div style={{ width: 30, height: 30, borderRadius: 8, background: t.forest, display: 'flex', alignItems: 'center', justifyContent: 'center', color: t.white, fontWeight: 700, fontSize: 11 }}>{initials}</div>
                 <div>
                   <div style={{ fontSize: 13, fontWeight: 600, color: t.black, lineHeight: 1.2 }}>{userName}</div>
                   <div style={{ fontSize: 11, color: t.gray, fontWeight: 500, lineHeight: 1.2 }}>{currentUser?.type || 'Manager'}</div>
                 </div>
                 <Icons.Down />
-              </div>
+              </button>
               {profileOpen && (
-                <div style={{ position: 'absolute', top: 50, right: 0, width: 220, ...glass(0.9, 24), borderRadius: 12, boxShadow: '0 8px 40px rgba(0,0,0,0.12)', border: '1px solid rgba(255,255,255,0.5)', zIndex: 100, overflow: 'hidden' }}>
+                <div style={{ position: 'absolute', top: 50, right: 0, width: 220, background: t.white, borderRadius: 12, boxShadow: '0 8px 24px rgba(24,34,31,0.12)', border: `1px solid ${t.grayLight}`, zIndex: 100, overflow: 'hidden' }}>
                   <div style={{ padding: '14px 16px', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
                     <div style={{ fontSize: 14, fontWeight: 600, color: t.black }}>{userName}</div>
                     <div style={{ fontSize: 12, color: t.grayMuted }}>{currentUser?.email || ''}</div>
                   </div>
                   <div
-                    onClick={() => { setProfileOpen(false); navigate('/staff/profile'); }}
+                    {...keyboardActivate(() => { setProfileOpen(false); navigate('/staff/profile'); })}
                     style={{ padding: '10px 16px', fontSize: 13, color: t.black, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}
                     onMouseEnter={e => (e.currentTarget.style.background = 'rgba(0,0,0,0.04)')}
                     onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
@@ -393,7 +390,7 @@ function ManagerShell() {
                     <Icons.Users /> My Profile
                   </div>
                   <div
-                    onClick={() => { setProfileOpen(false); setSearchParams({ section: 'people', tab: 'staff' }); }}
+                    {...keyboardActivate(() => { setProfileOpen(false); setSearchParams({ section: 'people', tab: 'staff' }); })}
                     style={{ padding: '10px 16px', fontSize: 13, color: t.black, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}
                     onMouseEnter={e => (e.currentTarget.style.background = 'rgba(0,0,0,0.04)')}
                     onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
@@ -402,7 +399,7 @@ function ManagerShell() {
                   </div>
                   <div style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }}>
                     <div
-                      onClick={() => { setProfileOpen(false); handleLogout(); }}
+                      {...keyboardActivate(() => { setProfileOpen(false); handleLogout(); })}
                       style={{ padding: '10px 16px', fontSize: 13, color: t.red, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}
                       onMouseEnter={e => (e.currentTarget.style.background = 'rgba(239,68,68,0.06)')}
                       onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
@@ -416,10 +413,10 @@ function ManagerShell() {
           </div>
         </div>
 
-        {/* CONTENT ROW: Middle + Right sidebar */}
+        {/* CONTENT */}
         <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
 
-          {/* MIDDLE CONTENT */}
+          
           <div style={{ flex: 1, padding: 24, overflowY: 'auto' }}>
             <React.Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', padding: 40, color: t.gray }}>Loading...</div>}>
               {activeSection === 'dashboard' && <DashboardSection storeId={storeId} />}
@@ -432,24 +429,10 @@ function ManagerShell() {
               {activeSection === 'compliance' && <FiscalCompliancePage storeId={storeId} />}
             </React.Suspense>
           </div>
-
-          {/* RIGHT SIDEBAR */}
-          <div style={{
-            width: t.rightSidebarWidth,
-            ...glass(0.55, 20),
-            borderLeft: '1px solid rgba(255,255,255,0.4)',
-            overflowY: 'auto', flexShrink: 0,
-            boxShadow: '-2px 0 20px rgba(0,0,0,0.02)',
-          }}>
-            <React.Suspense fallback={null}>
-              <RightSidebar section={activeSection} storeId={storeId} />
-            </React.Suspense>
-          </div>
         </div>
       </div>
     </div>
   );
 }
 
-// eslint-disable-next-line react-refresh/only-export-components -- HOC default export
 export default withPageStoreContext(ManagerShell, 'manager-shell');

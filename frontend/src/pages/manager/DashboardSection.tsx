@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useAppSelector } from '../../store/hooks';
-import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
+import { selectCartCurrency, selectCartLocale, selectSelectedStoreName } from '../../store/slices/cartSlice';
+import { selectCurrentUser } from '../../store/slices/authSlice';
+import DashboardOverview from './DashboardOverview';
 import { formatMajorAmount } from '../../utils/currency';
 import { derivedFromSummary } from './storeOrderMetrics';
 
@@ -8,10 +10,9 @@ import {
   normalizeOrderTypeBreakdown,
   activePeakHours,
 } from '../../utils/analyticsMetrics';
-import { t, cardStyle, sectionTitleStyle, statusBadge } from './manager-tokens';
+import { t, cardStyle, sectionTitleStyle } from './manager-tokens';
 import {
   ManagerPageFrame,
-  ManagerStatCard,
   ManagerEmptyState,
   ManagerErrorState,
   ManagerLoadingBlock,
@@ -34,9 +35,8 @@ import {
   useGetSalesForecastQuery,
   useGetChurnPredictionQuery,
   useGetExecutiveSummaryQuery,
-  useGetDriverStatusQuery,
 } from '../../store/api/analyticsApi';
-import type { StaffRankingItem, ProductRankingItem, ChurnPredictionItem, SalesForecastItem } from '../types/analytics';
+import type { StaffRankingItem, ChurnPredictionItem, SalesForecastItem } from '../types/analytics';
 
 interface Props {
   storeId: string;
@@ -45,6 +45,8 @@ interface Props {
 const DashboardSection: React.FC<Props> = ({ storeId }) => {
   const currency = useAppSelector(selectCartCurrency);
   const locale = useAppSelector(selectCartLocale);
+  const storeName = useAppSelector(selectSelectedStoreName);
+  const currentUser = useAppSelector(selectCurrentUser);
   const { data: sessions = [], isLoading: loadingSessions, error: sessionsError, refetch: refetchSessions } = useGetActiveStoreSessionsQuery(storeId, {
     skip: !storeId, pollingInterval: 30000,
   });
@@ -64,19 +66,24 @@ const DashboardSection: React.FC<Props> = ({ storeId }) => {
     { storeId, days: 30 },
     { skip: !storeId, pollingInterval: 30000 },
   );
-  const { data: kitchenQueue = [] } = useGetKitchenQueueQuery(storeId, { skip: !storeId, pollingInterval: 15000 });
+  const { data: todaySummary, isLoading: loadingTodaySummary, isError: todaySummaryError, refetch: refetchTodaySummary } = useGetStoreOrderSummaryQuery(
+    { storeId, days: 1 },
+    { skip: !storeId, pollingInterval: 60000 },
+  );
+  const {
+    data: kitchenQueue = [],
+    isLoading: loadingQueue,
+    isError: queueError,
+    refetch: refetchQueue,
+  } = useGetKitchenQueueQuery(storeId, { skip: !storeId, pollingInterval: 15000 });
   const {
     data: todaySalesMetrics,
-    isLoading: loadingSales,
     isError: salesError,
     refetch: refetchSales,
   } = useGetTodaySalesMetricsQuery(storeId, { skip: !storeId, pollingInterval: 60000 });
-  const { data: driverStatus, isError: driverError } = useGetDriverStatusQuery(storeId, { skip: !storeId, pollingInterval: 30000 });
   const { data: storeEmployees = [] } = useGetStoreEmployeesQuery(storeId, { skip: !storeId, pollingInterval: 60000 });
   const {
     data: salesTrends,
-    isLoading: loadingTrends,
-    isError: trendsError,
   } = useGetSalesTrendsQuery({ period: 'WEEKLY', storeId }, { skip: !storeId, pollingInterval: 300000 });
   const {
     data: orderTypeBreakdown,
@@ -97,6 +104,11 @@ const DashboardSection: React.FC<Props> = ({ storeId }) => {
   const [approveSession, { isLoading: approvingSession }] = useApproveSessionMutation();
   const [rejectSession, { isLoading: rejectingSession }] = useRejectSessionMutation();
   const [sessionActionError, setSessionActionError] = useState<string | null>(null);
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNowMs(Date.now()), 60000);
+    return () => clearInterval(id);
+  }, []);
 
   useEffect(() => {
     if (storeId) {
@@ -116,7 +128,7 @@ const DashboardSection: React.FC<Props> = ({ storeId }) => {
 
   const salesData = {
     today: (todaySalesMetrics?.todaySales || 0) > 0 ? todaySalesMetrics!.todaySales : derived.todaySales,
-    percentageChange: todaySalesMetrics?.percentChangeFromLastYear || 0,
+    percentageChange: todaySalesMetrics?.percentChangeFromLastYear,
     weeklyTotal: (salesTrends?.totalSales || 0) > 0 ? salesTrends!.totalSales : derived.weekSales,
     todayOrders: (todaySalesMetrics?.todayOrderCount || 0) > 0 ? todaySalesMetrics!.todayOrderCount : derived.todayOrderCount,
   };
@@ -139,13 +151,9 @@ const DashboardSection: React.FC<Props> = ({ storeId }) => {
   const clockedInDrivers = sessions.filter(
     (s) => s.isActive && (driverEmployeeIds.has(s.employeeId) || String(s.role || '').toUpperCase() === 'DRIVER'),
   ).length;
-  const rosterDrivers = driverEmployeeIds.size || driverStatus?.totalDrivers || 0;
-  const availableDrivers = clockedInDrivers > 0
-    ? clockedInDrivers
-    : (driverStatus?.availableDrivers ?? 0);
 
   const calculateDuration = (loginTime: string): string => {
-    const diff = Date.now() - new Date(loginTime).getTime();
+    const diff = nowMs - new Date(loginTime).getTime();
     const hours = Math.floor(diff / 3600000);
     const minutes = Math.floor((diff % 3600000) / 60000);
     return `${hours}h ${minutes}m`;
@@ -180,6 +188,7 @@ const DashboardSection: React.FC<Props> = ({ storeId }) => {
     <ManagerPageFrame
       title="Dashboard"
       subtitle="Live store overview"
+      hideHeading
       storeId={storeId || undefined}
       empty={!storeId}
       emptyTitle="Select a store"
@@ -218,61 +227,35 @@ const DashboardSection: React.FC<Props> = ({ storeId }) => {
         </div>
       )}
 
-      {/* Stats Cards — always one row of five equal tiles */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
-          gap: 12,
-          marginBottom: 24,
-        }}
-      >
-        <ManagerStatCard
-          compact
-          label="Today's Sales"
-          value={formatCurrency(salesData.today)}
-          color={t.orange}
-          loading={loadingSales && loadingOrders && derived.todaySales === 0}
-          error={salesError && ordersError && derived.todaySales === 0}
-          errorMessage="Sales API failed"
-          hint={`${salesData.todayOrders} completed · ${salesData.percentageChange >= 0 ? '+' : ''}${salesData.percentageChange}% vs last year`}
-        />
-        <ManagerStatCard
-          compact
-          label="Weekly Total"
-          value={formatCurrency(salesData.weeklyTotal)}
-          loading={loadingTrends && loadingOrders && derived.weekSales === 0}
-          error={trendsError && ordersError && derived.weekSales === 0}
-          errorMessage="Trends API failed"
-          hint={`${(salesTrends?.totalOrders || derived.weekOrders)} orders · last 7 days`}
-        />
-        <ManagerStatCard
-          compact
-          label="Active Staff"
-          value={activeStaffCount}
-          loading={loadingSessions}
-          error={!!sessionsError}
-          errorMessage="Sessions API failed"
-          hint="From active clock-in sessions"
-        />
-        <ManagerStatCard
-          compact
-          label="Pending Orders"
-          value={orderQueue.length}
-          loading={loadingOrders}
-          error={ordersError}
-          errorMessage="Orders API failed"
-          hint={`${orderQueue.filter(o => o.priority === 'urgent').length} urgent`}
-        />
-        <ManagerStatCard
-          compact
-          label="Drivers"
-          value={`${availableDrivers}/${rosterDrivers}`}
-          error={driverError && rosterDrivers === 0}
-          errorMessage="Driver status failed"
-          hint={clockedInDrivers > 0 ? `${clockedInDrivers} clocked in` : 'Available / roster'}
-        />
-      </div>
+      <DashboardOverview
+        greetingName={(currentUser?.name || 'Manager').split(' ')[0]}
+        storeName={storeName || ''}
+        currency={currency}
+        locale={locale}
+        revenueToday={salesData.today}
+        revenueHint={
+          salesData.percentageChange === undefined
+            ? `${salesData.todayOrders} orders today`
+            : `${salesData.percentageChange >= 0 ? '+' : ''}${salesData.percentageChange}% vs last year`
+        }
+        hourlyRevenue={(todaySummary?.hours || []).map((h) => ({ hour: h.hour, sales: h.sales || 0 }))}
+        hourlyLoading={loadingTodaySummary}
+        hourlyError={todaySummaryError}
+        onRetryHourly={() => void refetchTodaySummary()}
+        activeOrders={kitchenQueue}
+        ordersLoading={loadingQueue}
+        ordersError={queueError}
+        onRetryOrders={() => void refetchQueue()}
+        staffLoading={loadingSessions}
+        staffError={!!sessionsError}
+        attentionLoading={loadingOrders || loadingPendingSessions}
+        attentionError={ordersError || !!pendingSessionsError}
+        staffOnShift={activeStaffCount}
+        staffRoster={storeEmployees.length}
+        driversClockedIn={clockedInDrivers}
+        needsAttention={derived.pendingPaymentCount + storePendingSessions.length}
+        needsAttentionHint={`${derived.pendingPaymentCount} unpaid · ${storePendingSessions.length} session approvals`}
+      />
 
       {salesError && derived.todaySales === 0 && (
         <div style={{ marginBottom: 16 }}>
@@ -280,76 +263,8 @@ const DashboardSection: React.FC<Props> = ({ storeId }) => {
         </div>
       )}
 
-      {/* AI Insights Banner */}
-      <div style={{
-        ...cardStyle,
-        marginBottom: 24,
-        background: `linear-gradient(135deg, ${t.orange}08 0%, ${t.blue}12 50%, ${t.blue}06 100%)`,
-        border: `1px solid ${t.grayLight}`,
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <div style={{
-            width: 40, height: 40, borderRadius: 12,
-            background: `linear-gradient(135deg, ${t.orange}, ${t.blue})`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: t.white, boxShadow: `0 4px 12px ${t.orange}25`,
-          }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 3l1.912 5.813a2 2 0 0 0 1.275 1.275L21 12l-5.813 1.912a2 2 0 0 0-1.275 1.275L12 21l-1.912-5.813a2 2 0 0 0-1.275-1.275L3 12l5.813-1.912a2 2 0 0 0 1.275-1.275L12 3z" />
-            </svg>
-          </div>
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: t.black }}>AI Agents Active</div>
-            <div style={{ fontSize: 12, color: t.gray, marginTop: 2 }}>
-              {forecastError
-                ? 'Forecast unavailable'
-                : salesForecast?.forecasts?.length
-                  ? `${salesForecast.forecasts.length}-day forecast ready (${Math.round(salesForecast.accuracy)}% model accuracy)`
-                  : 'Demand forecasting runs nightly at 2 AM'}
-              {churnError
-                ? ' · Churn unavailable'
-                : churnPrediction?.totalAtRisk
-                  ? ` · ${churnPrediction.totalAtRisk} customers at churn risk`
-                  : ''}
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Two Column Layout: Order Queue + Staff Sessions */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
-        <div style={cardStyle}>
-          <h3 style={sectionTitleStyle}>Live Order Queue</h3>
-          <div style={{ marginTop: 12 }}>
-            {loadingOrders ? (
-              <ManagerLoadingBlock rows={3} label="Loading orders…" />
-            ) : ordersError ? (
-              <ManagerErrorState title="Failed to load orders" onRetry={() => void refetchOrders()} />
-            ) : orderQueue.length === 0 ? (
-              <ManagerEmptyState compact title="No pending orders" description="Queue is clear right now." />
-            ) : orderQueue.slice(0, 10).map(order => (
-              <div key={order.id} style={{
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                padding: '10px 0', borderBottom: `1px solid ${t.grayLight}`,
-              }}>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: t.black }}>
-                    #{typeof order.id === 'string' ? order.id.slice(-3) : order.id} - {order.customer}
-                  </div>
-                  <div style={{ fontSize: 12, color: t.gray }}>
-                    {order.items} items - {order.time}
-                    {order.priority === 'urgent' && (
-                      <span style={{ ...statusBadge('CANCELLED'), marginLeft: 8, fontSize: 10 }}>URGENT</span>
-                    )}
-                  </div>
-                </div>
-                <span style={statusBadge(order.status)}>{order.status}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16, marginBottom: 24 }}>
         <div style={cardStyle}>
           <h3 style={sectionTitleStyle}>Active Staff Sessions</h3>
           <div style={{ marginTop: 12 }}>
