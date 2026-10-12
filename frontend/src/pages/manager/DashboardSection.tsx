@@ -255,7 +255,6 @@ const DashboardSection: React.FC<Props> = ({ storeId }) => {
       )}
 
       <DashboardInsights
-        locale={locale}
         formatCurrency={formatCurrency}
         activeOrders={activeOrders}
         sessions={{ data: sessions, loading: loadingSessions, error: !!sessionsError }}

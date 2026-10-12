@@ -42,7 +42,7 @@ export const BarChart: React.FC<BarChartProps> = ({
   verticalGrid = true,
   height = 230,
   width = 640,
-  color = '#2FA383',
+  color = '#D94A22',
 }) => {
   const step = niceStep(Math.max(0, ...data.map((d) => d.value)));
   const max = step * 4;

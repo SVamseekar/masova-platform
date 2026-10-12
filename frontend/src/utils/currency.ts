@@ -31,19 +31,28 @@ export function cartMajorToMinorUnits(cartMajor: number, currency: string): numb
 }
 
 /**
+ * Number-formatting locale for money. The product UI is English, so amounts read the same in
+ * every store: symbol first, comma thousands, dot decimals (€1,283.50). INR keeps Indian grouping.
+ */
+export function moneyDisplayLocale(currency: string): string {
+  return currency === 'INR' ? 'en-IN' : 'en-GB';
+}
+
+/**
  * Format a monetary amount stored in minor units (cents, paise) for display.
- * Uses Intl.NumberFormat with the store's currency and locale.
+ * Uses Intl.NumberFormat with the store's currency. `_locale` (the store locale) is accepted for
+ * call-site compatibility but does not change the number format; see moneyDisplayLocale.
  */
 export function formatMoney(
   amountMinorUnits: number,
   currency: string,
-  locale: string
+  _locale?: string
 ): string {
   const isNoDecimal = NO_DECIMAL_CURRENCIES.has(currency);
   const divisor = isNoDecimal ? 1 : 100;
   const amount = amountMinorUnits / divisor;
 
-  return new Intl.NumberFormat(locale, {
+  return new Intl.NumberFormat(moneyDisplayLocale(currency), {
     style: 'currency',
     currency,
     minimumFractionDigits: isNoDecimal ? 0 : 2,
@@ -52,11 +61,11 @@ export function formatMoney(
 }
 
 /** Format cart/order amounts stored in major units (rupees, euros, HUF forint). */
-export function formatMajorAmount(major: number, currency: string, locale: string): string {
+export function formatMajorAmount(major: number, currency: string, locale?: string): string {
   return formatMoney(cartMajorToMinorUnits(major, currency), currency, locale);
 }
 
 /** Format API/menu basePrice (already in API storage units). */
-export function formatApiPrice(apiPrice: number, currency: string, locale: string): string {
+export function formatApiPrice(apiPrice: number, currency: string, locale?: string): string {
   return formatMoney(apiPrice, currency, locale);
 }

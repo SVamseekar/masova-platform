@@ -48,6 +48,15 @@ describe('formatINR', () => {
 });
 
 describe('formatMoney', () => {
+  it('ignores the store locale: German store still reads €1,283.50', () => {
+    expect(formatMoney(128350, 'EUR', 'de-DE')).toBe('€1,283.50');
+    expect(formatMajorAmount(1283.5, 'EUR', 'de-DE')).toBe('€1,283.50');
+  });
+
+  it('keeps Indian grouping for INR', () => {
+    expect(formatMoney(12835000, 'INR', 'en-IN')).toBe('₹1,28,350.00');
+  });
+
   it('formats EUR cents — 1999 minor units as €19.99', () => {
     const result = formatMoney(1999, 'EUR', 'en-IE');
     expect(result).toMatch(/19[,.]99/);

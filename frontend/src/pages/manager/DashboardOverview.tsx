@@ -50,8 +50,8 @@ interface Props {
 }
 
 const SOURCES: Record<string, { label: string; color: string }> = {
-  MASOVA: { label: 'Direct', color: '#1F8A5B' },
-  WOLT: { label: 'Wolt', color: '#0E9F6E' },
+  MASOVA: { label: 'Direct', color: '#203D32' },
+  WOLT: { label: 'Wolt', color: '#0891B2' },
   DELIVEROO: { label: 'Deliveroo', color: '#2563EB' },
   JUST_EAT: { label: 'Just Eat', color: '#EA580C' },
   UBER_EATS: { label: 'Uber Eats', color: '#4F46E5' },
@@ -64,12 +64,12 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 const STATUS_SEGMENTS: Array<{ key: string; label: string; statuses: string[]; color: string }> = [
-  { key: 'received', label: 'Received', statuses: ['RECEIVED'], color: '#2E9E6E' },
+  { key: 'received', label: 'Received', statuses: ['RECEIVED'], color: '#2563EB' },
   { key: 'preparing', label: 'Preparing', statuses: ['PREPARING'], color: '#E8501A' },
   { key: 'oven', label: 'In oven', statuses: ['OVEN'], color: '#F5A623' },
-  { key: 'baked', label: 'Baked', statuses: ['BAKED'], color: '#6B7280' },
-  { key: 'ready', label: 'Ready', statuses: ['READY'], color: '#1F6FEB' },
-  { key: 'out', label: 'Out for delivery', statuses: ['DISPATCHED', 'OUT_FOR_DELIVERY'], color: '#38A9E8' },
+  { key: 'baked', label: 'Baked', statuses: ['BAKED'], color: '#8A6D5A' },
+  { key: 'ready', label: 'Ready', statuses: ['READY'], color: '#1F8A5B' },
+  { key: 'out', label: 'Out for delivery', statuses: ['DISPATCHED', 'OUT_FOR_DELIVERY'], color: '#475569' },
 ];
 
 const STATUS_BADGES: Record<string, { bg: string; color: string; icon: 'up' | 'check' | null }> = {
@@ -176,11 +176,10 @@ const RevenueChart: React.FC<{
   error: boolean;
   onRetry: () => void;
   format: (v: number) => string;
-  locale: string;
-}> = ({ hours, loading, error, onRetry, format, locale }) => {
+}> = ({ hours, loading, error, onRetry, format }) => {
   if (loading) return <ManagerLoadingBlock rows={3} label="Loading revenue…" />;
   if (error) return <ManagerErrorState title="Could not load today's revenue" onRetry={onRetry} />;
-  const axis = (value: number) => new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(value);
+  const axis = (value: number) => new Intl.NumberFormat('en-GB', { maximumFractionDigits: 0 }).format(value);
   const byHour = new Map(hours.map((h) => [h.hour, h.sales]));
   const activeHours = hours.filter((h) => h.sales > 0).map((h) => h.hour);
   const first = Math.min(8, ...(activeHours.length ? activeHours : [8]));
@@ -225,7 +224,7 @@ const RevenueChart: React.FC<{
             <g key={hour}>
               <line x1={x} x2={x} y1={top} y2={top + plotH} stroke="#EEEFEA" strokeWidth={1} />
               {value > 0 && (
-                <rect x={x + slot * 0.2} y={top + plotH - barH} width={slot * 0.6} height={barH} rx={2} fill="#2FA383">
+                <rect x={x + slot * 0.2} y={top + plotH - barH} width={slot * 0.6} height={barH} rx={2} fill="#D94A22">
                   <title>{`${String(hour).padStart(2, '0')}:00 · ${format(value)}`}</title>
                 </rect>
               )}
@@ -256,8 +255,8 @@ const StatusDonut: React.FC<{ orders: Order[] }> = ({ orders }) => {
   let offset = 0;
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'auto minmax(0, 1fr)', alignItems: 'center', columnGap: 28 }}>
-      <svg width={176} height={176} viewBox="0 0 200 200" role="img" aria-label={`${total} active orders by status`}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'auto minmax(0, 1fr)', alignItems: 'center', columnGap: 28, flex: 1 }}>
+      <svg width={190} height={190} viewBox="0 0 200 200" role="img" aria-label={`${total} active orders by status`}>
         <circle cx={100} cy={100} r={radius} fill="none" stroke={t.selection} strokeWidth={stroke} />
         {total > 0 &&
           counts
@@ -475,11 +474,10 @@ const DashboardOverview: React.FC<Props> = ({
               error={hourlyError}
               onRetry={onRetryHourly}
               format={format}
-              locale={locale}
             />
           </div>
         </section>
-        <section style={{ ...card, padding: 20 }} aria-labelledby="order-status-title">
+        <section style={{ ...card, padding: 20, display: 'flex', flexDirection: 'column' }} aria-labelledby="order-status-title">
           <h3 id="order-status-title" style={{ ...cardTitle, marginBottom: 16 }}>Order status</h3>
           {ordersError ? (
             <ManagerErrorState title="Could not load order status" onRetry={onRetryOrders} />

@@ -31,7 +31,6 @@ interface Section<T> {
 }
 
 interface Props {
-  locale: string;
   formatCurrency: (value: number) => string;
   activeOrders: Order[];
   sessions: Section<WorkingSession[]>;
@@ -51,15 +50,20 @@ interface Props {
   churn: Section<{ items: ChurnPredictionItem[]; total: number; high: number; medium: number; low: number } | undefined>;
 }
 
+// Same hues as the order status donut: Received blue, kitchen orange, Ready green, out slate.
 const FLOW_STAGES: Array<{ label: string; statuses: string[]; color: string }> = [
-  { label: 'Received', statuses: ['RECEIVED'], color: '#2E9E6E' },
+  { label: 'Received', statuses: ['RECEIVED'], color: '#2563EB' },
   { label: 'In kitchen', statuses: ['PREPARING', 'OVEN', 'BAKED'], color: '#E8501A' },
-  { label: 'Ready', statuses: ['READY'], color: '#1F6FEB' },
-  { label: 'Dispatched', statuses: ['DISPATCHED', 'OUT_FOR_DELIVERY'], color: '#38A9E8' },
+  { label: 'Ready', statuses: ['READY'], color: '#1F8A5B' },
+  { label: 'Dispatched', statuses: ['DISPATCHED', 'OUT_FOR_DELIVERY'], color: '#475569' },
 ];
 
+const TYPE_COLORS: Record<string, string> = { DELIVERY: '#2563EB', DINE_IN: '#E8501A', TAKEAWAY: '#203D32' };
+const PEAK_COLOR = '#2563EB';
+const FORECAST_COLOR = '#203D32';
+const PRODUCT_COLOR = '#E8501A';
+
 const BAR_TRACK = '#ECEEEB';
-const TEAL = '#2FA383';
 
 const initials = (name: string | undefined): string =>
   (name || '?').split(/\s+/).filter(Boolean).map((part) => part[0]).join('').slice(0, 2).toUpperCase();
@@ -71,7 +75,7 @@ const duration = (loginTime: string, nowMs: number): string => {
 };
 
 const th: React.CSSProperties = { ...tableHeaderStyle, borderBottom: 'none', padding: '10px 12px', fontWeight: 500, fontSize: 13 };
-const td: React.CSSProperties = { ...tableCellStyle, padding: '8px 12px', height: 52, fontSize: 15, borderBottom: `1px solid ${t.grayLight}` };
+const td: React.CSSProperties = { ...tableCellStyle, padding: '8px 12px', height: 60, fontSize: 15, borderBottom: `1px solid ${t.grayLight}` };
 
 const primaryButton: React.CSSProperties = {
   height: 34, padding: '0 14px', borderRadius: 8, border: 'none', background: '#D94A22', color: t.white,
@@ -82,13 +86,14 @@ const secondaryButton: React.CSSProperties = {
   fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: t.font,
 };
 
-const Card: React.FC<{ title: string; titleId: string; subtitle?: string; children: React.ReactNode }> = ({
+const Card: React.FC<{ title: string; titleId: string; subtitle?: string; fill?: boolean; children: React.ReactNode }> = ({
   title,
   titleId,
   subtitle,
+  fill = false,
   children,
 }) => (
-  <section style={surfaceCard} aria-labelledby={titleId}>
+  <section style={fill ? { ...surfaceCard, flex: 1 } : surfaceCard} aria-labelledby={titleId}>
     <h3 id={titleId} style={surfaceTitle}>{title}</h3>
     {subtitle && <p style={{ margin: '4px 0 0', fontSize: 13, color: t.gray }}>{subtitle}</p>}
     <div style={{ marginTop: 14 }}>{children}</div>
@@ -132,7 +137,6 @@ const SectionState: React.FC<{ section: Section<unknown>; loadingLabel: string; 
 };
 
 const DashboardInsights: React.FC<Props> = ({
-  locale,
   formatCurrency,
   activeOrders,
   sessions,
@@ -151,7 +155,7 @@ const DashboardInsights: React.FC<Props> = ({
   leaderboard,
   churn,
 }) => {
-  const axisNumber = (value: number) => new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(value);
+  const axisNumber = (value: number) => new Intl.NumberFormat('en-GB', { maximumFractionDigits: 0 }).format(value);
   const active = sessions.data.filter((s) => s.isActive);
   const flow = FLOW_STAGES.map((stage) => ({
     ...stage,
@@ -190,7 +194,7 @@ const DashboardInsights: React.FC<Props> = ({
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.55fr) minmax(0, 1fr)', gap: 16, alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.55fr) minmax(0, 1fr)', gap: 16 }}>
         <Card title="Active staff sessions" titleId="staff-sessions-title" subtitle={`${active.length} on shift`}>
           {sessions.loading || sessions.error ? (
             <SectionState section={sessions} loadingLabel="Loading sessions…" errorTitle="Could not load staff sessions" />
@@ -219,8 +223,8 @@ const DashboardInsights: React.FC<Props> = ({
                       <td style={{ ...td, color: t.gray }}>{session.role}</td>
                       <td style={{ ...td, fontVariantNumeric: 'tabular-nums' }}>{duration(session.loginTime, nowMs)}</td>
                       <td style={td}>
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '4px 10px', borderRadius: 8, background: '#DDF3E6', color: '#146342', fontSize: 14, fontWeight: 500 }}>
-                          <Check size={14} strokeWidth={2.25} aria-hidden /> Active
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 15, color: t.black }}>
+                          <span aria-hidden style={{ width: 8, height: 8, borderRadius: '50%', background: '#1F8A5B' }} /> Active
                         </span>
                       </td>
                     </tr>
@@ -242,7 +246,7 @@ const DashboardInsights: React.FC<Props> = ({
               pendingSessions.data.map((session) => (
                 <div
                   key={session.id}
-                  style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: `1px solid ${t.grayLight}` }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 0', borderBottom: `1px solid ${t.grayLight}` }}
                 >
                   <Initials name={session.employeeName} />
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -261,6 +265,7 @@ const DashboardInsights: React.FC<Props> = ({
           </div>
         </Card>
 
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, minWidth: 0 }}>
         <Card title="Order types" titleId="order-types-title" subtitle="Orders and sales by type">
           {orderTypes.loading || orderTypes.error || orderTypes.data.length === 0 ? (
             <SectionState
@@ -270,7 +275,7 @@ const DashboardInsights: React.FC<Props> = ({
               empty={<ManagerEmptyState compact title="No order types yet" description="Breakdown needs completed orders." />}
             />
           ) : (
-            <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 18 }}>
+            <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 14 }}>
               {orderTypes.data.map((row) => (
                 <li key={row.orderType}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, color: t.black, marginBottom: 8 }}>
@@ -280,51 +285,14 @@ const DashboardInsights: React.FC<Props> = ({
                       <span style={{ color: t.gray }}> · {formatCurrency(row.sales)}</span>
                     </span>
                   </div>
-                  <Meter value={row.count} max={typeMax} color={TEAL} label={`${row.label} orders`} />
+                  <Meter value={row.count} max={typeMax} color={TYPE_COLORS[row.orderType.toUpperCase()] || '#475569'} label={`${row.label} orders`} />
                 </li>
               ))}
             </ul>
           )}
         </Card>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.55fr) minmax(0, 1fr)', gap: 16, alignItems: 'start' }}>
-        <Card
-          title="Peak hours"
-          titleId="peak-hours-title"
-          subtitle={
-            busiest && quietest
-              ? `Busiest ${String(busiest.hour).padStart(2, '0')}:00 (${busiest.orderCount} orders, ${formatCurrency(busiest.sales)}) · Quietest ${String(quietest.hour).padStart(2, '0')}:00`
-              : undefined
-          }
-        >
-          {peakHours.loading || peakHours.error || peakSorted.length === 0 ? (
-            <SectionState
-              section={peakHours}
-              loadingLabel="Loading peak hours…"
-              errorTitle="Could not load peak hours"
-              empty={<ManagerEmptyState compact title="No peak-hour data" description="Hourly orders appear once orders are placed." />}
-            />
-          ) : (
-            <BarChart
-              ariaLabel="Orders by hour"
-              formatAxis={axisNumber}
-              labelEvery={2}
-              data={peakRange.map((hour) => {
-                const row = peakByHour.get(hour);
-                return {
-                  key: hour,
-                  label: `${String(hour).padStart(2, '0')}:00`,
-                  value: row?.orderCount ?? 0,
-                  title: `${String(hour).padStart(2, '0')}:00 · ${row?.orderCount ?? 0} orders · ${formatCurrency(row?.sales ?? 0)}`,
-                };
-              })}
-            />
-          )}
-        </Card>
-
         <Card title="Order flow" titleId="order-flow-title" subtitle="Share of active orders by stage">
-          <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 18 }}>
+          <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 14 }}>
             {flow.map((stage) => (
               <li key={stage.label} style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                 <span style={{ width: 92, fontSize: 15, color: t.black }}>{stage.label}</span>
@@ -336,53 +304,7 @@ const DashboardInsights: React.FC<Props> = ({
             ))}
           </ul>
         </Card>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.55fr) minmax(0, 1fr)', gap: 16, alignItems: 'start' }}>
-        <Card title="Top selling products" titleId="top-products-title" subtitle="Ranked by revenue">
-          {topProducts.loading || topProducts.error || products.length === 0 ? (
-            <SectionState
-              section={topProducts}
-              loadingLabel="Loading products…"
-              errorTitle="Could not load top products"
-              empty={<ManagerEmptyState compact title="No sales yet" description="Top products appear after completed orders." />}
-            />
-          ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 480 }}>
-                <thead>
-                  <tr style={tableHeadBand}>
-                    <th scope="col" style={th}>#</th>
-                    <th scope="col" style={th}>Product</th>
-                    <th scope="col" style={{ ...th, textAlign: 'right' }}>Sold</th>
-                    <th scope="col" style={{ ...th, textAlign: 'right' }}>Revenue</th>
-                    <th scope="col" style={{ ...th, width: 150 }}>Share</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {products.map((product) => (
-                    <tr key={product.itemId}>
-                      <td style={{ ...td, width: 44, color: t.gray, fontVariantNumeric: 'tabular-nums' }}>{product.rank}</td>
-                      <td style={td}>{product.itemName}</td>
-                      <td style={{ ...td, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{product.quantitySold}</td>
-                      <td style={{ ...td, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(product.revenue)}</td>
-                      <td style={td}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <Meter value={product.revenue} max={productMax} color={TEAL} label={`${product.itemName} revenue share`} />
-                          <span style={{ width: 44, fontSize: 13, color: t.gray, fontVariantNumeric: 'tabular-nums' }}>
-                            {(product.percentOfTotalRevenue ?? 0).toFixed(1)}%
-                          </span>
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </Card>
-
-        <Card title="Executive summary" titleId="executive-summary-title">
+        <Card title="Executive summary" titleId="executive-summary-title" fill>
           {executiveSummary.loading || executiveSummary.error || !summary ? (
             <SectionState
               section={executiveSummary}
@@ -413,7 +335,7 @@ const DashboardInsights: React.FC<Props> = ({
                   <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 10 }}>
                     {summary.topInsights!.slice(0, 3).map((insight: string) => (
                       <li key={insight} style={{ display: 'flex', gap: 10, fontSize: 15, color: t.black }}>
-                        <Check size={16} strokeWidth={2.25} color={t.greenDark} aria-hidden style={{ marginTop: 3, flexShrink: 0 }} />
+                        <Check size={16} strokeWidth={2.25} color={t.black} aria-hidden style={{ marginTop: 3, flexShrink: 0 }} />
                         {insight}
                       </li>
                     ))}
@@ -421,6 +343,88 @@ const DashboardInsights: React.FC<Props> = ({
                 </div>
               )}
             </>
+          )}
+        </Card>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: 16 }}>
+        <Card
+          title="Peak hours"
+          titleId="peak-hours-title"
+          subtitle={
+            busiest && quietest
+              ? `Busiest ${String(busiest.hour).padStart(2, '0')}:00 (${busiest.orderCount} orders, ${formatCurrency(busiest.sales)}) · Quietest ${String(quietest.hour).padStart(2, '0')}:00`
+              : undefined
+          }
+        >
+          {peakHours.loading || peakHours.error || peakSorted.length === 0 ? (
+            <SectionState
+              section={peakHours}
+              loadingLabel="Loading peak hours…"
+              errorTitle="Could not load peak hours"
+              empty={<ManagerEmptyState compact title="No peak-hour data" description="Hourly orders appear once orders are placed." />}
+            />
+          ) : (
+            <BarChart
+              ariaLabel="Orders by hour"
+              formatAxis={axisNumber}
+              labelEvery={2}
+              color={PEAK_COLOR}
+              width={560}
+              height={340}
+              data={peakRange.map((hour) => {
+                const row = peakByHour.get(hour);
+                return {
+                  key: hour,
+                  label: `${String(hour).padStart(2, '0')}:00`,
+                  value: row?.orderCount ?? 0,
+                  title: `${String(hour).padStart(2, '0')}:00 · ${row?.orderCount ?? 0} orders · ${formatCurrency(row?.sales ?? 0)}`,
+                };
+              })}
+            />
+          )}
+        </Card>
+        <Card title="Top selling products" titleId="top-products-title" subtitle="Ranked by revenue">
+          {topProducts.loading || topProducts.error || products.length === 0 ? (
+            <SectionState
+              section={topProducts}
+              loadingLabel="Loading products…"
+              errorTitle="Could not load top products"
+              empty={<ManagerEmptyState compact title="No sales yet" description="Top products appear after completed orders." />}
+            />
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 480 }}>
+                <thead>
+                  <tr style={tableHeadBand}>
+                    <th scope="col" style={th}>#</th>
+                    <th scope="col" style={th}>Product</th>
+                    <th scope="col" style={{ ...th, textAlign: 'right' }}>Sold</th>
+                    <th scope="col" style={{ ...th, textAlign: 'right' }}>Revenue</th>
+                    <th scope="col" style={{ ...th, width: 150 }}>Share</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {products.map((product) => (
+                    <tr key={product.itemId}>
+                      <td style={{ ...td, width: 44, color: t.gray, fontVariantNumeric: 'tabular-nums' }}>{product.rank}</td>
+                      <td style={td}>{product.itemName}</td>
+                      <td style={{ ...td, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{product.quantitySold}</td>
+                      <td style={{ ...td, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(product.revenue)}</td>
+                      <td style={td}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <Meter value={product.revenue} max={productMax} color={PRODUCT_COLOR} label={`${product.itemName} revenue share`} />
+                          <span style={{ width: 44, fontSize: 13, color: t.gray, fontVariantNumeric: 'tabular-nums' }}>
+                            {(product.percentOfTotalRevenue ?? 0).toFixed(1)}%
+                          </span>
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </Card>
       </div>
@@ -444,6 +448,7 @@ const DashboardInsights: React.FC<Props> = ({
             labelEvery={1}
             width={1120}
             height={260}
+            color={FORECAST_COLOR}
             verticalGrid={false}
             valueLabel={(value) => formatCurrency(value)}
             data={fc.items.map((item) => ({
