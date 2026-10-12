@@ -33,7 +33,7 @@ describe('customer web browse workflow', () => {
     expect(mocks.menu).toHaveBeenCalledWith('DOM001', { skip: false });
     expect(screen.getByText('Margherita Pizza')).toBeInTheDocument();
     expect(screen.queryByText('Other-store Pizza')).not.toBeInTheDocument();
-    expect(screen.getByText(/12,00/)).toHaveTextContent('€');
+    expect(screen.getByText(/12\.00/)).toHaveTextContent('€');
   });
   it('combines cuisine, diet and ingredient search; clears filters', async () => {
     const user = userEvent.setup(); render();
