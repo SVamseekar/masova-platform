@@ -3,6 +3,7 @@ import { useAppSelector } from '../../store/hooks';
 import { selectCartCurrency, selectCartLocale, selectSelectedStoreName } from '../../store/slices/cartSlice';
 import { selectCurrentUser } from '../../store/slices/authSlice';
 import DashboardOverview from './DashboardOverview';
+import DashboardInsights from './DashboardInsights';
 import { formatMajorAmount } from '../../utils/currency';
 import { derivedFromSummary } from './storeOrderMetrics';
 
@@ -10,12 +11,10 @@ import {
   normalizeOrderTypeBreakdown,
   activePeakHours,
 } from '../../utils/analyticsMetrics';
-import { t, cardStyle, sectionTitleStyle } from './manager-tokens';
+import { t } from './manager-tokens';
 import {
   ManagerPageFrame,
-  ManagerEmptyState,
   ManagerErrorState,
-  ManagerLoadingBlock,
 } from './components';
 import {
   useGetActiveStoreSessionsQuery,
@@ -36,7 +35,6 @@ import {
   useGetChurnPredictionQuery,
   useGetExecutiveSummaryQuery,
 } from '../../store/api/analyticsApi';
-import type { StaffRankingItem, ChurnPredictionItem, SalesForecastItem } from '../types/analytics';
 
 interface Props {
   storeId: string;
@@ -141,17 +139,6 @@ const DashboardSection: React.FC<Props> = ({ storeId }) => {
     todayOrders: (todaySalesMetrics?.todayOrderCount || 0) > 0 ? todaySalesMetrics!.todayOrderCount : derived.todayOrderCount,
   };
 
-  const orderQueue = kitchenQueue.map(order => ({
-    id: order.orderNumber,
-    status: order.status,
-    items: order.items?.length || 0,
-    time: order.createdAt
-      ? new Date(order.createdAt).toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit' })
-      : '—',
-    customer: order.customerName,
-    priority: order.priority?.toLowerCase() || 'normal',
-  }));
-
   const activeStaffCount = sessions.filter(s => s.isActive).length;
   const driverEmployeeIds = new Set(
     storeEmployees.filter((e) => String(e.type || '').toUpperCase() === 'DRIVER').map((e) => e.id),
@@ -159,13 +146,6 @@ const DashboardSection: React.FC<Props> = ({ storeId }) => {
   const clockedInDrivers = sessions.filter(
     (s) => s.isActive && (driverEmployeeIds.has(s.employeeId) || String(s.role || '').toUpperCase() === 'DRIVER'),
   ).length;
-
-  const calculateDuration = (loginTime: string): string => {
-    const diff = nowMs - new Date(loginTime).getTime();
-    const hours = Math.floor(diff / 3600000);
-    const minutes = Math.floor((diff % 3600000) / 60000);
-    return `${hours}h ${minutes}m`;
-  };
 
   const storePendingSessions = pendingSessions.filter((s) => s.storeId === storeId);
 
@@ -274,303 +254,50 @@ const DashboardSection: React.FC<Props> = ({ storeId }) => {
         </div>
       )}
 
-      {/* Two Column Layout: Order Queue + Staff Sessions */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16, marginBottom: 24 }}>
-        <div style={cardStyle}>
-          <h3 style={sectionTitleStyle}>Active Staff Sessions</h3>
-          <div style={{ marginTop: 12 }}>
-            {loadingSessions ? (
-              <p style={{ textAlign: 'center', color: t.gray, padding: 20 }}>Loading sessions...</p>
-            ) : sessionsError ? (
-              <p style={{ textAlign: 'center', color: t.red, padding: 20 }}>Error loading sessions</p>
-            ) : sessions.filter(s => s.isActive).length === 0 ? (
-              <p style={{ textAlign: 'center', color: t.gray, padding: 20 }}>No active sessions</p>
-            ) : sessions.filter(s => s.isActive).map(session => (
-              <div key={session.id} style={{
-                display: 'flex', alignItems: 'center', gap: 12,
-                padding: '10px 0', borderBottom: `1px solid ${t.grayLight}`,
-              }}>
-                <div style={{
-                  width: 36, height: 36, borderRadius: '50%', background: t.orange,
-                  color: t.white, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 13, fontWeight: 700,
-                }}>
-                  {session.employeeName?.split(' ').map(n => n[0]).join('') || '??'}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: t.black }}>{session.employeeName || 'Unknown'}</div>
-                  <div style={{ fontSize: 12, color: t.gray }}>{session.role} - {calculateDuration(session.loginTime)}</div>
-                </div>
-                <div style={{ width: 8, height: 8, borderRadius: '50%', background: t.green }} />
-              </div>
-            ))}
-          </div>
-
-          <div style={{ marginTop: 16 }}>
-            <h4 style={{ fontSize: 13, fontWeight: 600, color: t.orange, marginBottom: 8 }}>
-              Pending Session Approvals ({storePendingSessions.length})
-            </h4>
-            {loadingPendingSessions && (
-              <p style={{ textAlign: 'center', color: t.gray, padding: 12, fontSize: 12 }}>Loading pending sessions...</p>
-            )}
-            {!loadingPendingSessions && pendingSessionsError && (
-              <p style={{ textAlign: 'center', color: t.red, padding: 12, fontSize: 12 }}>Failed to load pending sessions</p>
-            )}
-            {!loadingPendingSessions && !pendingSessionsError && storePendingSessions.length === 0 && (
-              <p style={{ textAlign: 'center', color: t.gray, padding: 12, fontSize: 12 }}>No sessions awaiting approval</p>
-            )}
-            {storePendingSessions.map(session => (
-              <div key={session.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0', borderBottom: `1px solid ${t.grayLight}` }}>
-                <div style={{ flex: 1, fontSize: 13 }}>{session.employeeName} - {session.role}</div>
-                <button onClick={() => handleApproveSession(session.id)} disabled={approvingSession}
-                  style={{ padding: '4px 12px', background: t.green, color: t.white, border: 'none', borderRadius: t.radius.sm, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
-                  Approve
-                </button>
-                <button onClick={() => handleRejectSession(session.id)} disabled={rejectingSession}
-                  style={{ padding: '4px 12px', background: t.red, color: t.white, border: 'none', borderRadius: t.radius.sm, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
-                  Reject
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Order Flow + Types + Peak hours */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16, marginBottom: 24 }}>
-        <div style={cardStyle}>
-          <h3 style={sectionTitleStyle}>Order Flow Summary</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 16 }}>
-            {[
-              { stage: 'Received', count: orderQueue.filter(o => o.status === 'RECEIVED').length, color: t.blue },
-              { stage: 'In Kitchen', count: orderQueue.filter(o => ['PREPARING', 'OVEN', 'BAKED'].includes(o.status)).length, color: t.yellow },
-              { stage: 'Ready', count: orderQueue.filter(o => o.status === 'READY').length, color: t.green },
-              { stage: 'Dispatched', count: orderQueue.filter(o => ['DISPATCHED', 'OUT_FOR_DELIVERY'].includes(o.status)).length, color: t.orange },
-            ].map(item => (
-              <div key={item.stage} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ width: 90, fontSize: 13, fontWeight: 600, color: t.gray }}>{item.stage}</div>
-                <div style={{ flex: 1, height: 24, background: t.grayLight, borderRadius: 6, overflow: 'hidden' }}>
-                  <div style={{
-                    height: '100%', width: `${Math.min((item.count / (orderQueue.length || 1)) * 100, 100)}%`,
-                    background: item.color, borderRadius: 6, transition: 'width 0.3s',
-                  }} />
-                </div>
-                <div style={{ width: 32, textAlign: 'right', fontSize: 15, fontWeight: 700, color: t.black }}>{item.count}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div style={cardStyle}>
-          <h3 style={sectionTitleStyle}>Order Types</h3>
-          {loadingBreakdown && <ManagerLoadingBlock rows={2} label="Loading order types…" />}
-          {breakdownError && (
-            <p style={{ color: t.red, fontSize: 13, marginTop: 12 }}>Failed to load order-type breakdown.</p>
-          )}
-          {!loadingBreakdown && !breakdownError && orderTypeRows.length === 0 && (
-            <ManagerEmptyState compact title="No order types yet" description="Breakdown needs completed orders." />
-          )}
-          {!loadingBreakdown && !breakdownError && orderTypeRows.length > 0 && (
-            <div style={{ marginTop: 16 }}>
-              {orderTypeRows.map((row) => (
-                <div key={row.orderType} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: `1px solid ${t.grayLight}` }}>
-                  <span style={{ fontSize: 13, color: t.black }}>{row.label}</span>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: t.orange }}>
-                    {row.count} · {formatCurrency(row.sales)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div style={cardStyle}>
-          <h3 style={sectionTitleStyle}>Peak hours</h3>
-          {loadingPeak && <ManagerLoadingBlock rows={2} label="Loading peak hours…" />}
-          {peakError && (
-            <p style={{ color: t.red, fontSize: 13, marginTop: 12 }}>Failed to load peak hours.</p>
-          )}
-          {!loadingPeak && !peakError && peakActive.length === 0 && (
-            <ManagerEmptyState compact title="No peak-hour data" description="Hourly sales appear after orders today." />
-          )}
-          {!loadingPeak && !peakError && peakHours && peakActive.length > 0 && (
-            <div style={{ marginTop: 12, fontSize: 13, color: t.black }}>
-              <div style={{ marginBottom: 8 }}>
-                Busiest hour: <strong style={{ color: t.orange }}>{peakHours.peakHour}:00</strong>
-                {' '}({peakHours.peakHourOrders} orders · {formatCurrency(peakHours.peakHourSales)})
-              </div>
-              <div style={{ marginBottom: 12 }}>
-                Quietest hour: <strong style={{ color: t.gray }}>{peakHours.slowestHour}:00</strong>
-              </div>
-              {peakActive.slice(0, 6).map((h) => (
-                <div key={h.hour} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: `1px solid ${t.grayLight}` }}>
-                  <span>{h.label}</span>
-                  <span style={{ fontWeight: 600 }}>{h.orderCount} orders · {formatCurrency(h.sales)}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Staff Leaderboard */}
-      {leaderboardError && (
-        <div style={{ ...cardStyle, marginBottom: 24 }}>
-          <ManagerErrorState title="Staff leaderboard unavailable" />
-        </div>
-      )}
-      {staffLeaderboard?.rankings && staffLeaderboard.rankings.length > 0 && (
-        <div style={{ ...cardStyle, marginBottom: 24 }}>
-          <h3 style={sectionTitleStyle}>Staff Leaderboard - {staffLeaderboard.period}</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 12, marginTop: 16 }}>
-            {staffLeaderboard.rankings.slice(0, 6).map((staff: StaffRankingItem, idx: number) => (
-              <div key={staff.staffId} style={{
-                padding: 12, background: idx < 3 ? t.orangeLight : t.bgMain, borderRadius: t.radius.md,
-                border: idx === 0 ? `2px solid ${t.orange}` : `1px solid ${t.grayLight}`,
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                  <span style={{ fontSize: 16, fontWeight: 800, color: idx < 3 ? t.orange : t.gray }}>#{staff.rank}</span>
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: t.black }}>{staff.staffName}</div>
-                    <div style={{ fontSize: 11, color: t.gray }}>{staff.performanceLevel}</div>
-                  </div>
-                </div>
-                <div style={{ fontSize: 11, color: t.gray }}>
-                  Orders: {staff.ordersProcessed} | Sales: {formatCurrency(staff.salesGenerated)}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Top Products */}
-      {productsError && derived.topProducts.length === 0 && (
-        <div style={{ ...cardStyle, marginBottom: 24 }}>
-          <ManagerErrorState title="Top products unavailable" />
-        </div>
-      )}
-      {(topProducts?.topProducts?.length || derived.topProducts.length) > 0 && (
-        <div style={{ ...cardStyle, marginBottom: 24 }}>
-          <h3 style={sectionTitleStyle}>Top Selling Products</h3>
-          <div style={{ marginTop: 16 }}>
-            {(topProducts?.topProducts?.length ? topProducts.topProducts : derived.topProducts).slice(0, 5).map((product) => (
-              <div key={product.itemId} style={{
-                display: 'flex', alignItems: 'center', gap: 12, padding: 10,
-                background: t.bgMain, borderRadius: t.radius.md, marginBottom: 8,
-              }}>
-                <span style={{ fontSize: 16, fontWeight: 800, color: product.rank === 1 ? t.orange : t.gray }}>#{product.rank}</span>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: t.black }}>{product.itemName}</div>
-                  <div style={{ fontSize: 11, color: t.gray }}>{product.quantitySold} sold</div>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: t.black, fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(product.revenue)}</div>
-                  <div style={{ fontSize: 11, color: t.gray }}>{(product.percentOfTotalRevenue ?? 0).toFixed(1)}%</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Executive Summary */}
-      {execError && (
-        <div style={{ ...cardStyle, marginBottom: 24 }}>
-          <ManagerErrorState title="Executive summary unavailable" />
-        </div>
-      )}
-      {executiveSummary?.revenue && (
-        <div style={{ ...cardStyle, marginBottom: 24 }}>
-          <h3 style={sectionTitleStyle}>Executive Summary</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginTop: 16, marginBottom: 16 }}>
-            <div>
-              <div style={{ fontSize: 12, color: t.gray }}>Revenue</div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: t.black, overflowWrap: 'anywhere', fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(executiveSummary.revenue?.total ?? 0)}</div>
-              <div style={{ fontSize: 11, color: (executiveSummary.revenue?.change ?? 0) >= 0 ? t.green : t.red }}>
-                {(executiveSummary.revenue?.change ?? 0) >= 0 ? '+' : ''}{executiveSummary.revenue?.change ?? 0}%
-              </div>
-            </div>
-            <div>
-              <div style={{ fontSize: 12, color: t.gray }}>Orders</div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: t.black, fontVariantNumeric: 'tabular-nums' }}>{executiveSummary.orders?.total ?? 0}</div>
-              <div style={{ fontSize: 11, color: (executiveSummary.orders?.change ?? 0) >= 0 ? t.green : t.red }}>
-                {(executiveSummary.orders?.change ?? 0) >= 0 ? '+' : ''}{executiveSummary.orders?.change ?? 0}%
-              </div>
-            </div>
-            <div>
-              <div style={{ fontSize: 12, color: t.gray }}>Customers At Risk</div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: t.yellow, fontVariantNumeric: 'tabular-nums' }}>{executiveSummary.customers?.atRisk ?? 0}</div>
-            </div>
-          </div>
-          {(executiveSummary.topInsights?.length ?? 0) > 0 && (
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: t.black, marginBottom: 8 }}>Key Insights</div>
-              {executiveSummary.topInsights!.slice(0, 3).map((insight: string, idx: number) => (
-                <div key={idx} style={{ fontSize: 12, color: t.gray, marginBottom: 4 }}>- {insight}</div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Churn Prediction */}
-      {churnError && (
-        <div style={{ ...cardStyle, marginBottom: 24 }}>
-          <ManagerErrorState title="Churn prediction unavailable" />
-        </div>
-      )}
-      {churnPrediction?.predictions && churnPrediction.predictions.length > 0 && (
-        <div style={{ ...cardStyle, marginBottom: 24 }}>
-          <h3 style={sectionTitleStyle}>At-Risk Customers ({churnPrediction.totalAtRisk})</h3>
-          <div style={{ fontSize: 12, color: t.gray, marginBottom: 12 }}>
-            High: {churnPrediction.highRiskCount} | Medium: {churnPrediction.mediumRiskCount} | Low: {churnPrediction.lowRiskCount}
-          </div>
-          {churnPrediction.predictions.slice(0, 5).map((pred: ChurnPredictionItem) => (
-            <div key={pred.customerId} style={{
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              padding: 10, background: t.bgMain, borderRadius: t.radius.md, marginBottom: 6,
-            }}>
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: t.black }}>{pred.customerName}</div>
-                <div style={{ fontSize: 11, color: t.gray }}>Last order: {pred.daysSinceLastOrder} days ago</div>
-              </div>
-              <span style={{
-                padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600, color: t.white,
-                background: pred.riskLevel === 'HIGH' ? t.red : pred.riskLevel === 'MEDIUM' ? t.yellow : t.blue,
-              }}>{pred.riskLevel}</span>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Sales Forecast */}
-      {forecastError && (
-        <div style={cardStyle}>
-          <ManagerErrorState title="Sales forecast unavailable" />
-        </div>
-      )}
-      {salesForecast?.forecasts && salesForecast.forecasts.length > 0 && (
-        <div style={cardStyle}>
-          <h3 style={sectionTitleStyle}>7-Day Sales Forecast</h3>
-          <p style={{ fontSize: 12, color: t.gray, marginTop: 4 }}>
-            Model accuracy {Math.round(salesForecast.accuracy)}% · period {salesForecast.period}
-          </p>
-          <div style={{ marginTop: 12 }}>
-            {salesForecast.forecasts.map((forecast: SalesForecastItem) => (
-              <div key={forecast.date} style={{
-                display: 'flex', justifyContent: 'space-between', padding: 10,
-                background: t.bgMain, borderRadius: t.radius.md, marginBottom: 6,
-              }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: t.black }}>
-                  {new Date(forecast.date).toLocaleDateString('en-IE', { weekday: 'short', month: 'short', day: 'numeric' })}
-                </span>
-                <span style={{ fontSize: 13, fontWeight: 700, color: t.orange }}>{formatCurrency(forecast.forecastedSales)}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      <DashboardInsights
+        locale={locale}
+        formatCurrency={formatCurrency}
+        activeOrders={activeOrders}
+        sessions={{ data: sessions, loading: loadingSessions, error: !!sessionsError }}
+        pendingSessions={{ data: storePendingSessions, loading: loadingPendingSessions, error: !!pendingSessionsError }}
+        nowMs={nowMs}
+        actionError={sessionActionError}
+        onDismissActionError={() => setSessionActionError(null)}
+        onApprove={handleApproveSession}
+        onReject={handleRejectSession}
+        actionBusy={approvingSession || rejectingSession}
+        orderTypes={{ data: orderTypeRows, loading: loadingBreakdown, error: breakdownError }}
+        peakHours={{ data: peakActive, loading: loadingPeak, error: peakError }}
+        topProducts={{
+          data: topProducts?.topProducts?.length ? topProducts.topProducts : derived.topProducts,
+          error: productsError && derived.topProducts.length === 0,
+        }}
+        executiveSummary={{ data: executiveSummary?.revenue ? executiveSummary : undefined, error: execError }}
+        forecast={{
+          data: salesForecast?.forecasts?.length
+            ? { items: salesForecast.forecasts, accuracy: salesForecast.accuracy, period: salesForecast.period }
+            : undefined,
+          error: forecastError,
+        }}
+        leaderboard={{
+          data: staffLeaderboard?.rankings?.length
+            ? { items: staffLeaderboard.rankings, period: staffLeaderboard.period }
+            : undefined,
+          error: leaderboardError,
+        }}
+        churn={{
+          data: churnPrediction?.predictions?.length
+            ? {
+                items: churnPrediction.predictions,
+                total: churnPrediction.totalAtRisk,
+                high: churnPrediction.highRiskCount,
+                medium: churnPrediction.mediumRiskCount,
+                low: churnPrediction.lowRiskCount,
+              }
+            : undefined,
+          error: churnError,
+        }}
+      />
     </ManagerPageFrame>
   );
 };

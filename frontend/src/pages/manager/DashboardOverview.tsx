@@ -256,8 +256,8 @@ const StatusDonut: React.FC<{ orders: Order[] }> = ({ orders }) => {
   let offset = 0;
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24, flexWrap: 'wrap' }}>
-      <svg width={200} height={200} viewBox="0 0 200 200" role="img" aria-label={`${total} active orders by status`}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'auto minmax(0, 1fr)', alignItems: 'center', columnGap: 28 }}>
+      <svg width={176} height={176} viewBox="0 0 200 200" role="img" aria-label={`${total} active orders by status`}>
         <circle cx={100} cy={100} r={radius} fill="none" stroke={t.selection} strokeWidth={stroke} />
         {total > 0 &&
           counts
@@ -288,7 +288,7 @@ const StatusDonut: React.FC<{ orders: Order[] }> = ({ orders }) => {
           active orders
         </text>
       </svg>
-      <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 14, minWidth: 190, flex: 1, maxWidth: 260 }}>
+      <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 14, minWidth: 0 }}>
         {counts.map((segment) => (
           <li key={segment.key} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 15, color: t.black }}>
             <span aria-hidden style={{ width: 10, height: 10, borderRadius: '50%', background: segment.color }} />

@@ -42,6 +42,21 @@ export const cardStyle: React.CSSProperties = {
   border: `1px solid ${t.grayLight}`,
 };
 
+/** White surface used by the board's dashboard panels. */
+export const surfaceCard: React.CSSProperties = {
+  background: t.white,
+  border: `1px solid ${t.grayLight}`,
+  borderRadius: t.radius.lg,
+  boxShadow: '0 1px 2px rgba(24,34,31,0.04)',
+  minWidth: 0,
+  padding: 20,
+};
+
+export const surfaceTitle: React.CSSProperties = { margin: 0, fontSize: 17, fontWeight: 600, color: t.black };
+
+/** Grey band behind table headings, as drawn in the approved boards. */
+export const tableHeadBand: React.CSSProperties = { background: '#F3F4F2' };
+
 export const tabStyle = (active: boolean): React.CSSProperties => ({
   padding: '10px 4px', marginRight: 24, border: 'none', borderRadius: 0,
   borderBottom: `2px solid ${active ? t.orange : 'transparent'}`,
