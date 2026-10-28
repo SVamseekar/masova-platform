@@ -253,4 +253,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for branching strategy, commit format, an
 
 ## License
 
-MIT © 2025 MaSoVa
+Proprietary — © 2025–2026 Marti Soura Vamseekar (MaSoVa). All rights reserved. See [LICENSE](LICENSE).
