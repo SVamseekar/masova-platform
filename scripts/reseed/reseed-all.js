@@ -88,7 +88,7 @@ async function reseedAll() {
     orderIds: deliveryOrderIds,
   });
 
-  // 6) 6-month manager dashboard horizon (docs/COMPLETE_MANAGER_DASHBOARD_SEEDING_GUIDE.md)
+  // 6) 6-month manager dashboard horizon (the internal manager-dashboard seeding guide)
   console.log('\n--- manager horizon ---');
   const { spawnSync } = require('child_process');
   const horizon = spawnSync(process.execPath, [require('path').join(__dirname, 'seed-manager-horizon.js')], {

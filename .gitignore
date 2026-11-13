@@ -67,7 +67,6 @@ error*.txt
 
 # Local-only directories (never publish to GitHub)
 backups/
-docs/
 scripts/*
 !scripts/reseed/
 !scripts/dev/
@@ -103,15 +102,6 @@ AGENTS.md
 .VSCodeCounter/
 .serena/
 GITHUB_REVAMP_PLAN.md
-docs/plans/
-docs/superpowers/
-docs/archive/
-docs/MASTER_INDEX.md
-docs/DOCUMENTATION_INDEX.md
-docs/full_codebase_security_audit.md
-docs/project/kiosk.md
-docs/project/pos_iss
-docs/project/MULTIISSUE_FIXES/plan.md
 scripts/node_modules/
 
 # Scripts/tooling artifacts
@@ -141,3 +131,7 @@ AGENTS.md
 
 # Ad-hoc local QA scripts (demo-account PINs, /tmp screenshot paths, no shared harness)
 frontend/scripts/qa-*.mjs
+_local/
+_to_delete/
+docs/api-contracts/
+frontend/docs/
