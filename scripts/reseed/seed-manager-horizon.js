@@ -1,6 +1,6 @@
 /**
  * 6-month manager-dashboard horizon seeder.
- * Spec: docs/COMPLETE_MANAGER_DASHBOARD_SEEDING_GUIDE.md
+ * Spec: the internal manager-dashboard seeding guide
  *
  *   MONGO=mongodb://192.168.50.88:27017 node scripts/reseed/seed-manager-horizon.js
  *

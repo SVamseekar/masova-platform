@@ -44,7 +44,7 @@ MaSoVa is a **production-grade, full-stack restaurant operating system** built f
 | Fiscal signing differs by country | Automated fiscal signing for DE, FR, IT, BE, HU, GB at order completion |
 | Multiple locations means double the chaos | Full multi-store support — each store has its own menu, staff, and analytics |
 
-👉 **[Demo guide →](DEMO.md)**
+👉 **[Demo guide →](docs/DEMO.md)**
 
 ---
 
@@ -221,7 +221,7 @@ masova/
 
 | Document | Description |
 |---|---|
-| [DEMO.md](DEMO.md) | Demo guide for restaurant clients |
+| [DEMO.md](docs/DEMO.md) | Demo guide for restaurant clients |
 | [DOCUMENTATION.md](DOCUMENTATION.md) | Full documentation index |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Development setup, branching, commits |
 | [CHANGELOG.md](CHANGELOG.md) | Release history |

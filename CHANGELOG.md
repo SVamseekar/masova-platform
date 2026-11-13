@@ -16,7 +16,7 @@ Nothing yet.
 
 Nine months, 680 commits, 4,574 files changed: MaSoVa's landmark release, transforming a 12-microservice prototype into a production-grade operating system for multi-store European restaurant groups.
 
-**Full release notes: [`RELEASE_NOTES_v3.0.0.md`](./RELEASE_NOTES_v3.0.0.md)**
+**Full release notes: [`docs/releases/RELEASE_NOTES_v3.0.0.md`](./docs/releases/RELEASE_NOTES_v3.0.0.md)**
 
 ### European Expansion & Regulatory Compliance
 - EU 14-Allergen Safety Management — menu item tagging and diner-facing safety filtering across every ordering surface
