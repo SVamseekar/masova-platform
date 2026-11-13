@@ -135,3 +135,9 @@ _local/
 _to_delete/
 docs/api-contracts/
 frontend/docs/
+# Internal AI-agent planning output (local-only)
+docs/superpowers/
+docs/plans/
+docs/archive/
+.agents/
+frontend/.env.local*
