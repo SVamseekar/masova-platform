@@ -13,4 +13,4 @@ Disallow: /tracking
 Disallow: /live-tracking
 Disallow: /kiosk-setup
 
-Sitemap: https://masova.souravamseekar.com/sitemap.xml
+Sitemap: https://getmasova.rest/sitemap.xml

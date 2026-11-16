@@ -20,7 +20,7 @@ interface Feature {
   mockupId: string
 }
 
-export const SITE_URL = 'https://masova.souravamseekar.com'
+export const SITE_URL = 'https://getmasova.rest'
 export const GITHUB_URL = 'https://github.com/SVamseekar/masova-platform'
 export const SUPPORT_EMAIL = 'masova@souravamseekar.com'
 
