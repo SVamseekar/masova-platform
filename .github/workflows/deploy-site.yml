@@ -39,6 +39,7 @@ jobs:
         working-directory: frontend
         env:
           VITE_SITE_URL: https://getmasova.rest
+          NEXT_PUBLIC_GA_MEASUREMENT_ID: G-Y6CWDTR081
           # Backend is not hosted yet; these are the planned public hosts.
           # The app requires them at startup, so the landing page cannot load without them.
           VITE_API_GATEWAY_URL: https://api.getmasova.rest/api
