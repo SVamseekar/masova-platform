@@ -39,6 +39,12 @@ jobs:
         working-directory: frontend
         env:
           VITE_SITE_URL: https://getmasova.rest
+          # Backend is not hosted yet; these are the planned public hosts.
+          # The app requires them at startup, so the landing page cannot load without them.
+          VITE_API_GATEWAY_URL: https://api.getmasova.rest/api
+          VITE_API_BASE_URL: https://api.getmasova.rest
+          VITE_WS_URL: wss://api.getmasova.rest/ws
+          VITE_AGENT_URL: https://agent.getmasova.rest
           VITE_FORMSPREE_FORM_ID: ${{ vars.VITE_FORMSPREE_FORM_ID }}
           VITE_GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
           VITE_GOOGLE_OAUTH_CLIENT_ID: ${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
