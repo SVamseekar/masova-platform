@@ -31,7 +31,7 @@ export const PrivacyPolicy: React.FC = () => {
             style={{ background: colors.bgElevated, border: `1px solid ${colors.border}` }}
           >
             <p><span className="text-white font-medium">Contact:</span> <SupportEmailLink /></p>
-            <p><span className="text-white font-medium">Data protection enquiries:</span> <SupportEmailLink /></p>
+            <p><span className="text-white font-medium">Data protection enquiries:</span> <SupportEmailLink to="privacy" /></p>
           </div>
         </Section>
 
@@ -74,7 +74,7 @@ export const PrivacyPolicy: React.FC = () => {
         <Section title="6. Your rights">
           <p>
             EEA residents can request access, correction, deletion, portability, or restriction of processing.
-            Email <SupportEmailLink /> with your request — we respond within 30 days as required by GDPR.
+            Email <SupportEmailLink to="privacy" /> with your request — we respond within 30 days as required by GDPR.
           </p>
           <p>
             Restaurant customers who order through a MaSoVa-powered app should contact the restaurant directly
@@ -126,7 +126,7 @@ export const PrivacyPolicy: React.FC = () => {
 
         <Section title="11. Complaints">
           <p>
-            Email <SupportEmailLink /> for any privacy question. You may also lodge a complaint with your
+            Email <SupportEmailLink to="privacy" /> for any privacy question. You may also lodge a complaint with your
             local EU supervisory authority.
           </p>
         </Section>

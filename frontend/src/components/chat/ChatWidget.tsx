@@ -9,6 +9,7 @@ import {
   getCapabilityPills,
 } from './chatAgentUtils'
 import './ChatWidget.css'
+import { CONTACT_EMAILS } from '../../config/contact'
 
 interface Message {
   id: string
@@ -237,7 +238,7 @@ export const ChatWidget: React.FC = () => {
       ])
       if (voiceModeRef.current) speakResponse(reply)
     } catch {
-      const errorText = "Sorry — I'm having trouble connecting. Try again in a moment, or email masova@souravamseekar.com."
+      const errorText = `Sorry — I'm having trouble connecting. Try again in a moment, or email ${CONTACT_EMAILS.support}.`
       setMessages((prev) => [
         ...prev,
         { id: crypto.randomUUID(), role: 'agent', text: errorText, ts: Date.now() },

@@ -49,7 +49,7 @@ export const CookiePolicy: React.FC = () => {
         <Section title="4. More information">
           <p>
             See our <a href="/privacy" className="underline text-gray-300 hover:text-white">Privacy Policy</a>{' '}
-            for full data processing details. Questions: <SupportEmailLink />.
+            for full data processing details. Questions: <SupportEmailLink to="privacy" />.
           </p>
           <div
             className="rounded-xl p-4 text-xs"

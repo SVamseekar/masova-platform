@@ -4,6 +4,7 @@ import SectionLabel from './SectionLabel'
 import Reveal from './Reveal'
 import DemoRequestForm from './DemoRequestForm'
 import SupportEmailLink from './SupportEmailLink'
+import ContactDirectory from './ContactDirectory'
 import { OPEN_CONTACT_EVENT } from '../constants'
 import { scrollToSection } from '../utils/scrollToSection'
 import { colors, typography } from '../tokens'
@@ -64,6 +65,10 @@ export default function ContactSection() {
           }}
         >
           <DemoRequestForm />
+        </Reveal>
+
+        <Reveal>
+          <ContactDirectory />
         </Reveal>
       </div>
     </section>

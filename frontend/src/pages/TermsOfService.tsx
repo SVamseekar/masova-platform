@@ -69,7 +69,7 @@ export const TermsOfService: React.FC = () => {
             className="rounded-xl p-4 text-xs space-y-1"
             style={{ background: colors.bgElevated, border: `1px solid ${colors.border}` }}
           >
-            <p><span className="text-white font-medium">Legal / support:</span> <SupportEmailLink /></p>
+            <p><span className="text-white font-medium">Legal:</span> <SupportEmailLink to="legal" /></p>
           </div>
         </Section>
       </div>
