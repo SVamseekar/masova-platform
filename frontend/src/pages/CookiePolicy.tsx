@@ -56,7 +56,7 @@ export const CookiePolicy: React.FC = () => {
             style={{ background: colors.bgElevated, border: `1px solid ${colors.border}` }}
           >
             <p className="text-gray-400">
-              This page describes cookie use for masova.souravamseekar.com and related app hosts.
+              This page describes cookie use for getmasova.rest and related app hosts.
             </p>
           </div>
         </Section>

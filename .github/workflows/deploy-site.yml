@@ -1,0 +1,59 @@
+name: Deploy Site to Cloudflare
+
+# Builds the frontend and deploys it to the Cloudflare Worker "masova-site"
+# (static assets, see frontend/wrangler.jsonc), served at https://getmasova.rest.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/deploy-site.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-site
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Build and deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: Build
+        run: npm run build
+        working-directory: frontend
+        env:
+          VITE_SITE_URL: https://getmasova.rest
+          # Backend is not hosted yet; these are the planned public hosts.
+          # The app requires them at startup, so the landing page cannot load without them.
+          VITE_API_GATEWAY_URL: https://api.getmasova.rest/api
+          VITE_API_BASE_URL: https://api.getmasova.rest
+          VITE_WS_URL: wss://api.getmasova.rest/ws
+          VITE_AGENT_URL: https://agent.getmasova.rest
+          VITE_FORMSPREE_FORM_ID: ${{ vars.VITE_FORMSPREE_FORM_ID }}
+          VITE_GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
+          VITE_GOOGLE_OAUTH_CLIENT_ID: ${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
+
+      - name: Deploy
+        uses: cloudflare/wrangler-action@953926a2e2182532811c01a25e53647d93bf07c0 # v4.1.3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: frontend
+          wranglerVersion: "4"
+          command: deploy

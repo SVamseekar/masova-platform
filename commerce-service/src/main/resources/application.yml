@@ -175,8 +175,8 @@ masova:
 # Application Configuration
 app:
   frontend:
-    url: ${FRONTEND_URL:https://masova-restaurant.vercel.app}
-    base-url: ${FRONTEND_BASE_URL:https://masova-restaurant.vercel.app}
+    url: ${FRONTEND_URL:https://getmasova.rest}
+    base-url: ${FRONTEND_BASE_URL:https://getmasova.rest}
   rating:
     token-validity-days: 30
 

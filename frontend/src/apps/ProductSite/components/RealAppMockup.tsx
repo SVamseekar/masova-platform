@@ -141,7 +141,7 @@ export default function RealAppMockup({ size = 'default' }: { size?: Size }) {
               <span className="w-2 h-2 rounded-full inline-block" style={{ background: 'rgba(46,125,50,0.5)' }} />
             </div>
             <span className="flex-1 text-center" style={{ color: realApp.text3, fontSize: isLarge ? 12 : 9 }}>
-              order.masova.app
+              getmasova.rest/order
             </span>
           </div>
           <div style={{ padding: s.pad, background: realApp.bg, minHeight: s.frameH }}>
