@@ -23,7 +23,8 @@ describe('PrivacyPolicy', () => {
   it('renders who we are section with support email links', () => {
     renderUnauthenticated(<PrivacyPolicy />);
     expect(screen.getByText('1. Who we are')).toBeInTheDocument();
-    expect(screen.getAllByRole('link', { name: 'masova@souravamseekar.com' }).length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByRole('link', { name: 'hello@getmasova.rest' }).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByRole('link', { name: 'privacy@getmasova.rest' }).length).toBeGreaterThanOrEqual(2);
   });
 
   it('renders GDPR rights section with email-based requests', () => {

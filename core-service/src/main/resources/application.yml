@@ -168,10 +168,10 @@ brevo:
   api-key: ${BREVO_API_KEY:}
   api:
     key: ${BREVO_API_KEY:}
-  from-email: ${BREVO_SENDER_EMAIL:noreply@masova.com}
+  from-email: ${BREVO_SENDER_EMAIL:noreply@getmasova.rest}
   from-name: ${BREVO_SENDER_NAME:MaSoVa Restaurant}
   sender:
-    email: ${BREVO_SENDER_EMAIL:noreply@masova.com}
+    email: ${BREVO_SENDER_EMAIL:noreply@getmasova.rest}
     name: ${BREVO_SENDER_NAME:MaSoVa Restaurant}
 
 logging:

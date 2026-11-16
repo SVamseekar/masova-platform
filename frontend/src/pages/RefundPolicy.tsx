@@ -43,7 +43,7 @@ export const RefundPolicy: React.FC = () => {
         <Section title="4. Subscription (SaaS)">
           <p>
             MaSoVa software subscription billing (if applicable to your plan) is separate from diner
-            order refunds. Contact <SupportEmailLink /> for billing disputes.
+            order refunds. Contact <SupportEmailLink to="billing" /> for billing disputes.
           </p>
         </Section>
 
@@ -54,7 +54,7 @@ export const RefundPolicy: React.FC = () => {
           >
             <p>
               For a specific order, contact the restaurant first. Platform issues:{' '}
-              <SupportEmailLink />
+              <SupportEmailLink to="billing" />
             </p>
           </div>
         </Section>
