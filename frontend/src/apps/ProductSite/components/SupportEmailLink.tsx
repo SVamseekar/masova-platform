@@ -7,7 +7,7 @@ interface SupportEmailLinkProps {
 }
 
 export default function SupportEmailLink({
-  className = 'text-gray-400 hover:text-white transition-colors underline-offset-2 hover:underline',
+  className = 'ms-link',
   to = 'hello',
 }: SupportEmailLinkProps) {
   const email = CONTACT_EMAILS[to]

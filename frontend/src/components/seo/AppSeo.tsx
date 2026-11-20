@@ -1,15 +1,12 @@
 import { useLocation } from 'react-router-dom'
 import { Seo } from './Seo'
-
-const PUBLIC_PATHS = new Set(['/'])
+import { isPublicSitePath } from '../../apps/ProductSite/locales'
 
 export function AppSeo() {
   const { pathname } = useLocation()
-  const isPublic = PUBLIC_PATHS.has(pathname)
 
-  if (isPublic) {
-    return <Seo />
-  }
+  // The getmasova.rest marketing and legal pages set their own tags (ProductSitePage, LegalPageLayout).
+  if (isPublicSitePath(pathname)) return null
 
   return <Seo title="MaSoVa" description="MaSoVa restaurant workspace." noindex path={pathname} />
 }
