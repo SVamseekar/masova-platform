@@ -17,16 +17,12 @@ export default defineConfig({
     testTimeout: 15000,
     hookTimeout: 15000,
     pool: 'forks',
-    poolOptions: {
-      forks: {
-        maxForks: 2,
-        minForks: 1,
-      },
-    },
+    // Vitest 4 moved pool options to the top level; poolOptions is ignored
+    maxWorkers: 2,
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
+      '@': path.resolve(import.meta.dirname, './src'),
     },
   },
 });
