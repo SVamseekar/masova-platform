@@ -51,6 +51,12 @@ public class CustomerServiceClient {
                 }
             }
             return ids;
+        } catch (org.springframework.web.client.HttpClientErrorException.Unauthorized e) {
+            // Core rejected the forwarded credentials: a configuration fault, not an ownership answer
+            log.error("Customer profile lookup unauthorised for user {}; check JWT forwarding to core", userId, e);
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE,
+                    "Order ownership could not be verified right now. Try again shortly.");
         } catch (org.springframework.web.client.HttpClientErrorException e) {
             // Core refused the lookup for this caller: no profiles, so ownership stays denied
             log.warn("Customer profile lookup refused for user {}: {}", userId, e.getStatusCode());

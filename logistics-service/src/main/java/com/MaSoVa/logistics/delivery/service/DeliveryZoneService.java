@@ -212,15 +212,20 @@ public class DeliveryZoneService {
     public List<Map<String, Object>> getDeliveryZones(String storeId) {
         try {
             Map<String, Object> storeData = getStoreDetails(storeId);
-            if (storeData == null) return getDefaultZones();
+            if (storeData == null) {
+                // Unknown currency: showing the legacy INR zones here would misprice non-INR stores
+                log.warn("Store {} not found; returning no delivery zones", storeId);
+                return List.of();
+            }
 
             List<Map<String, Object>> zones = configuredZones(storeData);
             if (zones != null && !zones.isEmpty()) return zones;
             return usesLegacyInrDefaults(storeData) ? getDefaultZones() : List.of();
 
         } catch (Exception e) {
-            log.error("Error getting delivery zones for store {}: {}", storeId, e.getMessage());
-            return getDefaultZones();
+            // Same reason as above: no zones is safer than INR zones for a store of unknown currency
+            log.error("Error getting delivery zones for store {}", storeId, e);
+            return List.of();
         }
     }
 

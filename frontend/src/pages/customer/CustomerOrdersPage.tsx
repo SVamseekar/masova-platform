@@ -7,7 +7,7 @@ import { selectCartLocale } from '../../store/slices/cartSlice';
 import { useGetCustomerByUserIdQuery } from '../../store/api/customerApi';
 import { useGetCustomerOrdersQuery, useRequestCancelMutation, type Order } from '../../store/api/orderApi';
 import { useGetAvailableMenuQuery } from '../../store/api/menuApi';
-import { formatMajorAmount } from '../../utils/currency';
+import { formatOrderAmount } from '../../utils/currency';
 import { DishImage } from '../../apps/PublicWebsite/components/DishCard';
 import { getApiErrorMessage } from '../utils/apiError';
 import AccountLayout from './AccountLayout';
@@ -27,7 +27,7 @@ function OrderRow({ order, open, onToggle }: { order: Order; open: boolean; onTo
   const [requestCancel, cancel] = useRequestCancelMutation();
   const [cancelError, setCancelError] = useState('');
   const copy = statusCopy(order.status);
-  const money = (value: number) => formatMajorAmount(value, order.currency || 'EUR', locale);
+  const money = (value: number) => formatOrderAmount(value, order.currency, locale);
   const dish = (menuItemId: string) => menu.currentData?.find(item => item.id === menuItemId);
   const items = order.items ?? [];
   const first = items[0] ? dish(items[0].menuItemId) : undefined;

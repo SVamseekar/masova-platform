@@ -69,3 +69,14 @@ export function formatMajorAmount(major: number, currency: string, locale?: stri
 export function formatApiPrice(apiPrice: number, currency: string, locale?: string): string {
   return formatMoney(apiPrice, currency, locale);
 }
+/**
+ * Formats an order amount, or '—' when the order carries no currency. A missing currency is a
+ * data fault; guessing one (e.g. EUR for an INR store) would show a wrong price.
+ */
+export function formatOrderAmount(value: number, currency: string | undefined | null, locale?: string): string {
+  if (!currency) {
+    console.warn('Order amount has no currency; showing a dash instead of guessing one');
+    return '—';
+  }
+  return formatMajorAmount(value, currency, locale);
+}

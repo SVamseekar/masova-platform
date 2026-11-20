@@ -6,7 +6,7 @@ import { selectCurrentUser } from '../../store/slices/authSlice';
 import { selectCartLocale } from '../../store/slices/cartSlice';
 import { useGetCustomerByUserIdQuery } from '../../store/api/customerApi';
 import { useGetCustomerOrdersQuery, type Order } from '../../store/api/orderApi';
-import { formatMajorAmount } from '../../utils/currency';
+import { formatMajorAmount, formatOrderAmount } from '../../utils/currency';
 import { useBrowseMenu } from '../../apps/PublicWebsite/components/useBrowseMenu';
 import { DishImage } from '../../apps/PublicWebsite/components/DishCard';
 import DishCustomization from '../../apps/PublicWebsite/components/DishCustomization';
@@ -51,7 +51,7 @@ const CustomerDashboard: React.FC = () => {
   const profile = noProfile ? undefined : customer.data;
   const orders = [...(orderList.data ?? [])].map(order => ({ ...order, items: order.items ?? [] })).sort(newestFirst);
   const active = orders.find(order => !TERMINAL_STATUSES.includes(order.status));
-  const money = (order: Order, value: number) => formatMajorAmount(value, order.currency || 'EUR', locale);
+  const money = (order: Order, value: number) => formatOrderAmount(value, order.currency, locale);
   const givenName = (profile?.name || user?.name || '').trim().split(/\s+/)[0] ?? '';
   const firstName = givenName.charAt(0).toUpperCase() + givenName.slice(1);
   const loyalty = profile?.loyaltyInfo;

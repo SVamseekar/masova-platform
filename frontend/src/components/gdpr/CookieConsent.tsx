@@ -31,6 +31,9 @@ const SERVER_CONSENTS = [
 // The legal documents stay readable before a choice is made.
 const LEGAL_PATHS = ['/privacy', '/privacy-policy', '/terms', '/cookies', '/refunds']
 
+/** Set when the last choice could not be recorded on the server; retried on the next load. */
+const PENDING_SYNC_KEY = 'cookie_consent_pending_sync'
+
 const ESSENTIAL_ONLY: CookiePreferences = { necessary: true, functional: false, analytics: false, marketing: false }
 
 /** Stored choice, or null when the visitor has not chosen yet or the value is unreadable. */
@@ -78,6 +81,45 @@ export const CookieConsent: React.FC = () => {
     }
   }, [visible])
 
+  /**
+   * Records the choice on the signed-in user's account. On any failure the choice stays on this
+   * device and a pending flag makes the next page load try again, so the server record catches up.
+   */
+  const recordOnServer = async (uid: string, prefs: CookiePreferences, previous: CookiePreferences | null) => {
+    const results = await Promise.all(SERVER_CONSENTS.map(async ({ key, consentType, consentText }) => {
+      try {
+        if (prefs[key]) {
+          await grantConsent({ userId: uid, consentType, version: '1.0', consentText }).unwrap()
+        } else if (previous?.[key]) {
+          await revokeConsent({ userId: uid, consentType }).unwrap()
+        }
+        return true
+      } catch (error) {
+        // 404 on a revoke means the server holds no granted consent, which is the state asked for.
+        if (!prefs[key] && (error as { status?: number })?.status === 404) return true
+        console.error(`Cookie consent ${consentType} was saved on this device but not recorded on the server`, error)
+        return false
+      }
+    }))
+    try {
+      if (results.every(Boolean)) localStorage.removeItem(PENDING_SYNC_KEY)
+      else localStorage.setItem(PENDING_SYNC_KEY, '1')
+    } catch (error) {
+      console.error('Cookie consent sync flag could not be stored', error)
+    }
+  }
+
+  // Retry a server record that failed on an earlier visit. Revokes are attempted for every type
+  // not granted; a 404 there already means the server matches.
+  useEffect(() => {
+    if (!userId || !saved) return
+    let pending = false
+    try { pending = localStorage.getItem(PENDING_SYNC_KEY) === '1' } catch { pending = false }
+    if (pending) void recordOnServer(userId, saved, { ...saved, analytics: true, marketing: true })
+    // Runs when the signed-in user changes; saved is read at that moment.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId])
+
   const persist = async (prefs: CookiePreferences) => {
     try {
       localStorage.setItem('cookie_consent', JSON.stringify(prefs))
@@ -93,21 +135,7 @@ export const CookieConsent: React.FC = () => {
     setRequested(false)
 
     if (!userId) return
-
-    // Each consent type is recorded on its own so one failure does not hide another.
-    await Promise.all(SERVER_CONSENTS.map(async ({ key, consentType, consentText }) => {
-      try {
-        if (prefs[key]) {
-          await grantConsent({ userId, consentType, version: '1.0', consentText }).unwrap()
-        } else if (previous?.[key]) {
-          await revokeConsent({ userId, consentType }).unwrap()
-        }
-      } catch (error) {
-        // 404 on a revoke means the server holds no granted consent, which is the state asked for.
-        if (!prefs[key] && (error as { status?: number })?.status === 404) return
-        console.error(`Cookie consent ${consentType} was saved on this device but not recorded on the server`, error)
-      }
-    }))
+    await recordOnServer(userId, prefs, previous)
   }
 
   const handleEssentialOnly = () =>

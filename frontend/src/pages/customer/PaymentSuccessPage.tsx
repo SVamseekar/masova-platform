@@ -48,10 +48,12 @@ const PaymentSuccessPage: React.FC = () => {
   const waiting = !!orderId && !limitedView && !paid && !failed;
   const { refetch } = orderQuery;
 
-  // Keep the cart when the payment did not go through, so the customer can retry
+  // Clear the cart only once the payment is confirmed (order paid, Razorpay verified, or Stripe
+  // redirect succeeded). Until then a decline may still arrive, and the cart is kept for a retry.
+  const confirmed = !failed && (paid || redirectStatus === 'succeeded');
   useEffect(() => {
-    if (!failed) dispatch(clearCart());
-  }, [dispatch, failed]);
+    if (confirmed) dispatch(clearCart());
+  }, [dispatch, confirmed]);
 
   useEffect(() => {
     if (orderId) sessionStorage.setItem('activeOrderId', orderId);

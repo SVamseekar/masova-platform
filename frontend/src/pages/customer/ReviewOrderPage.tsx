@@ -10,7 +10,7 @@ import { useGetActiveStoresQuery } from '../../store/api/storeApi';
 import { useCreateReviewMutation } from '../../store/api/reviewApi';
 import { useAppSelector } from '../../store/hooks';
 import { selectCartLocale } from '../../store/slices/cartSlice';
-import { formatMajorAmount } from '../../utils/currency';
+import { formatOrderAmount } from '../../utils/currency';
 import { getApiErrorMessage } from '../utils/apiError';
 import { statusCopy } from './orderStatus';
 import { displayOrderNumber, TERMINAL_STATUSES } from './useCustomerOrder';
@@ -63,7 +63,7 @@ const ReviewOrderPage: React.FC = () => {
   const data = order.data;
   const items = data.items ?? [];
   const isDelivery = data.orderType === 'DELIVERY';
-  const money = (value: number) => formatMajorAmount(value, data.currency || 'EUR', locale);
+  const money = (value: number) => formatOrderAmount(value, data.currency, locale);
   const store = stores.data?.find(candidate => candidate.id === data.storeId || candidate.storeCode === data.storeId);
   const dish = items[0] ? menu.currentData?.find(item => item.id === items[0].menuItemId) : undefined;
   const placed = new Date(data.createdAt);

@@ -6,7 +6,7 @@ import { storeDisplayName } from '../../apps/PublicWebsite/components/CustomerSt
 import { useGetActiveStoresQuery } from '../../store/api/storeApi';
 import { useAppSelector } from '../../store/hooks';
 import { selectCartLocale } from '../../store/slices/cartSlice';
-import { formatMajorAmount } from '../../utils/currency';
+import { formatOrderAmount } from '../../utils/currency';
 import { SUPPORT_EMAIL } from '../../apps/ProductSite/constants';
 import { displayOrderNumber, TERMINAL_STATUSES, useCustomerOrder } from './useCustomerOrder';
 import { statusCopy, stepsFor } from './orderStatus';
@@ -45,8 +45,7 @@ const TrackingPage: React.FC = () => {
   const finished = TERMINAL_STATUSES.includes(status) && !cancelled;
   const copy = statusCopy(status);
   const store = stores.data?.find(candidate => candidate.id === order.storeId || candidate.storeCode === order.storeId);
-  const currency = order.currency || 'EUR';
-  const money = (value: number) => formatMajorAmount(value, currency, locale);
+  const money = (value: number) => formatOrderAmount(value, order.currency, locale);
   const placed = new Date(order.createdAt);
   const placedText = Number.isNaN(placed.getTime()) ? '' : `${placed.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })} · ${placed.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
   const vat = order.totalVatAmount ?? order.tax;
