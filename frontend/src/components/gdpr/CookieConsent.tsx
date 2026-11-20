@@ -31,7 +31,7 @@ const SERVER_CONSENTS = [
 // The legal documents stay readable before a choice is made.
 const LEGAL_PATHS = ['/privacy', '/privacy-policy', '/terms', '/cookies', '/refunds']
 
-/** Set when the last choice could not be recorded on the server; retried on the next load. */
+/** Holds the user id whose last choice could not be recorded on the server; retried for that user only. */
 const PENDING_SYNC_KEY = 'cookie_consent_pending_sync'
 
 const ESSENTIAL_ONLY: CookiePreferences = { necessary: true, functional: false, analytics: false, marketing: false }
@@ -102,8 +102,9 @@ export const CookieConsent: React.FC = () => {
       }
     }))
     try {
+      // The flag names the account that made the choice, so a retry never records it for someone else
       if (results.every(Boolean)) localStorage.removeItem(PENDING_SYNC_KEY)
-      else localStorage.setItem(PENDING_SYNC_KEY, '1')
+      else localStorage.setItem(PENDING_SYNC_KEY, String(uid))
     } catch (error) {
       console.error('Cookie consent sync flag could not be stored', error)
     }
@@ -113,9 +114,10 @@ export const CookieConsent: React.FC = () => {
   // not granted; a 404 there already means the server matches.
   useEffect(() => {
     if (!userId || !saved) return
-    let pending = false
-    try { pending = localStorage.getItem(PENDING_SYNC_KEY) === '1' } catch { pending = false }
-    if (pending) void recordOnServer(userId, saved, { ...saved, analytics: true, marketing: true })
+    let pendingFor: string | null = null
+    try { pendingFor = localStorage.getItem(PENDING_SYNC_KEY) } catch { pendingFor = null }
+    // Retry only for the account that made the choice; another account on this device never inherits it.
+    if (pendingFor === String(userId)) void recordOnServer(userId, saved, { ...saved, analytics: true, marketing: true })
     // Runs when the signed-in user changes; saved is read at that moment.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId])

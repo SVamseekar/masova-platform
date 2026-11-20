@@ -24,6 +24,9 @@ import { getApiErrorMessage } from '../utils/apiError';
 import { useGetAvailableDriversQuery as useGetStoreDriversQuery } from '../../store/api/driverApi';
 import { format } from 'date-fns';
 import { countActiveDeliveries } from './quickInfoMetrics';
+import { useAppSelector } from '../../store/hooks';
+import { selectCartCurrency, selectCartLocale } from '../../store/slices/cartSlice';
+import { formatMajorAmount } from '../../utils/currency';
 
 interface Props { storeId: string; activeTab: string; onTabChange: (tab: string) => void; }
 
@@ -76,7 +79,15 @@ const modalBox: React.CSSProperties = {
 };
 
 // ─── PAYMENTS TAB ───
+/** Formats an amount in the selected store's currency (HUF without decimals, and so on). */
+function useStoreMoney() {
+  const currency = useAppSelector(selectCartCurrency);
+  const locale = useAppSelector(selectCartLocale);
+  return (value: number) => formatMajorAmount(value, currency, locale);
+}
+
 const PaymentsTab = ({ storeId }: { storeId: string }) => {
+  const money = useStoreMoney();
   const [dateMode, setDateMode] = useState<'all' | 'date'>('all');
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
 
@@ -142,8 +153,8 @@ const PaymentsTab = ({ storeId }: { storeId: string }) => {
 
       {/* Stats — always render so cards stay populated from the orders list */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 12, marginBottom: 20 }}>
-        <div style={miniStat}><p style={statLabel}>Total Revenue</p><p style={statValue(t.green)}>{(displayReport?.successfulAmount ?? 0).toFixed(2)}</p></div>
-        <div style={miniStat}><p style={statLabel}>Net Amount</p><p style={statValue()}>{(displayReport?.netAmount ?? 0).toFixed(2)}</p></div>
+        <div style={miniStat}><p style={statLabel}>Total Revenue</p><p style={statValue(t.green)}>{money(displayReport?.successfulAmount ?? 0)}</p></div>
+        <div style={miniStat}><p style={statLabel}>Net Amount</p><p style={statValue()}>{money(displayReport?.netAmount ?? 0)}</p></div>
         <div style={miniStat}><p style={statLabel}>Transactions</p><p style={statValue()}>{displayReport?.totalTransactions ?? orderPayments.length}</p></div>
         <div style={miniStat}><p style={statLabel}>Failed</p><p style={statValue(t.red)}>{displayReport?.failedTransactions ?? 0}</p></div>
       </div>
@@ -156,7 +167,7 @@ const PaymentsTab = ({ storeId }: { storeId: string }) => {
             {Object.entries(displayReport.paymentMethodBreakdown).map(([method, amount]) => (
               <div key={method} style={{ textAlign: 'center', padding: 12, background: t.bgMain, borderRadius: t.radius.md }}>
                 <div style={{ fontSize: 12, color: t.grayMuted, marginBottom: 4 }}>{method}</div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: t.orange }}>{typeof amount === 'number' ? amount.toFixed(2) : '0.00'}</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: t.orange }}>{money(typeof amount === 'number' ? amount : 0)}</div>
               </div>
             ))}
           </div>
@@ -178,7 +189,7 @@ const PaymentsTab = ({ storeId }: { storeId: string }) => {
                 <tr key={txn.id}>
                   <td style={tableCellStyle}>{txn.orderNumber || txn.id?.substring(0, 8)}</td>
                   <td style={tableCellStyle}>{txn.customerName || 'Walk-in'}</td>
-                  <td style={{ ...tableCellStyle, fontWeight: 600 }}>{txn.amount.toFixed(2)}</td>
+                  <td style={{ ...tableCellStyle, fontWeight: 600 }}>{money(txn.amount)}</td>
                   <td style={tableCellStyle}>{txn.paymentMethod}</td>
                   <td style={tableCellStyle}><span style={paymentBadge(txn.status)}>{txn.status}</span></td>
                   <td style={{ ...tableCellStyle, fontSize: 11 }}>{format(new Date(txn.createdAt), 'MMM dd, HH:mm')}</td>
@@ -194,6 +205,7 @@ const PaymentsTab = ({ storeId }: { storeId: string }) => {
 
 // ─── REFUNDS TAB ───
 const RefundsTab = ({ storeId }: { storeId: string }) => {
+  const money = useStoreMoney();
   const { data: transactions = [], isLoading } = useGetTransactionsByStoreIdQuery(storeId, { skip: !storeId });
   const [initiateRefund, { isLoading: refundLoading }] = useInitiateRefundMutation();
 
@@ -244,7 +256,7 @@ const RefundsTab = ({ storeId }: { storeId: string }) => {
                   onClick={() => { setSelectedTxn(txn); setRefundAmount(txn.amount.toString()); setRefundType('FULL'); }}>
                   <td style={tableCellStyle}>{txn.orderId}</td>
                   <td style={tableCellStyle}>{txn.customerEmail || 'N/A'}</td>
-                  <td style={{ ...tableCellStyle, fontWeight: 600 }}>{txn.amount.toFixed(2)}</td>
+                  <td style={{ ...tableCellStyle, fontWeight: 600 }}>{money(txn.amount)}</td>
                   <td style={tableCellStyle}><span style={refundBadge(txn.status)}>{txn.status}</span></td>
                   <td style={{ ...tableCellStyle, fontSize: 11 }}>{format(new Date(txn.createdAt), 'MMM dd, yyyy')}</td>
                   <td style={tableCellStyle}><button style={btn('danger')} onClick={e => { e.stopPropagation(); setSelectedTxn(txn); setRefundAmount(txn.amount.toString()); setRefundType('FULL'); }}>Refund</button></td>
@@ -261,7 +273,7 @@ const RefundsTab = ({ storeId }: { storeId: string }) => {
           <h4 style={{ ...sectionTitleStyle, marginBottom: 12 }}>Initiate Refund</h4>
           <div style={{ background: t.bgMain, borderRadius: t.radius.sm, padding: 10, marginBottom: 12, fontSize: 12, color: t.gray }}>
             <div><strong>Order:</strong> {selectedTxn.orderId}</div>
-            <div><strong>Amount:</strong> {selectedTxn.amount.toFixed(2)}</div>
+            <div><strong>Amount:</strong> {money(selectedTxn.amount)}</div>
             <div><strong>Method:</strong> {selectedTxn.paymentMethod || 'N/A'}</div>
           </div>
           {/* Type toggle */}
@@ -297,6 +309,7 @@ const RefundsTab = ({ storeId }: { storeId: string }) => {
 
 // ─── DELIVERIES TAB ───
 const DeliveriesTab = ({ storeId }: { storeId: string }) => {
+  const money = useStoreMoney();
   const { data: allOrders = [], isLoading } = useGetRecentStoreOrdersQuery({ storeId, days: 2, page: 0, size: 100 }, { skip: !storeId, pollingInterval: 30000 });
   const { data: availableDrivers = [] } = useGetAvailableDriversQuery(storeId, { skip: !storeId, pollingInterval: 30000 });
   const { data: storeDrivers = [] } = useGetStoreDriversQuery(storeId, { skip: !storeId, pollingInterval: 30000 });
@@ -347,7 +360,7 @@ const DeliveriesTab = ({ storeId }: { storeId: string }) => {
                 <div>
                   <span style={{ fontWeight: 700, color: t.orange, fontSize: 14 }}>#{order.orderNumber}</span>
                   <span style={{ marginLeft: 10, fontSize: 13, color: t.black }}>{order.customerName}</span>
-                  <span style={{ marginLeft: 10, fontSize: 13, fontWeight: 600, color: t.orange }}>{order.total?.toFixed(2)}</span>
+                  <span style={{ marginLeft: 10, fontSize: 13, fontWeight: 600, color: t.orange }}>{typeof order.total === 'number' ? money(order.total) : '—'}</span>
                 </div>
                 <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                   <span style={statusBadge('READY')}>READY</span>
@@ -379,7 +392,7 @@ const DeliveriesTab = ({ storeId }: { storeId: string }) => {
                 <div>
                   <span style={{ fontWeight: 700, color: t.orange, fontSize: 14 }}>#{order.orderNumber}</span>
                   <span style={{ marginLeft: 10, fontSize: 13, color: t.black }}>{order.customerName}</span>
-                  <span style={{ marginLeft: 10, fontSize: 13, fontWeight: 600, color: t.orange }}>{order.total?.toFixed(2)}</span>
+                  <span style={{ marginLeft: 10, fontSize: 13, fontWeight: 600, color: t.orange }}>{typeof order.total === 'number' ? money(order.total) : '—'}</span>
                 </div>
                 <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                   <span style={{ ...statusBadge('PENDING'), background: '#DBEAFE', color: t.blue }}>DISPATCHED</span>

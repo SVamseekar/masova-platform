@@ -41,7 +41,8 @@ public class UpdateAddressRequest {
         AddAddressRequest request = new AddAddressRequest();
         request.setLabel(label); request.setAddressLine1(addressLine1); request.setAddressLine2(addressLine2);
         request.setCity(city); request.setState(state); request.setPostalCode(postalCode);
-        if (country != null) request.setCountry(country);
+        // Null keeps the stored country; AddAddressRequest's India default must not overwrite it
+        request.setCountry(country);
         request.setLatitude(latitude); request.setLongitude(longitude); request.setLandmark(landmark);
         if (isDefault != null) request.setDefault(isDefault);
         return request;

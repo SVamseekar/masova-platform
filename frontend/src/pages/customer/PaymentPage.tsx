@@ -345,7 +345,7 @@ const PaymentPage: React.FC = () => {
 
     const options: RazorpayOptions = {
       key: paymentData.razorpayKeyId,
-      amount: paymentData.amount * 100,
+      amount: Math.round(paymentData.amount * 100),
       currency: 'INR',
       name: 'MaSoVa Restaurant',
       description: `Order #${orderId}`,
@@ -376,7 +376,7 @@ const PaymentPage: React.FC = () => {
 
     const razorpay = new window.Razorpay(options);
     razorpay.on('payment.failed', function (response: RazorpayFailedResponse) {
-      navigate(`/payment/failed?order_id=${orderId}&error=${response.error.description || 'Payment failed'}`);
+      navigate(`/payment/failed?order_id=${encodeURIComponent(orderId)}&error=${encodeURIComponent(response.error.description || 'Payment failed')}`);
     });
     razorpay.open();
   };

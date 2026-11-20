@@ -264,6 +264,11 @@ public class OrderService {
             log.debug("India GST applied for state={}: tax={}", state, tax);
         }
 
+        // Defence in depth behind the request validation: an order must cost something
+        if (!(total > 0)) {
+            throw new IllegalArgumentException("Order total must be greater than zero");
+        }
+
         // Generate unique order number
         String orderNumber = generateOrderNumber();
 

@@ -5,6 +5,8 @@ import com.MaSoVa.commerce.order.entity.Order.PaymentMethod;
 import com.MaSoVa.commerce.order.entity.DeliveryAddress;
 import com.MaSoVa.shared.enums.OrderSource;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -111,6 +113,8 @@ public class CreateOrderRequest {
         private String name;
 
         @NotNull(message = "Quantity is required")
+        @Min(value = 1, message = "Quantity must be at least 1")
+        @Max(value = 99, message = "Quantity must be at most 99")
         private Integer quantity;
 
         @NotNull(message = "Price is required")

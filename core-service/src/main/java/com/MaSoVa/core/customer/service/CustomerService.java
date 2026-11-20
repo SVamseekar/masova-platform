@@ -446,7 +446,7 @@ public class CustomerService {
         address.setCity(request.getCity());
         address.setState(request.getState());
         address.setPostalCode(request.getPostalCode());
-        address.setCountry(request.getCountry());
+        if (request.getCountry() != null) address.setCountry(request.getCountry());
         address.setLatitude(request.getLatitude());
         address.setLongitude(request.getLongitude());
         address.setLandmark(request.getLandmark());
