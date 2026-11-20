@@ -27,9 +27,11 @@ updates:
       - dependency-name: org.springframework.boot:spring-boot-dependencies
         update-types:
           - version-update:semver-major
+      # Spring Cloud release trains move as "minor" versions but 2025.1+ needs Spring Boot 4
       - dependency-name: org.springframework.cloud:spring-cloud-dependencies
         update-types:
           - version-update:semver-major
+          - version-update:semver-minor
 
   # ── Frontend (customer + staff web) ───────────────────────────────────────
   - package-ecosystem: npm
