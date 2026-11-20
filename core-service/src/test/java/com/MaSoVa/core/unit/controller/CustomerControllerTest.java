@@ -155,7 +155,7 @@ class CustomerControllerTest extends BaseServiceTest {
     @Test
     @DisplayName("POST /api/customers/get-or-create returns existing or new customer")
     void getOrCreate_returns200() throws Exception {
-        when(customerService.getOrCreateCustomer(any())).thenReturn(buildCustomer("cust-1"));
+        when(customerService.getOrCreateOwnCustomer(any())).thenReturn(buildCustomer("cust-1"));
 
         mockMvc.perform(post("/api/customers/get-or-create")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -401,7 +401,7 @@ class CustomerControllerTest extends BaseServiceTest {
         info.setPhone("+919876543210");
         user.setPersonalInfo(info);
         when(userService.getUserByIdUncached("user-1")).thenReturn(user);
-        when(customerService.getOrCreateCustomer(any())).thenReturn(buildCustomer("cust-1"));
+        when(customerService.getOrCreateOwnCustomer(any())).thenReturn(buildCustomer("cust-1"));
 
         mockMvc.perform(post("/api/customers/me")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -411,7 +411,7 @@ class CustomerControllerTest extends BaseServiceTest {
 
         org.mockito.ArgumentCaptor<com.MaSoVa.core.customer.dto.request.CreateCustomerRequest> captor =
                 org.mockito.ArgumentCaptor.forClass(com.MaSoVa.core.customer.dto.request.CreateCustomerRequest.class);
-        org.mockito.Mockito.verify(customerService).getOrCreateCustomer(captor.capture());
+        org.mockito.Mockito.verify(customerService).getOrCreateOwnCustomer(captor.capture());
         org.assertj.core.api.Assertions.assertThat(captor.getValue().getUserId()).isEqualTo("user-1");
         org.assertj.core.api.Assertions.assertThat(captor.getValue().getEmail()).isEqualTo("asha@example.com");
         org.assertj.core.api.Assertions.assertThat(captor.getValue().getName()).isEqualTo("Asha");
@@ -429,7 +429,7 @@ class CustomerControllerTest extends BaseServiceTest {
         info.setPhone("+919876543210");
         user.setPersonalInfo(info);
         when(userService.getUserByIdUncached("user-1")).thenReturn(user);
-        when(customerService.getOrCreateCustomer(any()))
+        when(customerService.getOrCreateOwnCustomer(any()))
                 .thenThrow(new IllegalArgumentException("Customer with phone +919876543210 already exists"));
 
         mockMvc.perform(post("/api/customers/me").contentType(MediaType.APPLICATION_JSON).content("{}"))
@@ -447,7 +447,7 @@ class CustomerControllerTest extends BaseServiceTest {
         info.setEmail("asha@example.com");
         user.setPersonalInfo(info);
         when(userService.getUserByIdUncached("user-1")).thenReturn(user);
-        when(customerService.getOrCreateCustomer(any()))
+        when(customerService.getOrCreateOwnCustomer(any()))
                 .thenThrow(new IllegalArgumentException("Customer with userId user-1 already exists"));
         when(customerService.getCustomerByUserId("user-1")).thenReturn(Optional.of(buildCustomer("cust-1")));
 

@@ -132,6 +132,31 @@ public class CustomerService {
         return createCustomer(request);
     }
 
+    /**
+     * Get or create the profile of a signed-in customer (POST /api/customers/me).
+     * Unlike {@link #getOrCreateCustomer}, this never re-assigns an existing profile to the caller:
+     * account emails are not verified, so linking a profile by email would let anyone who registers
+     * with someone else's email take over that profile (orders, addresses, loyalty).
+     *
+     * @throws IllegalArgumentException when another profile already uses the email or phone
+     */
+    public Customer getOrCreateOwnCustomer(CreateCustomerRequest request) {
+        Optional<Customer> own = customerRepository.findByUserId(request.getUserId());
+        if (own.isPresent()) {
+            Customer existing = own.get();
+            if (request.getStoreId() != null && !request.getStoreId().isEmpty()
+                    && !existing.getStoreIds().contains(request.getStoreId())) {
+                existing.addStoreId(request.getStoreId());
+                return customerRepository.save(existing);
+            }
+            return existing;
+        }
+        if (customerRepository.findByEmail(request.getEmail()).isPresent()) {
+            throw new IllegalArgumentException("Another customer profile already uses this email");
+        }
+        return createCustomer(request);
+    }
+
     @CacheEvict(value = "customers", allEntries = true)
     public Customer createCustomer(CreateCustomerRequest request) {
         logger.info("Creating customer for userId: {}", request.getUserId());

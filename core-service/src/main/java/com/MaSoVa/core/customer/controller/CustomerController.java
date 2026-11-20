@@ -425,9 +425,8 @@ public class CustomerController {
     /**
      * POST /api/customers/me — get or create the signed-in customer's own profile (checkout).
      * Body (optional): { "storeId": "..." } adds the store to the profile's stores.
-     * Name, email and phone come from the caller's own account, never from the body:
-     * get-or-create links an existing profile with the same email, so a body email would let
-     * a caller take over someone else's profile.
+     * Name, email and phone come from the caller's own account, never from the body, and an
+     * existing profile of another account is never re-linked (account emails are not verified).
      */
     @PostMapping("/me")
     @PreAuthorize("hasRole('CUSTOMER')")
@@ -449,7 +448,7 @@ public class CustomerController {
             request.setStoreId(store);
         }
         try {
-            return ResponseEntity.ok(customerService.getOrCreateCustomer(request));
+            return ResponseEntity.ok(customerService.getOrCreateOwnCustomer(request));
         } catch (IllegalArgumentException e) {
             // A concurrent request may have just created this account's profile
             Optional<Customer> created = customerService.getCustomerByUserId(userId);

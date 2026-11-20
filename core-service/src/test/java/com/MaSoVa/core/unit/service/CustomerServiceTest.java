@@ -161,6 +161,37 @@ class CustomerServiceTest {
     // ===========================
 
     @Nested
+    @DisplayName("getOrCreateOwnCustomer")
+    class GetOrCreateOwnCustomer {
+
+        @Test
+        @DisplayName("never re-assigns another account's profile that has the same email")
+        void doesNotTakeOverProfileByEmail() {
+            Customer victim = buildCustomer("victim-profile", "victim@example.com");
+            victim.setUserId("victim-user");
+            when(customerRepository.findByUserId("attacker-user")).thenReturn(Optional.empty());
+            when(customerRepository.findByEmail("victim@example.com")).thenReturn(Optional.of(victim));
+
+            CreateCustomerRequest req = buildCreateRequest("attacker-user", "victim@example.com", "9876543210");
+            assertThatThrownBy(() -> customerService.getOrCreateOwnCustomer(req))
+                    .isInstanceOf(IllegalArgumentException.class);
+            assertThat(victim.getUserId()).isEqualTo("victim-user");
+            verify(customerRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("returns the caller's existing profile")
+        void returnsOwnProfile() {
+            Customer own = buildCustomer("own-profile", "me@example.com");
+            when(customerRepository.findByUserId("me")).thenReturn(Optional.of(own));
+            when(customerRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+            CreateCustomerRequest req = buildCreateRequest("me", "me@example.com", "9876543210");
+            assertThat(customerService.getOrCreateOwnCustomer(req)).isSameAs(own);
+        }
+    }
+
+    @Nested
     @DisplayName("createCustomer")
     class CreateCustomer {
 
