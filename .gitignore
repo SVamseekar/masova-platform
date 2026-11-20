@@ -67,7 +67,6 @@ error*.txt
 
 # Local-only directories (never publish to GitHub)
 backups/
-docs/
 scripts/*
 !scripts/reseed/
 !scripts/dev/
@@ -92,6 +91,8 @@ frontend/tsconfig.tsbuildinfo
 *.jpg
 *.jpeg
 !frontend/public/images/menu/*.jpg
+!frontend/public/site/*.webp
+!frontend/public/site/og-image.jpg
 
 # Local AI / IDE tooling (never commit)
 AGENTS.md
@@ -103,15 +104,6 @@ AGENTS.md
 .VSCodeCounter/
 .serena/
 GITHUB_REVAMP_PLAN.md
-docs/plans/
-docs/superpowers/
-docs/archive/
-docs/MASTER_INDEX.md
-docs/DOCUMENTATION_INDEX.md
-docs/full_codebase_security_audit.md
-docs/project/kiosk.md
-docs/project/pos_iss
-docs/project/MULTIISSUE_FIXES/plan.md
 scripts/node_modules/
 
 # Scripts/tooling artifacts
@@ -129,8 +121,9 @@ archive/
 # Product Launch Assets (untracked media)
 product_launch_assets/
 
-# Vercel CLI (project link lives at repo root)
+# Hosting tool local state (Vercel link kept ignored until the local dir is removed)
 /.vercel/
+.wrangler/
 
 # Claude Code local context (not for git)
 CLAUDE.md
@@ -141,3 +134,13 @@ AGENTS.md
 
 # Ad-hoc local QA scripts (demo-account PINs, /tmp screenshot paths, no shared harness)
 frontend/scripts/qa-*.mjs
+_local/
+_to_delete/
+docs/api-contracts/
+frontend/docs/
+# Internal AI-agent planning output (local-only)
+docs/superpowers/
+docs/plans/
+docs/archive/
+.agents/
+frontend/.env.local*

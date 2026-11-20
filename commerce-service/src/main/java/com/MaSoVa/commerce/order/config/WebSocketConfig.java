@@ -24,7 +24,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void registerStompEndpoints(@NonNull StompEndpointRegistry registry) {
         // KDS / customer tracking — allow LAN Dell + local Vite (origin patterns, not fixed list).
         // SockJS info: GET http://{commerce}:8084/ws/orders/info  (NOT bare /ws)
-        // Frontend: VITE_WS_URL=http://192.168.50.88:8084/ws  → connects to …/ws/orders
+        // Frontend: VITE_WS_URL=http://localhost:8084/ws  → connects to …/ws/orders
         registry.addEndpoint("/ws/orders")
                 .setAllowedOriginPatterns("*")
                 .withSockJS();
