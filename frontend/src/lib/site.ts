@@ -1,5 +1,5 @@
 export const SITE_URL =
-  (import.meta.env.VITE_SITE_URL as string | undefined)?.trim() ??
+  (import.meta.env.VITE_SITE_URL as string | undefined)?.trim() ||
   'https://getmasova.rest'
 
 export const SITE_NAME = 'MaSoVa'
