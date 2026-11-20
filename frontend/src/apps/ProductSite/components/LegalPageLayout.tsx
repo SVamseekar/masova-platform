@@ -1,61 +1,97 @@
-import React, { useEffect } from 'react'
-import '../product-site.css'
+import { useEffect, useMemo, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import Navbar from './Navbar'
-import SupportEmailLink from './SupportEmailLink'
-import { GOLD_GRADIENT_TEXT } from '../constants'
-import { scrollToTop } from '../utils/scrollToSection'
-import { colors } from '../tokens'
+import '../site.css'
+import { Seo } from '../../../components/seo/Seo'
+import { SiteContext } from '../SiteContext'
+import { getSiteCopy } from '../content'
+import { DEFAULT_SITE_LOCALE, SITE_LEGAL_PATHS, SITE_LOCALE_TAGS, type SiteLegalPath } from '../locales'
+import SiteNav from './SiteNav'
+import SiteFooter from './SiteFooter'
+import { PageLink } from './Layout'
 
-interface LegalPageLayoutProps {
-  children: React.ReactNode
+export interface LegalSection {
   title: string
-  updated: string
+  body: ReactNode
 }
 
-export default function LegalPageLayout({ children, title, updated }: LegalPageLayoutProps) {
+interface LegalPageLayoutProps {
+  path: SiteLegalPath
+  title: string
+  /** One sentence for the page header and the meta description. */
+  summary: string
+  updated: string
+  sections: LegalSection[]
+}
+
+/** A highlighted box inside a legal section, for contact details and short notes. */
+export function LegalNote({ children }: { children: ReactNode }) {
+  return <div className="ms-legal-note">{children}</div>
+}
+
+/**
+ * Frame for the legal pages: the site's own navigation and footer, a list of sections
+ * to jump to, and the text. Legal pages are published in English only.
+ */
+export default function LegalPageLayout({ path, title, summary, updated, sections }: LegalPageLayoutProps) {
+  const value = useMemo(() => ({ locale: DEFAULT_SITE_LOCALE, copy: getSiteCopy(DEFAULT_SITE_LOCALE) }), [])
+  const { copy } = value
+
   useEffect(() => {
-    scrollToTop('instant')
-  }, [])
+    if (!window.location.hash) window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+  }, [path])
 
   return (
-    <div id="product-site" style={{ background: colors.bg, minHeight: '100vh' }}>
-      <Navbar />
-      <main className="pt-28 pb-16 px-6">
-        <div className="max-w-3xl mx-auto space-y-10">
-          <header className="space-y-3 border-b border-white/5 pb-8">
-            <Link
-              to="/"
-              className="inline-flex items-center gap-2 text-xs text-gray-500 hover:text-white transition-colors"
-            >
-              <span style={{ ...GOLD_GRADIENT_TEXT, fontSize: 14 }}>MaSoVa</span>
-              <span className="text-gray-600">/</span>
-              <span>{title}</span>
-            </Link>
-            <h1
-              className="text-4xl md:text-5xl font-bold text-white"
-              style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
-            >
-              {title}
-            </h1>
-            <p className="text-xs text-gray-500">Last updated {updated}</p>
+    <SiteContext.Provider value={value}>
+      <div id="product-site" className="ms" lang={SITE_LOCALE_TAGS[DEFAULT_SITE_LOCALE]}>
+        <Seo title={`${title} | MaSoVa`} description={summary} path={path} lang={SITE_LOCALE_TAGS[DEFAULT_SITE_LOCALE]} />
+        <a className="ms-skip" href="#main">{copy.ui.skip}</a>
+        <SiteNav page="home" />
+        <main id="main">
+          <header className="ms-page-head ms-on-dark">
+            <div className="ms-wrap ms-page-head-inner">
+              <div className="ms-page-head-copy">
+                <p className="ms-eyebrow">{copy.footer.legalTitle}</p>
+                <h1 className="ms-page-title">{title}</h1>
+                <p className="ms-lead">{summary}</p>
+                <p className="ms-legal-updated">Last updated {updated}</p>
+              </div>
+            </div>
           </header>
-          {children}
-        </div>
-      </main>
-      <footer
-        className="px-6 py-8 border-t border-white/5 text-center text-xs text-gray-600"
-        style={{ background: colors.bg }}
-      >
-        <p>
-          Questions?{' '}
-          <a href="/#contact" className="text-gray-400 hover:text-white transition-colors">
-            Book a walkthrough
-          </a>{' '}
-          or email <SupportEmailLink />
-        </p>
-        <p className="mt-2">© 2026 MaSoVa. All rights reserved.</p>
-      </footer>
-    </div>
+
+          <div className="ms-section">
+            <div className="ms-wrap ms-legal">
+              <nav className="ms-legal-toc" aria-label="On this page">
+                <h2>On this page</h2>
+                <ol>
+                  {sections.map((section, i) => (
+                    <li key={section.title}><a href={`#s${i + 1}`}>{section.title}</a></li>
+                  ))}
+                </ol>
+              </nav>
+
+              <article className="ms-legal-body">
+                {sections.map((section, i) => (
+                  <section key={section.title} id={`s${i + 1}`} aria-labelledby={`s${i + 1}-title`}>
+                    <h2 id={`s${i + 1}-title`} data-section-anchor>
+                      <span className="ms-num" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
+                      {section.title}
+                    </h2>
+                    {section.body}
+                  </section>
+                ))}
+
+                <nav className="ms-legal-more" aria-label={copy.footer.legalTitle}>
+                  {SITE_LEGAL_PATHS.map((href, i) => (
+                    <Link key={href} to={href} aria-current={href === path ? 'page' : undefined}>{copy.footer.legal[i]}</Link>
+                  ))}
+                  <PageLink page="contact" className="ms-link">{copy.pages.contact.eyebrow}</PageLink>
+                </nav>
+              </article>
+            </div>
+          </div>
+        </main>
+        <SiteFooter page="home" />
+      </div>
+    </SiteContext.Provider>
   )
 }

@@ -44,7 +44,7 @@ MaSoVa is a **production-grade, full-stack restaurant operating system** built f
 | Fiscal signing differs by country | Automated fiscal signing for DE, FR, IT, BE, HU, GB at order completion |
 | Multiple locations means double the chaos | Full multi-store support — each store has its own menu, staff, and analytics |
 
-👉 **[Demo guide →](DEMO.md)**
+👉 **[Demo guide →](docs/DEMO.md)**
 
 ---
 
@@ -133,7 +133,7 @@ Event-driven communication via RabbitMQ (`masova.orders.exchange`, `masova.notif
 | **Payments** | Stripe (SCA/3D Secure, EU/international), Razorpay (India legacy) — routed by store `countryCode` |
 | **Auth** | JWT (HS512), Redis blacklist for logout, PIN auth for POS |
 | **Testing** | JUnit 5, Mockito, Vitest, React Testing Library, Pact, Playwright |
-| **Deployment** | GCP Cloud Run, Firebase Hosting, Docker Compose |
+| **Deployment** | GCP Cloud Run, Cloudflare Workers (frontend), Docker Compose |
 
 ---
 
@@ -221,7 +221,7 @@ masova/
 
 | Document | Description |
 |---|---|
-| [DEMO.md](DEMO.md) | Demo guide for restaurant clients |
+| [DEMO.md](docs/DEMO.md) | Demo guide for restaurant clients |
 | [DOCUMENTATION.md](DOCUMENTATION.md) | Full documentation index |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Development setup, branching, commits |
 | [CHANGELOG.md](CHANGELOG.md) | Release history |

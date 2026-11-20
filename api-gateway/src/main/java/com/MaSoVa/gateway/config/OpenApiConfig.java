@@ -31,7 +31,7 @@ public class OpenApiConfig {
                         .version("2.1.0")
                         .contact(new Contact()
                                 .name("MaSoVa Development Team")
-                                .email("dev@masova.com"))
+                                .email("dev@getmasova.rest"))
                         .license(new License()
                                 .name("MIT License")
                                 .url("https://opensource.org/licenses/MIT")))

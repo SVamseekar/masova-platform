@@ -23,12 +23,7 @@ public class CorsConfig {
             "http://localhost:3000",
             "http://localhost:5173",
             "http://localhost:8080",
-            "https://masova.souravamseekar.com",
-            "https://masova-restaurant.vercel.app",
-            "https://masova-restaurant-martisoura-5934s-projects.vercel.app",
-            "https://masova-restaurant-martisoura-5934-martisoura-5934s-projects.vercel.app",
-            "https://masova-restaurant-anwptt007-martisoura-5934s-projects.vercel.app",
-            "https://masova-restaurant-git-main-martisoura-5934s-projects.vercel.app"
+            "https://getmasova.rest"
     );
 
     @Value("${cors.allowed-origins:}")
