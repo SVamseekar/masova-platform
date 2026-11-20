@@ -1,45 +1,2907 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://getmasova.rest/</loc>
-    <lastmod>2026-07-10</lastmod>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/"/>
+    <lastmod>2026-11-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
+    <loc>https://getmasova.rest/de</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/fr</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/it</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/es</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/product</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/product"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/product"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/product"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/product"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/product"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/product"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/de/product</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/product"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/product"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/product"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/product"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/product"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/product"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/fr/product</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/product"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/product"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/product"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/product"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/product"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/product"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/it/product</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/product"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/product"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/product"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/product"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/product"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/product"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/es/product</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/product"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/product"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/product"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/product"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/product"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/product"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/product/ordering</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/product/ordering"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/product/ordering"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/product/ordering"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/product/ordering"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/product/ordering"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/product/ordering"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/de/product/ordering</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/product/ordering"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/product/ordering"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/product/ordering"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/product/ordering"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/product/ordering"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/product/ordering"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/fr/product/ordering</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/product/ordering"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/product/ordering"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/product/ordering"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/product/ordering"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/product/ordering"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/product/ordering"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/it/product/ordering</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/product/ordering"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/product/ordering"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/product/ordering"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/product/ordering"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/product/ordering"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/product/ordering"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/es/product/ordering</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/product/ordering"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/product/ordering"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/product/ordering"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/product/ordering"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/product/ordering"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/product/ordering"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/product/counter</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/product/counter"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/product/counter"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/product/counter"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/product/counter"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/product/counter"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/product/counter"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/de/product/counter</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/product/counter"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/product/counter"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/product/counter"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/product/counter"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/product/counter"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/product/counter"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/fr/product/counter</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/product/counter"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/product/counter"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/product/counter"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/product/counter"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/product/counter"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/product/counter"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/it/product/counter</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/product/counter"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/product/counter"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/product/counter"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/product/counter"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/product/counter"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/product/counter"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/es/product/counter</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/product/counter"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/product/counter"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/product/counter"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/product/counter"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/product/counter"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/product/counter"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/product/kitchen</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/product/kitchen"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/product/kitchen"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/product/kitchen"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/product/kitchen"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/product/kitchen"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/product/kitchen"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/de/product/kitchen</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/product/kitchen"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/product/kitchen"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/product/kitchen"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/product/kitchen"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/product/kitchen"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/product/kitchen"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/fr/product/kitchen</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/product/kitchen"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/product/kitchen"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/product/kitchen"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/product/kitchen"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/product/kitchen"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/product/kitchen"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/it/product/kitchen</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/product/kitchen"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/product/kitchen"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/product/kitchen"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/product/kitchen"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/product/kitchen"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/product/kitchen"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/es/product/kitchen</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/product/kitchen"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/product/kitchen"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/product/kitchen"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/product/kitchen"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/product/kitchen"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/product/kitchen"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/product/delivery</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/product/delivery"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/product/delivery"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/product/delivery"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/product/delivery"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/product/delivery"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/product/delivery"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/de/product/delivery</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/product/delivery"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/product/delivery"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/product/delivery"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/product/delivery"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/product/delivery"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/product/delivery"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/fr/product/delivery</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/product/delivery"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/product/delivery"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/product/delivery"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/product/delivery"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/product/delivery"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/product/delivery"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/it/product/delivery</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/product/delivery"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/product/delivery"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/product/delivery"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/product/delivery"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/product/delivery"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/product/delivery"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/es/product/delivery</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/product/delivery"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/product/delivery"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/product/delivery"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/product/delivery"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/product/delivery"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/product/delivery"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/product/stock</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/product/stock"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/product/stock"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/product/stock"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/product/stock"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/product/stock"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/product/stock"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/de/product/stock</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/product/stock"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/product/stock"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/product/stock"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/product/stock"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/product/stock"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/product/stock"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/fr/product/stock</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/product/stock"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/product/stock"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/product/stock"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/product/stock"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/product/stock"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/product/stock"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/it/product/stock</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/product/stock"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/product/stock"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/product/stock"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/product/stock"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/product/stock"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/product/stock"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/es/product/stock</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/product/stock"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/product/stock"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/product/stock"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/product/stock"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/product/stock"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/product/stock"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/product/team</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/product/team"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/product/team"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/product/team"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/product/team"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/product/team"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/product/team"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/de/product/team</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/product/team"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/product/team"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/product/team"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/product/team"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/product/team"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/product/team"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/fr/product/team</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/product/team"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/product/team"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/product/team"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/product/team"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/product/team"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/product/team"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/it/product/team</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/product/team"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/product/team"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/product/team"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/product/team"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/product/team"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/product/team"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/es/product/team</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/product/team"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/product/team"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/product/team"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/product/team"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/product/team"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/product/team"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/product/guests</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/product/guests"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/product/guests"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/product/guests"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/product/guests"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/product/guests"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/product/guests"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/de/product/guests</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/product/guests"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/product/guests"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/product/guests"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/product/guests"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/product/guests"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/product/guests"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/fr/product/guests</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/product/guests"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/product/guests"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/product/guests"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/product/guests"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/product/guests"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/product/guests"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/it/product/guests</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/product/guests"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/product/guests"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/product/guests"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/product/guests"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/product/guests"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/product/guests"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/es/product/guests</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/product/guests"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/product/guests"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/product/guests"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/product/guests"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/product/guests"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/product/guests"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/product/reports</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/product/reports"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/product/reports"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/product/reports"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/product/reports"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/product/reports"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/product/reports"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/de/product/reports</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/product/reports"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/product/reports"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/product/reports"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/product/reports"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/product/reports"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/product/reports"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/fr/product/reports</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/product/reports"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/product/reports"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/product/reports"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/product/reports"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/product/reports"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/product/reports"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/it/product/reports</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/product/reports"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/product/reports"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/product/reports"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/product/reports"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/product/reports"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/product/reports"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/es/product/reports</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/product/reports"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/product/reports"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/product/reports"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/product/reports"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/product/reports"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/product/reports"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/apps</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/apps"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/apps"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/apps"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/apps"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/apps"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/apps"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/de/apps</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/apps"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/apps"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/apps"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/apps"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/apps"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/apps"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/fr/apps</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/apps"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/apps"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/apps"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/apps"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/apps"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/apps"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/it/apps</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/apps"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/apps"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/apps"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/apps"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/apps"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/apps"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/es/apps</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/apps"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/apps"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/apps"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/apps"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/apps"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/apps"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/ai</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/ai"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/ai"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/ai"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/ai"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/ai"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/ai"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/de/ai</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/ai"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/ai"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/ai"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/ai"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/ai"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/ai"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/fr/ai</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/ai"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/ai"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/ai"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/ai"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/ai"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/ai"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/it/ai</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/ai"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/ai"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/ai"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/ai"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/ai"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/ai"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/es/ai</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/ai"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/ai"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/ai"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/ai"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/ai"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/ai"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/solutions</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/solutions"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/solutions"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/solutions"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/solutions"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/solutions"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/solutions"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/de/solutions</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/solutions"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/solutions"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/solutions"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/solutions"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/solutions"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/solutions"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/fr/solutions</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/solutions"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/solutions"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/solutions"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/solutions"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/solutions"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/solutions"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/it/solutions</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/solutions"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/solutions"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/solutions"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/solutions"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/solutions"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/solutions"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/es/solutions</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/solutions"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/solutions"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/solutions"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/solutions"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/solutions"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/solutions"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/countries</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/de/countries</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/fr/countries</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/it/countries</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/es/countries</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/compliance</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/compliance"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/compliance"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/compliance"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/compliance"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/compliance"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/compliance"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/de/compliance</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/compliance"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/compliance"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/compliance"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/compliance"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/compliance"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/compliance"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/fr/compliance</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/compliance"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/compliance"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/compliance"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/compliance"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/compliance"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/compliance"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/it/compliance</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/compliance"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/compliance"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/compliance"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/compliance"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/compliance"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/compliance"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/es/compliance</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/compliance"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/compliance"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/compliance"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/compliance"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/compliance"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/compliance"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/security</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/security"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/security"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/security"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/security"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/security"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/security"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/de/security</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/security"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/security"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/security"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/security"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/security"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/security"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/fr/security</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/security"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/security"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/security"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/security"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/security"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/security"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/it/security</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/security"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/security"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/security"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/security"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/security"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/security"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/es/security</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/security"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/security"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/security"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/security"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/security"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/security"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/integrations</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/integrations"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/integrations"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/integrations"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/integrations"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/integrations"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/integrations"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/de/integrations</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/integrations"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/integrations"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/integrations"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/integrations"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/integrations"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/integrations"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/fr/integrations</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/integrations"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/integrations"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/integrations"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/integrations"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/integrations"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/integrations"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/it/integrations</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/integrations"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/integrations"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/integrations"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/integrations"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/integrations"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/integrations"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/es/integrations</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/integrations"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/integrations"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/integrations"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/integrations"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/integrations"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/integrations"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/pricing</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/pricing"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/pricing"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/pricing"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/pricing"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/pricing"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/pricing"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/de/pricing</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/pricing"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/pricing"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/pricing"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/pricing"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/pricing"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/pricing"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/fr/pricing</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/pricing"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/pricing"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/pricing"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/pricing"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/pricing"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/pricing"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/it/pricing</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/pricing"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/pricing"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/pricing"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/pricing"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/pricing"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/pricing"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/es/pricing</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/pricing"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/pricing"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/pricing"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/pricing"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/pricing"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/pricing"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/pilot</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/pilot"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/pilot"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/pilot"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/pilot"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/pilot"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/pilot"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/de/pilot</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/pilot"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/pilot"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/pilot"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/pilot"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/pilot"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/pilot"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/fr/pilot</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/pilot"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/pilot"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/pilot"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/pilot"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/pilot"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/pilot"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/it/pilot</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/pilot"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/pilot"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/pilot"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/pilot"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/pilot"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/pilot"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/es/pilot</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/pilot"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/pilot"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/pilot"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/pilot"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/pilot"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/pilot"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/faq</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/faq"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/faq"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/faq"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/faq"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/faq"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/faq"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/de/faq</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/faq"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/faq"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/faq"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/faq"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/faq"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/faq"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/fr/faq</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/faq"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/faq"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/faq"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/faq"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/faq"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/faq"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/it/faq</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/faq"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/faq"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/faq"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/faq"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/faq"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/faq"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/es/faq</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/faq"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/faq"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/faq"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/faq"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/faq"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/faq"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/about</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/about"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/about"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/about"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/about"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/about"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/about"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/de/about</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/about"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/about"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/about"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/about"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/about"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/about"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/fr/about</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/about"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/about"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/about"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/about"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/about"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/about"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/it/about</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/about"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/about"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/about"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/about"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/about"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/about"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/es/about</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/about"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/about"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/about"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/about"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/about"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/about"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/contact</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/contact"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/contact"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/contact"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/contact"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/contact"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/contact"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/de/contact</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/contact"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/contact"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/contact"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/contact"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/contact"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/contact"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/fr/contact</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/contact"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/contact"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/contact"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/contact"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/contact"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/contact"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/it/contact</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/contact"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/contact"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/contact"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/contact"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/contact"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/contact"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/es/contact</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/contact"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/contact"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/contact"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/contact"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/contact"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/contact"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/countries/india</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/india"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/india"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/india"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/india"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/india"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/india"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/de/countries/india</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/india"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/india"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/india"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/india"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/india"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/india"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/fr/countries/india</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/india"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/india"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/india"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/india"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/india"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/india"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/it/countries/india</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/india"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/india"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/india"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/india"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/india"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/india"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/es/countries/india</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/india"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/india"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/india"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/india"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/india"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/india"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/countries/united-kingdom</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/united-kingdom"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/united-kingdom"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/united-kingdom"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/united-kingdom"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/united-kingdom"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/united-kingdom"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/de/countries/united-kingdom</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/united-kingdom"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/united-kingdom"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/united-kingdom"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/united-kingdom"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/united-kingdom"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/united-kingdom"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/fr/countries/united-kingdom</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/united-kingdom"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/united-kingdom"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/united-kingdom"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/united-kingdom"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/united-kingdom"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/united-kingdom"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/it/countries/united-kingdom</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/united-kingdom"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/united-kingdom"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/united-kingdom"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/united-kingdom"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/united-kingdom"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/united-kingdom"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/es/countries/united-kingdom</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/united-kingdom"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/united-kingdom"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/united-kingdom"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/united-kingdom"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/united-kingdom"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/united-kingdom"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/countries/ireland</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/ireland"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/ireland"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/ireland"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/ireland"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/ireland"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/ireland"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/de/countries/ireland</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/ireland"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/ireland"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/ireland"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/ireland"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/ireland"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/ireland"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/fr/countries/ireland</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/ireland"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/ireland"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/ireland"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/ireland"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/ireland"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/ireland"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/it/countries/ireland</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/ireland"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/ireland"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/ireland"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/ireland"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/ireland"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/ireland"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/es/countries/ireland</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/ireland"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/ireland"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/ireland"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/ireland"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/ireland"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/ireland"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/countries/united-states</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/united-states"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/united-states"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/united-states"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/united-states"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/united-states"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/united-states"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/de/countries/united-states</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/united-states"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/united-states"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/united-states"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/united-states"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/united-states"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/united-states"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/fr/countries/united-states</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/united-states"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/united-states"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/united-states"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/united-states"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/united-states"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/united-states"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/it/countries/united-states</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/united-states"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/united-states"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/united-states"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/united-states"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/united-states"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/united-states"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/es/countries/united-states</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/united-states"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/united-states"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/united-states"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/united-states"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/united-states"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/united-states"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/countries/canada</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/canada"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/canada"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/canada"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/canada"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/canada"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/canada"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/de/countries/canada</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/canada"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/canada"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/canada"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/canada"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/canada"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/canada"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/fr/countries/canada</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/canada"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/canada"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/canada"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/canada"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/canada"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/canada"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/it/countries/canada</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/canada"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/canada"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/canada"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/canada"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/canada"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/canada"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/es/countries/canada</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/canada"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/canada"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/canada"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/canada"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/canada"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/canada"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/countries/australia</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/australia"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/australia"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/australia"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/australia"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/australia"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/australia"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/de/countries/australia</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/australia"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/australia"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/australia"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/australia"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/australia"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/australia"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/fr/countries/australia</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/australia"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/australia"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/australia"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/australia"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/australia"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/australia"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/it/countries/australia</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/australia"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/australia"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/australia"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/australia"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/australia"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/australia"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/es/countries/australia</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/australia"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/australia"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/australia"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/australia"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/australia"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/australia"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/countries/new-zealand</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/new-zealand"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/new-zealand"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/new-zealand"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/new-zealand"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/new-zealand"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/new-zealand"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/de/countries/new-zealand</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/new-zealand"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/new-zealand"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/new-zealand"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/new-zealand"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/new-zealand"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/new-zealand"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/fr/countries/new-zealand</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/new-zealand"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/new-zealand"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/new-zealand"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/new-zealand"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/new-zealand"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/new-zealand"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/it/countries/new-zealand</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/new-zealand"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/new-zealand"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/new-zealand"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/new-zealand"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/new-zealand"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/new-zealand"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/es/countries/new-zealand</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/new-zealand"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/new-zealand"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/new-zealand"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/new-zealand"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/new-zealand"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/new-zealand"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/countries/singapore</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/singapore"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/singapore"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/singapore"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/singapore"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/singapore"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/singapore"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/de/countries/singapore</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/singapore"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/singapore"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/singapore"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/singapore"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/singapore"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/singapore"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/fr/countries/singapore</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/singapore"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/singapore"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/singapore"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/singapore"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/singapore"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/singapore"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/it/countries/singapore</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/singapore"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/singapore"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/singapore"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/singapore"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/singapore"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/singapore"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/es/countries/singapore</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/singapore"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/singapore"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/singapore"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/singapore"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/singapore"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/singapore"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/countries/malaysia</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/malaysia"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/malaysia"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/malaysia"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/malaysia"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/malaysia"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/malaysia"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/de/countries/malaysia</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/malaysia"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/malaysia"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/malaysia"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/malaysia"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/malaysia"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/malaysia"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/fr/countries/malaysia</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/malaysia"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/malaysia"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/malaysia"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/malaysia"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/malaysia"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/malaysia"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/it/countries/malaysia</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/malaysia"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/malaysia"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/malaysia"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/malaysia"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/malaysia"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/malaysia"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/es/countries/malaysia</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/malaysia"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/malaysia"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/malaysia"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/malaysia"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/malaysia"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/malaysia"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/countries/germany</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/germany"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/germany"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/germany"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/germany"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/germany"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/germany"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/de/countries/germany</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/germany"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/germany"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/germany"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/germany"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/germany"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/germany"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/fr/countries/germany</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/germany"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/germany"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/germany"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/germany"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/germany"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/germany"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/it/countries/germany</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/germany"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/germany"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/germany"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/germany"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/germany"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/germany"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/es/countries/germany</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/germany"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/germany"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/germany"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/germany"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/germany"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/germany"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/countries/austria</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/austria"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/austria"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/austria"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/austria"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/austria"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/austria"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/de/countries/austria</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/austria"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/austria"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/austria"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/austria"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/austria"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/austria"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/fr/countries/austria</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/austria"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/austria"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/austria"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/austria"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/austria"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/austria"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/it/countries/austria</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/austria"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/austria"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/austria"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/austria"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/austria"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/austria"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/es/countries/austria</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/austria"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/austria"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/austria"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/austria"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/austria"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/austria"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/countries/switzerland</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/switzerland"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/switzerland"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/switzerland"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/switzerland"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/switzerland"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/switzerland"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/de/countries/switzerland</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/switzerland"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/switzerland"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/switzerland"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/switzerland"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/switzerland"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/switzerland"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/fr/countries/switzerland</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/switzerland"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/switzerland"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/switzerland"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/switzerland"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/switzerland"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/switzerland"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/it/countries/switzerland</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/switzerland"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/switzerland"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/switzerland"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/switzerland"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/switzerland"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/switzerland"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/es/countries/switzerland</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/switzerland"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/switzerland"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/switzerland"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/switzerland"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/switzerland"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/switzerland"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/countries/france</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/france"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/france"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/france"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/france"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/france"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/france"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/de/countries/france</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/france"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/france"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/france"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/france"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/france"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/france"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/fr/countries/france</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/france"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/france"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/france"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/france"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/france"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/france"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/it/countries/france</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/france"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/france"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/france"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/france"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/france"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/france"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/es/countries/france</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/france"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/france"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/france"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/france"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/france"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/france"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/countries/belgium</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/belgium"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/belgium"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/belgium"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/belgium"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/belgium"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/belgium"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/de/countries/belgium</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/belgium"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/belgium"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/belgium"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/belgium"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/belgium"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/belgium"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/fr/countries/belgium</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/belgium"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/belgium"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/belgium"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/belgium"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/belgium"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/belgium"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/it/countries/belgium</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/belgium"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/belgium"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/belgium"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/belgium"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/belgium"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/belgium"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/es/countries/belgium</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/belgium"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/belgium"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/belgium"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/belgium"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/belgium"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/belgium"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/countries/netherlands</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/netherlands"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/netherlands"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/netherlands"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/netherlands"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/netherlands"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/netherlands"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/de/countries/netherlands</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/netherlands"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/netherlands"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/netherlands"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/netherlands"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/netherlands"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/netherlands"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/fr/countries/netherlands</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/netherlands"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/netherlands"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/netherlands"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/netherlands"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/netherlands"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/netherlands"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/it/countries/netherlands</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/netherlands"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/netherlands"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/netherlands"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/netherlands"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/netherlands"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/netherlands"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/es/countries/netherlands</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/netherlands"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/netherlands"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/netherlands"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/netherlands"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/netherlands"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/netherlands"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/countries/luxembourg</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/luxembourg"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/luxembourg"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/luxembourg"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/luxembourg"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/luxembourg"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/luxembourg"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/de/countries/luxembourg</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/luxembourg"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/luxembourg"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/luxembourg"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/luxembourg"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/luxembourg"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/luxembourg"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/fr/countries/luxembourg</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/luxembourg"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/luxembourg"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/luxembourg"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/luxembourg"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/luxembourg"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/luxembourg"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/it/countries/luxembourg</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/luxembourg"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/luxembourg"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/luxembourg"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/luxembourg"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/luxembourg"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/luxembourg"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/es/countries/luxembourg</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/luxembourg"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/luxembourg"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/luxembourg"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/luxembourg"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/luxembourg"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/luxembourg"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/countries/italy</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/italy"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/italy"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/italy"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/italy"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/italy"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/italy"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/de/countries/italy</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/italy"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/italy"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/italy"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/italy"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/italy"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/italy"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/fr/countries/italy</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/italy"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/italy"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/italy"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/italy"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/italy"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/italy"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/it/countries/italy</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/italy"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/italy"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/italy"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/italy"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/italy"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/italy"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/es/countries/italy</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/italy"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/italy"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/italy"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/italy"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/italy"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/italy"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/countries/spain</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/spain"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/spain"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/spain"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/spain"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/spain"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/spain"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/de/countries/spain</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/spain"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/spain"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/spain"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/spain"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/spain"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/spain"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/fr/countries/spain</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/spain"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/spain"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/spain"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/spain"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/spain"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/spain"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/it/countries/spain</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/spain"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/spain"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/spain"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/spain"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/spain"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/spain"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/es/countries/spain</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/spain"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/spain"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/spain"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/spain"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/spain"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/spain"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/countries/portugal</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/portugal"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/portugal"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/portugal"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/portugal"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/portugal"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/portugal"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/de/countries/portugal</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/portugal"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/portugal"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/portugal"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/portugal"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/portugal"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/portugal"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/fr/countries/portugal</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/portugal"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/portugal"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/portugal"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/portugal"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/portugal"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/portugal"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/it/countries/portugal</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/portugal"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/portugal"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/portugal"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/portugal"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/portugal"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/portugal"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/es/countries/portugal</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/portugal"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/portugal"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/portugal"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/portugal"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/portugal"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/portugal"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/countries/poland</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/poland"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/poland"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/poland"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/poland"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/poland"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/poland"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/de/countries/poland</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/poland"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/poland"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/poland"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/poland"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/poland"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/poland"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/fr/countries/poland</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/poland"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/poland"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/poland"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/poland"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/poland"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/poland"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/it/countries/poland</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/poland"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/poland"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/poland"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/poland"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/poland"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/poland"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/es/countries/poland</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/poland"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/poland"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/poland"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/poland"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/poland"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/poland"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/countries/czechia</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/czechia"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/czechia"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/czechia"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/czechia"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/czechia"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/czechia"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/de/countries/czechia</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/czechia"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/czechia"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/czechia"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/czechia"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/czechia"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/czechia"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/fr/countries/czechia</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/czechia"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/czechia"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/czechia"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/czechia"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/czechia"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/czechia"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/it/countries/czechia</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/czechia"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/czechia"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/czechia"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/czechia"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/czechia"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/czechia"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/es/countries/czechia</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/czechia"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/czechia"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/czechia"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/czechia"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/czechia"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/czechia"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/countries/hungary</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/hungary"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/hungary"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/hungary"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/hungary"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/hungary"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/hungary"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/de/countries/hungary</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/hungary"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/hungary"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/hungary"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/hungary"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/hungary"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/hungary"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/fr/countries/hungary</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/hungary"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/hungary"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/hungary"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/hungary"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/hungary"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/hungary"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/it/countries/hungary</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/hungary"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/hungary"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/hungary"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/hungary"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/hungary"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/hungary"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/es/countries/hungary</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/hungary"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/hungary"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/hungary"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/hungary"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/hungary"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/hungary"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/countries/romania</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/romania"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/romania"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/romania"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/romania"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/romania"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/romania"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/de/countries/romania</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/romania"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/romania"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/romania"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/romania"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/romania"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/romania"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/fr/countries/romania</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/romania"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/romania"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/romania"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/romania"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/romania"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/romania"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/it/countries/romania</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/romania"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/romania"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/romania"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/romania"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/romania"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/romania"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/es/countries/romania</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/romania"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/romania"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/romania"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/romania"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/romania"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/romania"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/countries/sweden</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/sweden"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/sweden"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/sweden"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/sweden"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/sweden"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/sweden"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/de/countries/sweden</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/sweden"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/sweden"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/sweden"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/sweden"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/sweden"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/sweden"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/fr/countries/sweden</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/sweden"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/sweden"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/sweden"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/sweden"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/sweden"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/sweden"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/it/countries/sweden</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/sweden"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/sweden"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/sweden"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/sweden"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/sweden"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/sweden"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/es/countries/sweden</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/sweden"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/sweden"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/sweden"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/sweden"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/sweden"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/sweden"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/countries/denmark</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/denmark"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/denmark"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/denmark"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/denmark"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/denmark"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/denmark"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/de/countries/denmark</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/denmark"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/denmark"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/denmark"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/denmark"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/denmark"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/denmark"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/fr/countries/denmark</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/denmark"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/denmark"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/denmark"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/denmark"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/denmark"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/denmark"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/it/countries/denmark</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/denmark"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/denmark"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/denmark"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/denmark"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/denmark"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/denmark"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/es/countries/denmark</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/denmark"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/denmark"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/denmark"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/denmark"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/denmark"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/denmark"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/countries/finland</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/finland"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/finland"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/finland"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/finland"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/finland"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/finland"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/de/countries/finland</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/finland"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/finland"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/finland"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/finland"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/finland"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/finland"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/fr/countries/finland</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/finland"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/finland"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/finland"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/finland"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/finland"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/finland"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/it/countries/finland</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/finland"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/finland"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/finland"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/finland"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/finland"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/finland"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://getmasova.rest/es/countries/finland</loc>
+    <xhtml:link rel="alternate" hreflang="en-GB" href="https://getmasova.rest/countries/finland"/>
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getmasova.rest/de/countries/finland"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://getmasova.rest/fr/countries/finland"/>
+    <xhtml:link rel="alternate" hreflang="it-IT" href="https://getmasova.rest/it/countries/finland"/>
+    <xhtml:link rel="alternate" hreflang="es-ES" href="https://getmasova.rest/es/countries/finland"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getmasova.rest/countries/finland"/>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://getmasova.rest/privacy</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-11-20</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.4</priority>
   </url>
   <url>
     <loc>https://getmasova.rest/terms</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-11-20</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.4</priority>
   </url>
   <url>
     <loc>https://getmasova.rest/cookies</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-11-20</lastmod>
     <changefreq>yearly</changefreq>
-    <priority>0.3</priority>
+    <priority>0.4</priority>
   </url>
   <url>
     <loc>https://getmasova.rest/refunds</loc>
-    <lastmod>2026-07-10</lastmod>
+    <lastmod>2026-11-20</lastmod>
     <changefreq>yearly</changefreq>
-    <priority>0.3</priority>
-  </url>
-  <url>
-    <loc>https://getmasova.rest/order</loc>
-    <lastmod>2026-07-10</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://getmasova.rest/menu</loc>
-    <lastmod>2026-07-10</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.4</priority>
   </url>
 </urlset>
