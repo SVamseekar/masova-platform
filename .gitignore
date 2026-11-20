@@ -91,6 +91,8 @@ frontend/tsconfig.tsbuildinfo
 *.jpg
 *.jpeg
 !frontend/public/images/menu/*.jpg
+!frontend/public/site/*.webp
+!frontend/public/site/og-image.jpg
 
 # Local AI / IDE tooling (never commit)
 AGENTS.md
@@ -119,8 +121,9 @@ archive/
 # Product Launch Assets (untracked media)
 product_launch_assets/
 
-# Vercel CLI (project link lives at repo root)
+# Hosting tool local state (Vercel link kept ignored until the local dir is removed)
 /.vercel/
+.wrangler/
 
 # Claude Code local context (not for git)
 CLAUDE.md

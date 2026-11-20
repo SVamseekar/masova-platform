@@ -1,0 +1,13 @@
+{
+  "name": "masova-site",
+  "compatibility_date": "2026-11-01",
+  "main": "./worker/index.js",
+  "workers_dev": false,
+  "routes": [{ "pattern": "getmasova.rest", "custom_domain": true }],
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/assets/*"]
+  }
+}

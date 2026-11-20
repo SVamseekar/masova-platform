@@ -21,13 +21,13 @@ class CorsConfigTest {
     @Test
     @DisplayName("allows configured MaSoVa production origin")
     void allowsProductionOrigin() {
-        MockServerWebExchange exchange = preflightExchange("https://masova-restaurant.vercel.app");
+        MockServerWebExchange exchange = preflightExchange("https://getmasova.rest");
 
         StepVerifier.create(corsWebFilter.filter(exchange, ex -> Mono.empty()))
                 .verifyComplete();
 
         assertThat(exchange.getResponse().getHeaders().getFirst(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN))
-                .isEqualTo("https://masova-restaurant.vercel.app");
+                .isEqualTo("https://getmasova.rest");
     }
 
     @Test
@@ -48,7 +48,7 @@ class CorsConfigTest {
         assertThat(new CorsConfig().resolveAllowedOrigins())
                 .noneMatch(origin -> origin.contains("*"));
         assertThat(new CorsConfig().resolveAllowedOrigins())
-                .contains("https://masova.souravamseekar.com");
+                .contains("https://getmasova.rest");
     }
 
     private MockServerWebExchange preflightExchange(String origin) {
