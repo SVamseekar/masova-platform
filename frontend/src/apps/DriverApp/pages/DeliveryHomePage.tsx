@@ -24,6 +24,7 @@ import { websocketService } from '../../../services/websocketService';
 import { ActionButton } from '../components/shared';
 import LocationMapModal from '../components/LocationMapModal';
 import { colors, spacing, borderRadius, typography, shadows } from '../../../styles/driver-design-tokens';
+import { CONTACT_EMAILS } from '../../../config/contact';
 
 interface DeliveryHomePageProps {
   isOnline: boolean;
@@ -477,7 +478,7 @@ const DeliveryHomePage: React.FC<DeliveryHomePageProps> = ({ isOnline, setIsOnli
             fullWidth
             startIcon={<PhoneIcon />}
             onClick={() => {
-              alert('Support Contact:\n\nPhone: 1-800-MASOVA\nEmail: masova@souravamseekar.com\n\nFor urgent issues during delivery, call the number above.');
+              alert(`Support Contact:\n\nPhone: 1-800-MASOVA\nEmail: ${CONTACT_EMAILS.crew}\n\nFor urgent issues during delivery, call the number above.`);
             }}
           >
             Support

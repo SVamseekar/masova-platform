@@ -1,19 +1,8 @@
-export const SITE_URL = 'https://masova.souravamseekar.com'
-export const SUPPORT_EMAIL = 'masova@souravamseekar.com'
+import { CONTACT_EMAILS } from '../../config/contact'
 
-export const OPEN_CONTACT_EVENT = 'masova:open-contact'
+export { CONTACT_EMAILS }
 
-export function openContactForm() {
-  if (window.location.pathname !== '/') {
-    window.location.assign('/#contact')
-    return
-  }
-  window.dispatchEvent(new CustomEvent(OPEN_CONTACT_EVENT))
-}
+export const SITE_URL = 'https://getmasova.rest'
 
-/** Approved monthly prices. Annual terms are confirmed in a walkthrough. */
-export const PRICING_TIERS: { name: string; price: number | null }[] = [
-  { name: 'Starter', price: 149 },
-  { name: 'Growth', price: 349 },
-  { name: 'Enterprise', price: null },
-]
+/** Default public address for the product site (general enquiries). */
+export const SUPPORT_EMAIL = CONTACT_EMAILS.hello

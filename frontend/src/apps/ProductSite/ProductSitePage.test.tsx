@@ -1,153 +1,145 @@
-import { render, screen, within } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import ProductSitePage from './ProductSitePage';
-import LegalPageLayout from './components/LegalPageLayout';
+import { describe, expect, it } from 'vitest'
+import { fireEvent, render, screen, within } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
+import ProductSitePage from './ProductSitePage'
+import { SITE_COPY } from './content'
+import { ASSISTANT_SCHEDULE, INBOX_ASSISTANTS } from './content/shared'
+import {
+  COUNTRY_CODES, PRODUCT_AREAS, SITE_LOCALES, SITE_LOCALE_TAGS, SITE_PAGES, countryPath, sitePath,
+  type CountryCode, type SiteLocale, type SitePage,
+} from './locales'
 
-const renderSite = () => render(<MemoryRouter><ProductSitePage /></MemoryRouter>);
+function renderPage(locale: SiteLocale, page: SitePage, country?: CountryCode) {
+  return render(
+    <MemoryRouter initialEntries={[country ? countryPath(locale, country) : sitePath(locale, page)]}>
+      <ProductSitePage locale={locale} page={page} country={country} />
+    </MemoryRouter>,
+  )
+}
 
-afterEach(() => vi.restoreAllMocks());
+describe('ProductSitePage', () => {
+  it.each(SITE_PAGES.filter((page) => page !== 'home'))('renders the %s page with its own heading', (page) => {
+    renderPage('en', page)
+    expect(screen.getByRole('heading', { level: 1, name: SITE_COPY.en.pages[page].heading })).toBeInTheDocument()
+  })
 
-describe('Product site', () => {
-  it('shows the approved hero, navigation and walkthrough actions', () => {
-    renderSite();
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Every location.One clear view.');
-    const nav = screen.getByRole('navigation', { name: 'Main' });
-    expect(within(nav).getAllByRole('link').map(link => link.textContent)).toEqual(['Product', 'AI assistants', 'Mobile apps', 'Pricing']);
-    expect(screen.getAllByRole('link', { name: 'Sign in' })[0]).toHaveAttribute('href', '/staff-login');
-    expect(screen.getAllByRole('button', { name: /Book a walkthrough/ }).length).toBeGreaterThan(1);
-  });
+  it('renders the home page hero', () => {
+    renderPage('en', 'home')
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(SITE_COPY.en.hero.titleLead)
+  })
 
-  it('opens the mobile menu with a labelled close button and returns focus', async () => {
-    const user = userEvent.setup();
-    renderSite();
-    const toggle = screen.getByRole('button', { name: 'Open menu' });
-    await user.click(toggle);
-    const menu = screen.getByRole('dialog', { name: 'Menu' });
-    expect(within(menu).getByRole('button', { name: 'Close' })).toHaveFocus();
-    expect(within(menu).getByRole('link', { name: 'Sign in' })).toBeInTheDocument();
-    await user.keyboard('{Escape}');
-    expect(screen.queryByRole('dialog', { name: 'Menu' })).not.toBeInTheDocument();
-    expect(toggle).toHaveFocus();
-  });
+  it.each(SITE_LOCALES)('renders every page in %s without errors', (locale) => {
+    for (const page of SITE_PAGES) {
+      const view = renderPage(locale, page)
+      expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
+      view.unmount()
+    }
+  })
 
-  it('switches platform tour tabs and assistant details', async () => {
-    const user = userEvent.setup();
-    renderSite();
-    const tabs = within(screen.getByRole('tablist', { name: 'Platform areas' })).getAllByRole('tab');
-    expect(tabs.map(tab => tab.textContent)).toEqual(['Ordering', 'Kitchen', 'Delivery', 'Payments', 'Aggregators', 'Analytics']);
-    await user.click(tabs[3]);
-    expect(tabs[3]).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getByText('Refunds need manager approval')).toBeInTheDocument();
+  it.each(COUNTRY_CODES)('renders the country page for %s with the country as its heading', (code) => {
+    renderPage('en', 'countries', code)
+    expect(screen.getByRole('heading', { level: 1, name: SITE_COPY.en.countries.list[code].name })).toBeInTheDocument()
+    expect(document.title).toBe(`${SITE_COPY.en.countries.list[code].name} | MaSoVa`)
+  })
 
-    const assistants = within(screen.getByRole('group', { name: 'Choose an assistant' })).getAllByRole('button');
-    expect(assistants).toHaveLength(8);
-    await user.click(screen.getByRole('button', { name: /Dynamic pricing/ }));
-    expect(screen.getByText('Suggested menu price change')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Dynamic pricing/ })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByText('Runs during service')).toBeInTheDocument();
-  });
+  it.each(SITE_LOCALES)('sets the document language and title for %s', (locale) => {
+    renderPage(locale, 'ai')
+    expect(document.title).toBe(`${SITE_COPY[locale].pages.ai.heading} | MaSoVa`)
+    expect(document.documentElement.lang).toMatch(new RegExp(`^${locale}`))
+  })
 
-  it('filters the sample kitchen queue and shows an empty stage honestly', async () => {
-    const user = userEvent.setup();
-    renderSite();
-    const stages = screen.getByRole('tablist', { name: 'Kitchen queue stage' });
-    await user.click(within(stages).getByRole('tab', { name: /Ready/ }));
-    const panel = screen.getByRole('tabpanel', { name: 'Ready sample orders' });
-    expect(within(panel).getAllByRole('row')).toHaveLength(2);
-    expect(within(panel).getByText('Lukas Weber')).toBeInTheDocument();
-  });
+  it('publishes hreflang alternates for every language plus x-default', () => {
+    renderPage('fr', 'pilot')
+    const alternates = [...document.head.querySelectorAll('link[rel="alternate"][data-seo-hreflang]')]
+    expect(alternates.map((link) => link.getAttribute('hreflang'))).toEqual([...SITE_LOCALES.map((code) => SITE_LOCALE_TAGS[code]), 'x-default'])
+    expect(alternates.find((link) => link.getAttribute('hreflang') === 'de-DE')).toHaveAttribute('href', expect.stringMatching(/\/de\/pilot$/))
+  })
 
-  it('reveals the cashier preview and answers the selected question', async () => {
-    const user = userEvent.setup();
-    renderSite();
-    await user.click(screen.getByRole('button', { name: 'Cashier' }));
-    expect(screen.getByText('Cashier app')).toBeInTheDocument();
-    expect(screen.queryByText('Manager app')).not.toBeInTheDocument();
+  it('points country page alternates at the same country in each language', () => {
+    renderPage('en', 'countries', 'DE')
+    const german = document.head.querySelector('link[rel="alternate"][hreflang="de-DE"]')
+    expect(german).toHaveAttribute('href', expect.stringMatching(/\/de\/countries\/germany$/))
+  })
 
-    await user.click(screen.getByRole('button', { name: 'How is VAT handled?' }));
-    expect(screen.getByText(/VAT is calculated per country/)).toBeInTheDocument();
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Filter questions by topic' }), 'Channels');
-    expect(screen.getByText(/join the same kitchen queue as your direct/)).toBeInTheDocument();
-  });
+  it('keeps navigation inside the current language', () => {
+    renderPage('it', 'home')
+    const links = screen.getAllByRole('link', { name: SITE_COPY.it.pages.pricing.eyebrow })
+    expect(links[0]).toHaveAttribute('href', '/it/pricing')
+  })
 
-  it('validates the walkthrough request and reports a failed send without losing input', async () => {
-    const user = userEvent.setup();
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('offline'));
-    vi.spyOn(console, 'error').mockImplementation(() => {});
-    renderSite();
-    await user.click(screen.getByRole('button', { name: 'Submit request' }));
-    expect(screen.getByText('Enter your full name')).toBeInTheDocument();
-    expect(screen.getByText('Agree to the Privacy Policy to send your request')).toBeInTheDocument();
-    expect(screen.getByLabelText(/Full name/)).toHaveFocus();
-    expect(fetchMock).not.toHaveBeenCalled();
+  it('labels every app stage in words, not only colour', () => {
+    renderPage('en', 'apps')
+    expect(screen.getAllByText(SITE_COPY.en.ui.status.available).length).toBeGreaterThan(0)
+  })
 
-    await user.type(screen.getByLabelText(/Full name/), 'Test Owner');
-    await user.type(screen.getByLabelText(/Work email/), 'owner@example.com');
-    await user.type(screen.getByLabelText(/Restaurant \/ brand name/), 'Test Kitchen');
-    await user.type(screen.getByLabelText(/City/), 'Berlin');
-    await user.click(screen.getByRole('checkbox'));
-    await user.click(screen.getByRole('button', { name: 'Submit request' }));
-    expect(await screen.findByText(/Your request was not sent/)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Full name/)).toHaveValue('Test Owner');
-  });
+  it('shows another app when it is picked in the showcase', async () => {
+    renderPage('en', 'apps')
+    const driver = SITE_COPY.en.apps.items.find((app) => app.key === 'driver')!
+    screen.getByRole('button', { name: driver.name }).click()
+    expect(await screen.findByRole('heading', { level: 3, name: driver.name })).toBeInTheDocument()
+    expect(screen.getByText(driver.points[0])).toBeInTheDocument()
+  })
 
-  it('confirms a sent walkthrough request', async () => {
-    const user = userEvent.setup();
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status: 200 }));
-    renderSite();
-    await user.type(screen.getByLabelText(/Full name/), 'Test Owner');
-    await user.type(screen.getByLabelText(/Work email/), 'owner@example.com');
-    await user.type(screen.getByLabelText(/Restaurant \/ brand name/), 'Test Kitchen');
-    await user.type(screen.getByLabelText(/City/), 'Berlin');
-    await user.click(screen.getByRole('checkbox'));
-    await user.click(screen.getByRole('button', { name: 'Submit request' }));
-    expect(await screen.findByText('We received your request')).toBeInTheDocument();
-    expect(screen.getByText('owner@example.com')).toBeInTheDocument();
-    expect(screen.getByText('We received your request').closest('[role="status"]')).toHaveFocus();
-  });
+  it('moves an approved proposal into the decision record and clears it on start again', () => {
+    renderPage('en', 'ai')
+    const inbox = SITE_COPY.en.ai.inbox
+    const log = screen.getByRole('complementary', { name: inbox.logTitle })
+    expect(within(log).getByText(inbox.logEmpty)).toBeInTheDocument()
 
-  it('treats a provider failure inside a 200 response as not sent', async () => {
-    const user = userEvent.setup();
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ success: 'false', message: 'not activated' }), { status: 200 }));
-    vi.spyOn(console, 'error').mockImplementation(() => {});
-    renderSite();
-    await user.type(screen.getByLabelText(/Full name/), 'Test Owner');
-    await user.type(screen.getByLabelText(/Work email/), 'owner@example.com');
-    await user.type(screen.getByLabelText(/Restaurant \/ brand name/), 'Test Kitchen');
-    await user.type(screen.getByLabelText(/City/), 'Berlin');
-    await user.click(screen.getByRole('checkbox'));
-    await user.click(screen.getByRole('button', { name: 'Submit request' }));
-    expect(await screen.findByText(/Your request was not sent/)).toBeInTheDocument();
-    expect(screen.queryByText('We received your request')).not.toBeInTheDocument();
-  });
+    fireEvent.click(screen.getAllByRole('button', { name: inbox.approve })[0])
+    expect(within(log).getByText(inbox.items[0].action)).toBeInTheDocument()
+    expect(within(log).getByText(new RegExp(inbox.approved))).toBeInTheDocument()
 
-  it('moves between platform tour tabs with the arrow keys', async () => {
-    const user = userEvent.setup();
-    renderSite();
-    const tabs = within(screen.getByRole('tablist', { name: 'Platform areas' })).getAllByRole('tab');
-    tabs[0].focus();
-    await user.keyboard('{ArrowRight}');
-    expect(tabs[1]).toHaveFocus();
-    expect(tabs[1]).toHaveAttribute('aria-selected', 'true');
-    expect(tabs[0]).toHaveAttribute('tabindex', '-1');
-  });
-});
+    fireEvent.click(within(log).getByRole('button', { name: inbox.reset }))
+    expect(within(log).queryByText(inbox.items[0].action)).not.toBeInTheDocument()
+    expect(within(log).getByText(inbox.logEmpty)).toBeInTheDocument()
+  })
 
-describe('Legal document layout', () => {
-  it('marks the active document and lists the sections on the page', async () => {
-    render(<MemoryRouter initialEntries={['/privacy']}>
-      <LegalPageLayout title="Privacy Policy" updated="10 Oct 2026">
-        <section><h2>1. Information we collect</h2><p>Sample.</p></section>
-        <section><h2>2. How we use information</h2><p>Sample.</p></section>
-      </LegalPageLayout>
-    </MemoryRouter>);
-    const legal = screen.getByRole('navigation', { name: 'Legal documents' });
-    expect(within(legal).getByRole('link', { name: 'Privacy' })).toHaveAttribute('aria-current', 'page');
-    expect(within(legal).getByRole('link', { name: 'Terms' })).not.toHaveAttribute('aria-current');
-    const contents = await screen.findByRole('navigation', { name: 'On this page' });
-    expect(within(contents).getByRole('link', { name: '1. Information we collect' })).toHaveAttribute('href', '#section-1');
-    expect(within(contents).getAllByRole('link')).toHaveLength(2);
-  });
-});
+  it('shows only stock proposals when the stock filter is picked', () => {
+    renderPage('en', 'ai')
+    const inbox = SITE_COPY.en.ai.inbox
+    fireEvent.click(screen.getByRole('button', { name: 'Stock' }))
+    const shown = screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent)
+    inbox.items.forEach((item, i) => {
+      const isStock = ASSISTANT_SCHEDULE[INBOX_ASSISTANTS[i]].group === 'stock'
+      expect(shown.includes(item.title)).toBe(isStock)
+    })
+  })
+
+  it('shows the driver day when the driver role is picked', () => {
+    renderPage('en', 'apps')
+    const driver = SITE_COPY.en.apps.roles[4]
+    fireEvent.click(screen.getByRole('button', { name: driver.role }))
+    expect(screen.getByText(driver.text)).toBeInTheDocument()
+  })
+
+  it('lists every app against every product area in the app matrix', () => {
+    const { container } = renderPage('en', 'apps')
+    const table = container.querySelector('table.ms-matrix') as HTMLTableElement
+    expect(within(table).getAllByRole('rowheader').filter((th) => th.getAttribute('scope') === 'row')).toHaveLength(SITE_COPY.en.apps.items.length)
+    expect(within(table).getAllByRole('columnheader').filter((th) => th.getAttribute('scope') === 'col')).toHaveLength(PRODUCT_AREAS.length)
+    expect(SITE_COPY.en.apps.items).toHaveLength(12)
+  })
+
+  it.each(PRODUCT_AREAS)('gives the %s page one section per feature group', (area) => {
+    const { container } = renderPage('en', area)
+    const sections = container.querySelectorAll('section[id^="g"]')
+    expect([...sections].filter((el) => /^g\d+$/.test(el.id))).toHaveLength(SITE_COPY.en.areas.items[area].groups.length)
+  })
+
+  it('names Razorpay for India and Stripe for Germany on the country pages', () => {
+    const india = renderPage('en', 'countries', 'IN')
+    expect(screen.getByText(SITE_COPY.en.countries.payRazorpay)).toBeInTheDocument()
+    india.unmount()
+    renderPage('en', 'countries', 'DE')
+    expect(screen.getByText(SITE_COPY.en.countries.payStripe)).toBeInTheDocument()
+  })
+
+  it('shows the text of each solution when its pill is clicked', () => {
+    renderPage('en', 'solutions')
+    for (const type of SITE_COPY.en.solutions.types) {
+      fireEvent.click(screen.getByRole('button', { name: type.name }))
+      expect(screen.getByText(type.text)).toBeInTheDocument()
+    }
+  })
+})

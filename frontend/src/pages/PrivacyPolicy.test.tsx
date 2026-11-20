@@ -1,50 +1,56 @@
-import { describe, it, expect, vi } from 'vitest';
-import { renderUnauthenticated, screen } from '@/test/utils/testUtils';
-import userEvent from '@testing-library/user-event';
+import { describe, it, expect } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { PrivacyPolicy } from './PrivacyPolicy';
 
-const mockNavigate = vi.fn();
-vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual('react-router-dom');
-  return { ...actual, useNavigate: () => mockNavigate };
-});
+function renderPrivacy() {
+  return render(
+    <MemoryRouter initialEntries={['/privacy']}>
+      <PrivacyPolicy />
+    </MemoryRouter>,
+  );
+}
 
 describe('PrivacyPolicy', () => {
-  it('renders without crashing', () => {
-    renderUnauthenticated(<PrivacyPolicy />);
-    expect(screen.getByRole('heading', { name: 'Privacy Policy' })).toBeInTheDocument();
+  it('renders the page title as the only level 1 heading', () => {
+    renderPrivacy();
+    expect(screen.getByRole('heading', { level: 1, name: 'Privacy Policy' })).toBeInTheDocument();
   });
 
   it('displays the last updated date', () => {
-    renderUnauthenticated(<PrivacyPolicy />);
-    expect(screen.getByText('Last updated:').parentElement).toHaveTextContent('Last updated: July 1, 2026');
+    renderPrivacy();
+    expect(screen.getByText('Last updated 17 November 2026')).toBeInTheDocument();
   });
 
-  it('renders who we are section with support email links', () => {
-    renderUnauthenticated(<PrivacyPolicy />);
-    expect(screen.getByRole('heading', { name: '1. Who we are' })).toBeInTheDocument();
-    expect(screen.getAllByRole('link', { name: 'masova@souravamseekar.com' }).length).toBeGreaterThanOrEqual(2);
+  it('names who we are with links to the general and privacy addresses', () => {
+    renderPrivacy();
+    expect(screen.getByRole('heading', { level: 2, name: /Who we are/ })).toBeInTheDocument();
+    const hrefs = screen.getAllByRole('link').map((link) => link.getAttribute('href'));
+    expect(hrefs).toContain('mailto:hello@getmasova.rest');
+    expect(hrefs).toContain('mailto:privacy@getmasova.rest');
   });
 
-  it('renders GDPR rights section with email-based requests', () => {
-    renderUnauthenticated(<PrivacyPolicy />);
-    expect(screen.getByRole('heading', { name: '6. Your rights' })).toBeInTheDocument();
-    expect(screen.getByText(/we respond within 30 days as required by GDPR/)).toBeInTheDocument();
-    expect(screen.queryByText('GDPR self-service portal')).not.toBeInTheDocument();
+  it('explains GDPR rights and the one-month response time', () => {
+    renderPrivacy();
+    expect(screen.getByRole('heading', { level: 2, name: /Your rights/ })).toBeInTheDocument();
+    expect(screen.getByText(/respond within one month/)).toBeInTheDocument();
   });
 
-  it('renders contact us button in rights section', () => {
-    renderUnauthenticated(<PrivacyPolicy />);
-    expect(screen.getByRole('button', { name: 'Contact us' })).toBeInTheDocument();
+  it('ends with a link to the contact page instead of a button', () => {
+    renderPrivacy();
+    expect(screen.queryByRole('button', { name: 'Contact us' })).not.toBeInTheDocument();
+    const contact = screen.getAllByRole('link', { name: 'Contact' }).find((link) => link.closest('.ms-legal-more'));
+    expect(contact).toHaveAttribute('href', '/contact');
   });
 
-  it('renders cookies section', () => {
-    renderUnauthenticated(<PrivacyPolicy />);
-    expect(screen.getByRole('heading', { name: '9. Cookies' })).toBeInTheDocument();
+  it('has a cookies section linking to the cookie policy', () => {
+    renderPrivacy();
+    expect(screen.getByRole('heading', { level: 2, name: /Cookies/ })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'cookie policy' })).toHaveAttribute('href', '/cookies');
   });
 
-  it('renders restaurant operator responsibilities', () => {
-    renderUnauthenticated(<PrivacyPolicy />);
-    expect(screen.getByRole('heading', { name: '10. Restaurant operator responsibilities' })).toBeInTheDocument();
+  it('states what restaurants remain responsible for', () => {
+    renderPrivacy();
+    expect(screen.getByRole('heading', { level: 2, name: /What restaurants remain responsible for/ })).toBeInTheDocument();
   });
 });

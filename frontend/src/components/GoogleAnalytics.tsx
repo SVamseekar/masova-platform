@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 
 const GA_MEASUREMENT_ID =
-  import.meta.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim() || 'G-MWQL8XNKTE'
+  import.meta.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim() || 'G-Y6CWDTR081'
 
 declare global {
   interface Window {

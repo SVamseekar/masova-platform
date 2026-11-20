@@ -1,79 +1,97 @@
-import React, { useEffect, useRef, useState } from 'react'
-import { Cookie, FileText, ReceiptText, ShieldCheck } from 'lucide-react'
-import { Link, useLocation } from 'react-router-dom'
-import { SiteFooter, SiteNav, SiteShell } from './SiteChrome'
-import { scrollToTop } from '../utils/scrollToSection'
+import { useEffect, useMemo, type ReactNode } from 'react'
+import { Link } from 'react-router-dom'
+import '../site.css'
+import { Seo } from '../../../components/seo/Seo'
+import { SiteContext } from '../SiteContext'
+import { getSiteCopy } from '../content'
+import { DEFAULT_SITE_LOCALE, SITE_LEGAL_PATHS, SITE_LOCALE_TAGS, type SiteLegalPath } from '../locales'
+import SiteNav from './SiteNav'
+import SiteFooter from './SiteFooter'
+import { PageLink } from './Layout'
 
-interface LegalPageLayoutProps {
-  children: React.ReactNode
+export interface LegalSection {
   title: string
-  updated: string
+  body: ReactNode
 }
 
-const LEGAL_PAGES = [
-  { label: 'Privacy', to: '/privacy', icon: ShieldCheck },
-  { label: 'Terms', to: '/terms', icon: FileText },
-  { label: 'Cookies', to: '/cookies', icon: Cookie },
-  { label: 'Refunds', to: '/refunds', icon: ReceiptText },
-]
+interface LegalPageLayoutProps {
+  path: SiteLegalPath
+  title: string
+  /** One sentence for the page header and the meta description. */
+  summary: string
+  updated: string
+  sections: LegalSection[]
+}
 
-/** Board 03 legal document layout: side navigation, last updated and a contents list. */
-export default function LegalPageLayout({ children, title, updated }: LegalPageLayoutProps) {
-  const { pathname } = useLocation()
-  const bodyRef = useRef<HTMLDivElement>(null)
-  const [contents, setContents] = useState<{ id: string; text: string }[]>([])
+/** A highlighted box inside a legal section, for contact details and short notes. */
+export function LegalNote({ children }: { children: ReactNode }) {
+  return <div className="ms-legal-note">{children}</div>
+}
+
+/**
+ * Frame for the legal pages: the site's own navigation and footer, a list of sections
+ * to jump to, and the text. Legal pages are published in English only.
+ */
+export default function LegalPageLayout({ path, title, summary, updated, sections }: LegalPageLayoutProps) {
+  const value = useMemo(() => ({ locale: DEFAULT_SITE_LOCALE, copy: getSiteCopy(DEFAULT_SITE_LOCALE) }), [])
+  const { copy } = value
 
   useEffect(() => {
-    scrollToTop('instant')
-  }, [pathname])
-
-  // Build the contents list from the section headings the document renders.
-  useEffect(() => {
-    const headings = Array.from(bodyRef.current?.querySelectorAll('h2') ?? [])
-    setContents(headings.map((heading, index) => {
-      const section = heading.closest('section') ?? heading
-      section.id = section.id || 'section-' + (index + 1)
-      return { id: section.id, text: (heading.textContent ?? '').replace(/^\d+\.\s*/, '') }
-    }))
-    // The ids exist only now, so a direct link to a section is honoured here.
-    const target = window.location.hash ? document.getElementById(window.location.hash.slice(1)) : null
-    target?.scrollIntoView()
-  }, [pathname, children])
-
-  const current = pathname === '/privacy-policy' ? '/privacy' : pathname
+    if (!window.location.hash) window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+  }, [path])
 
   return (
-    <SiteShell>
-      <SiteNav />
-      <div className="msite-legal">
-        <aside className="msite-legal-side">
-          <h2>Legal</h2>
-          <nav aria-label="Legal documents">
-            {LEGAL_PAGES.map(({ label, to, icon: Icon }) => (
-              <Link key={to} to={to} aria-current={current === to ? 'page' : undefined}>
-                <Icon size={20} strokeWidth={1.9} aria-hidden="true" />
-                {label}
-              </Link>
-            ))}
-          </nav>
-        </aside>
-        <main className="msite-legal-doc">
-          <h1>{title}</h1>
-          <p className="msite-legal-updated"><strong>Last updated:</strong> {updated}</p>
-          {contents.length > 0 && (
-            <nav className="msite-legal-toc" aria-label="On this page">
-              <b>On this page</b>
-              <ol>
-                {contents.map(({ id, text }, index) => (
-                  <li key={id}><a href={'#' + id}>{index + 1}. {text}</a></li>
+    <SiteContext.Provider value={value}>
+      <div id="product-site" className="ms" lang={SITE_LOCALE_TAGS[DEFAULT_SITE_LOCALE]}>
+        <Seo title={`${title} | MaSoVa`} description={summary} path={path} lang={SITE_LOCALE_TAGS[DEFAULT_SITE_LOCALE]} />
+        <a className="ms-skip" href="#main">{copy.ui.skip}</a>
+        <SiteNav page="home" />
+        <main id="main">
+          <header className="ms-page-head ms-on-dark">
+            <div className="ms-wrap ms-page-head-inner">
+              <div className="ms-page-head-copy">
+                <p className="ms-eyebrow">{copy.footer.legalTitle}</p>
+                <h1 className="ms-page-title">{title}</h1>
+                <p className="ms-lead">{summary}</p>
+                <p className="ms-legal-updated">Last updated {updated}</p>
+              </div>
+            </div>
+          </header>
+
+          <div className="ms-section">
+            <div className="ms-wrap ms-legal">
+              <nav className="ms-legal-toc" aria-label="On this page">
+                <h2>On this page</h2>
+                <ol>
+                  {sections.map((section, i) => (
+                    <li key={section.title}><a href={`#s${i + 1}`}>{section.title}</a></li>
+                  ))}
+                </ol>
+              </nav>
+
+              <article className="ms-legal-body">
+                {sections.map((section, i) => (
+                  <section key={section.title} id={`s${i + 1}`} aria-labelledby={`s${i + 1}-title`}>
+                    <h2 id={`s${i + 1}-title`} data-section-anchor>
+                      <span className="ms-num" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
+                      {section.title}
+                    </h2>
+                    {section.body}
+                  </section>
                 ))}
-              </ol>
-            </nav>
-          )}
-          <div ref={bodyRef} className="msite-legal-body">{children}</div>
+
+                <nav className="ms-legal-more" aria-label={copy.footer.legalTitle}>
+                  {SITE_LEGAL_PATHS.map((href, i) => (
+                    <Link key={href} to={href} aria-current={href === path ? 'page' : undefined}>{copy.footer.legal[i]}</Link>
+                  ))}
+                  <PageLink page="contact" className="ms-link">{copy.pages.contact.eyebrow}</PageLink>
+                </nav>
+              </article>
+            </div>
+          </div>
         </main>
+        <SiteFooter page="home" />
       </div>
-      <SiteFooter />
-    </SiteShell>
+    </SiteContext.Provider>
   )
 }

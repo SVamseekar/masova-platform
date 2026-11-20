@@ -1,14 +1,19 @@
-import React from 'react'
-import { SUPPORT_EMAIL } from '../constants'
+import { CONTACT_EMAILS, type ContactEmailKey } from '../../../config/contact'
 
 interface SupportEmailLinkProps {
   className?: string
+  /** Which public address to link to. Defaults to the general hello@ address. */
+  to?: ContactEmailKey
 }
 
-export default function SupportEmailLink({ className }: SupportEmailLinkProps) {
+export default function SupportEmailLink({
+  className = 'ms-link',
+  to = 'hello',
+}: SupportEmailLinkProps) {
+  const email = CONTACT_EMAILS[to]
   return (
-    <a href={`mailto:${SUPPORT_EMAIL}`} className={className}>
-      {SUPPORT_EMAIL}
+    <a href={`mailto:${email}`} className={className}>
+      {email}
     </a>
   )
 }

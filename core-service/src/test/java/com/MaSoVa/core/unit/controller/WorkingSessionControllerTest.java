@@ -1,6 +1,8 @@
 package com.MaSoVa.core.unit.controller;
 
 import com.MaSoVa.core.user.controller.WorkingSessionController;
+import com.MaSoVa.core.user.dto.WorkingSessionResponse;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import com.MaSoVa.core.user.service.WorkingSessionService;
 import com.MaSoVa.shared.test.BaseServiceTest;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,6 +40,50 @@ class WorkingSessionControllerTest extends BaseServiceTest {
         mockMvc = MockMvcBuilders.standaloneSetup(sessionController)
             .setMessageConverters(new MappingJackson2HttpMessageConverter())
             .build();
+    }
+
+    @Test
+    @DisplayName("GET /api/sessions/me/active returns 200 with the caller's active session")
+    void getMyActiveSession_returnsSession() throws Exception {
+        WorkingSessionResponse session = new WorkingSessionResponse();
+        session.setId("session-1");
+        session.setEmployeeId("driver-1");
+        session.setActive(true);
+        when(sessionService.getCurrentSession("driver-1")).thenReturn(session);
+
+        mockMvc.perform(get("/api/sessions/me/active").principal(driverAuth()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value("session-1"))
+                .andExpect(jsonPath("$.isActive").value(true));
+
+        verify(sessionService).getCurrentSession("driver-1");
+    }
+
+    @Test
+    @DisplayName("GET /api/sessions/me/active returns 204 when the caller is not clocked in")
+    void getMyActiveSession_returnsNoContentWhenNone() throws Exception {
+        when(sessionService.getCurrentSession("driver-1")).thenReturn(null);
+
+        mockMvc.perform(get("/api/sessions/me/active").principal(driverAuth()))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    @DisplayName("GET /api/sessions/me/active ignores a spoofed X-User-Id header")
+    void getMyActiveSession_ignoresSpoofedHeader() throws Exception {
+        when(sessionService.getCurrentSession("driver-1")).thenReturn(null);
+
+        mockMvc.perform(get("/api/sessions/me/active")
+                        .principal(driverAuth())
+                        .header("X-User-Id", "someone-else"))
+                .andExpect(status().isNoContent());
+
+        verify(sessionService).getCurrentSession("driver-1");
+        verify(sessionService, never()).getCurrentSession("someone-else");
+    }
+
+    private static UsernamePasswordAuthenticationToken driverAuth() {
+        return new UsernamePasswordAuthenticationToken("driver-1", null, List.of());
     }
 
     @Test

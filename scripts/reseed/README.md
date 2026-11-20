@@ -35,7 +35,7 @@ After 2026-07-09 repair:
 | Script | Purpose |
 |---|---|
 | **`reseed-all.js`** | **Phase E full EU reseed** — core → commerce → payment → logistics → **manager horizon (6 months)** → intelligence |
-| **`seed-manager-horizon.js`** | **6-month manager dashboard dataset** — spec `docs/COMPLETE_MANAGER_DASHBOARD_SEEDING_GUIDE.md` (~22k orders, 250 customers, inventory, POs, waste, reviews) |
+| **`seed-manager-horizon.js`** | **6-month manager dashboard dataset** — spec `the internal manager-dashboard seeding guide` (~22k orders, 250 customers, inventory, POs, waste, reviews) |
 | **`verify-seed.js`** | **Phase E exit criteria** — counts + ownership + analytics; exit 0 = green |
 | `seed-core.js` | `POST /api/test-data/seed-demo` (Berlin DE/EUR, EU E.164 phones, users, campaigns) |
 | `seed-commerce.js` | `POST /api/orders/seed-demo` (menu + multi-status orders + equipment) |
@@ -52,11 +52,11 @@ After 2026-07-09 repair:
 
 ```bash
 # Mac → Dell. Requires services on spring profile dev|demo + host Mongo + RabbitMQ + Redis.
-GW=http://192.168.50.88:8080 node scripts/reseed/reseed-all.js
-GW=http://192.168.50.88:8080 node scripts/reseed/verify-seed.js
+GW=http://localhost:8080 node scripts/reseed/reseed-all.js
+GW=http://localhost:8080 node scripts/reseed/verify-seed.js
 # Heavy traffic + AMQP:
-GW=http://192.168.50.88:8080 CONCURRENCY=40 REQUESTS=800 \
-  RABBIT_MGMT=http://192.168.50.88:15672 \
+GW=http://localhost:8080 CONCURRENCY=40 REQUESTS=800 \
+  RABBIT_MGMT=http://localhost:15672 \
   node scripts/reseed/verify-backend-load.js
 # Exit 0 = green. Safe to run reseed-all twice (idempotent upserts).
 ```
@@ -80,12 +80,12 @@ GW=http://192.168.50.88:8080 CONCURRENCY=40 REQUESTS=800 \
 ### Orders/delivery verify (Mac → Dell gateway)
 
 ```bash
-GW=http://192.168.50.88:8080 node scripts/reseed/verify-orders-delivery-e2e.js
+GW=http://localhost:8080 node scripts/reseed/verify-orders-delivery-e2e.js
 # Exit 0 = all green. Requires commerce + logistics on latest main.
 ```
 
-**KDS WebSocket:** set `VITE_WS_URL=http://192.168.50.88:8084/ws`  
-Health: `curl http://192.168.50.88:8084/ws/orders/info` → `{"websocket":true}`  
+**KDS WebSocket:** set `VITE_WS_URL=http://localhost:8084/ws`  
+Health: `curl http://localhost:8084/ws/orders/info` → `{"websocket":true}`  
 **Driver auto-pool:** `PATCH /api/delivery/driver/{id}/status` body `{"status":"AVAILABLE"}` before auto-dispatch (manual preferredDriverId still works offline).
 
 ### Run repair on Dell
@@ -122,7 +122,7 @@ Password for all demo users remains `Demo@1234`.
 **PIN API check:**
 
 ```bash
-curl -s -X POST http://192.168.50.88:8080/api/auth/validate-pin \
+curl -s -X POST http://localhost:8080/api/auth/validate-pin \
   -H "Content-Type: application/json" \
   -d '{"pin":"12345"}'
 ```
@@ -135,8 +135,8 @@ From `frontend/` with Dell gateway reachable and Vite on `:3000`:
 
 ```bash
 # Point API at Dell (or use .env)
-export VITE_API_GATEWAY_URL=http://192.168.50.88:8080/api
-export VITE_API_BASE_URL=http://192.168.50.88:8080
+export VITE_API_GATEWAY_URL=http://localhost:8080/api
+export VITE_API_BASE_URL=http://localhost:8080
 npx playwright test tests/phase-f-platform-smoke.spec.ts --project=chromium
 ```
 
@@ -167,7 +167,7 @@ $env:STRIPE_WEBHOOK_SECRET = "whsec_..."   # from Stripe CLI or Dashboard webhoo
 
 ```text
 # On a machine with Stripe CLI logged in:
-stripe listen --forward-to http://192.168.50.88:8089/api/payments/webhook/stripe
+stripe listen --forward-to http://localhost:8089/api/payments/webhook/stripe
 # Use the printed whsec_… as STRIPE_WEBHOOK_SECRET, restart payment-service
 ```
 
@@ -205,7 +205,7 @@ $env:RAZORPAY_WEBHOOK_SECRET = "..."
 ### Payments/refunds verify (Mac → Dell)
 
 ```bash
-GW=http://192.168.50.88:8080 node scripts/reseed/verify-payments-refunds-e2e.js
+GW=http://localhost:8080 node scripts/reseed/verify-payments-refunds-e2e.js
 # Exit 0 = green. Works with synthetic seed+cash if Stripe test keys are not set.
 ```
 
@@ -214,7 +214,7 @@ GW=http://192.168.50.88:8080 node scripts/reseed/verify-payments-refunds-e2e.js
 After UI bugs like “TOTAL ORDERS 8 but No orders found”, run:
 
 ```bash
-GW=http://192.168.50.88:8080 node scripts/reseed/verify-frontend-contracts.js
+GW=http://localhost:8080 node scripts/reseed/verify-frontend-contracts.js
 ```
 
 Asserts canonical `GET /orders?storeId=DOM001` (not `/orders/store`), kitchen queue, analytics, inventory, menu, kiosks, and dual-source consistency.

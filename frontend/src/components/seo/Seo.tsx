@@ -7,11 +7,26 @@ import {
 } from '../../lib/seo'
 import { SITE_URL } from '../../lib/site'
 
+interface SeoAlternate {
+  /** BCP 47 tag or "x-default". */
+  hrefLang: string
+  /** Absolute URL. */
+  href: string
+}
+
 interface SeoProps {
   title?: string
   description?: string
   path?: string
   noindex?: boolean
+  /** BCP 47 tag for <html lang>, e.g. "de-DE". */
+  lang?: string
+  /** Open Graph locale, e.g. "de_DE". */
+  ogLocale?: string
+  /** Language alternates for this page (hreflang links). */
+  alternates?: SeoAlternate[]
+  /** Add the organisation/website JSON-LD (home page only). */
+  jsonLd?: boolean
 }
 
 function upsertMeta(name: string, content: string, property = false) {
@@ -30,11 +45,15 @@ export function Seo({
   description = DEFAULT_DESCRIPTION,
   path = '/',
   noindex = false,
+  lang = 'en-GB',
+  ogLocale = 'en_GB',
+  alternates = [],
+  jsonLd = !noindex,
 }: SeoProps) {
   const url = path === '/' ? `${SITE_URL}/` : `${SITE_URL}${path}`
 
   useEffect(() => {
-    document.documentElement.lang = 'en-GB'
+    document.documentElement.lang = lang
     document.title = title
 
     upsertMeta('description', description)
@@ -50,7 +69,7 @@ export function Seo({
     upsertMeta('og:url', url, true)
     upsertMeta('og:type', 'website', true)
     upsertMeta('og:site_name', 'MaSoVa', true)
-    upsertMeta('og:locale', 'en_GB', true)
+    upsertMeta('og:locale', ogLocale, true)
     upsertMeta('twitter:card', 'summary_large_image')
     upsertMeta('twitter:title', title)
     upsertMeta('twitter:description', description)
@@ -67,7 +86,17 @@ export function Seo({
       .querySelectorAll('script[data-seo-jsonld="home"]')
       .forEach((node) => node.remove())
 
-    if (!noindex) {
+    document.querySelectorAll('link[rel="alternate"][data-seo-hreflang]').forEach((node) => node.remove())
+    alternates.forEach(({ hrefLang, href }) => {
+      const link = document.createElement('link')
+      link.rel = 'alternate'
+      link.hreflang = hrefLang
+      link.href = href
+      link.setAttribute('data-seo-hreflang', '')
+      document.head.appendChild(link)
+    })
+
+    if (jsonLd && !noindex) {
       buildHomeJsonLd().forEach((schema) => {
         const script = document.createElement('script')
         script.type = 'application/ld+json'
@@ -76,7 +105,7 @@ export function Seo({
         document.head.appendChild(script)
       })
     }
-  }, [title, description, url, noindex])
+  }, [title, description, url, noindex, lang, ogLocale, alternates, jsonLd])
 
   return null
 }

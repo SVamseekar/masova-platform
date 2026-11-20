@@ -20,6 +20,7 @@ import { StoreLocaleSync } from './components/i18n/StoreLocaleSync';
 
 // Lazy load components
 const ProductSitePage = React.lazy(() => import('./apps/ProductSite/ProductSitePage'))
+import { COUNTRY_CODES, SITE_LOCALES, SITE_PAGES, SITE_REDIRECTS, countryPath, sitePath } from './apps/ProductSite/locales'
 
 const HomePage = React.lazy(() => import('./apps/PublicWebsite/HomePage'));
 const PromotionsPage = React.lazy(() => import('./apps/PublicWebsite/PromotionsPage'));
@@ -104,7 +105,18 @@ const App: React.FC = () => {
                   <Suspense fallback={<AppLoader />}>
                     <Routes>
                   {/* Public Routes - No Login Required */}
-                  <Route path="/" element={<ProductSitePage />} />
+                  {/* getmasova.rest marketing site: every page in every site language */}
+                  {SITE_LOCALES.flatMap((code) => [
+                    ...SITE_PAGES.map((page) => (
+                      <Route key={`${code}-${page}`} path={sitePath(code, page)} element={<ProductSitePage locale={code} page={page} />} />
+                    )),
+                    ...COUNTRY_CODES.map((country) => (
+                      <Route key={`${code}-${country}`} path={countryPath(code, country)} element={<ProductSitePage locale={code} page="countries" country={country} />} />
+                    )),
+                    ...Object.entries(SITE_REDIRECTS).map(([slug, page]) => (
+                      <Route key={`${code}-${slug}`} path={`${code === 'en' ? '' : `/${code}`}/${slug}`} element={<Navigate to={sitePath(code, page)} replace />} />
+                    )),
+                  ])}
                   <Route path="/order" element={<CustomerLayout><HomePage /></CustomerLayout>} />
                   <Route path="/menu" element={<CustomerLayout><PublicMenuPage /></CustomerLayout>} />
                   <Route path="/promotions" element={<CustomerLayout><PromotionsPage /></CustomerLayout>} />

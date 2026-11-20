@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -191,6 +192,19 @@ public class WorkingSessionController {
             @RequestBody Map<String, String> request) {
         sessionService.rejectSession(sessionId, managerId, request.get("reason"));
         return ResponseEntity.ok(Map.of("message", "Session rejected"));
+    }
+
+    /**
+     * GET /api/sessions/me/active — the caller's own active session, or 204 if not clocked in.
+     * Lets drivers and staff check their clock-in state; the list endpoint above is manager-only.
+     * Identity comes from the JWT verified by this service's security filter, never from a header.
+     */
+    @GetMapping("/me/active")
+    @Operation(summary = "Get the caller's active session (204 if none)")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<WorkingSessionResponse> getMyActiveSession(Authentication authentication) {
+        WorkingSessionResponse session = sessionService.getCurrentSession(authentication.getName());
+        return session != null ? ResponseEntity.ok(session) : ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{sessionId}/break")
