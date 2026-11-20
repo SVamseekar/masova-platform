@@ -9,9 +9,7 @@ spring:
     port: 1025
   cloud:
     gateway:
-      server:
-        webflux:
-          routes: []
+      routes: []
 
 server:
   port: 0
