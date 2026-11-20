@@ -36,6 +36,7 @@ import org.mockito.quality.Strictness;
 import java.util.List;
 import java.util.Map;
 
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.within;
@@ -100,7 +101,7 @@ class OrderServiceEuVatTest {
         );
 
         when(menuServiceClient.isMenuItemAvailable(anyString())).thenReturn(true);
-        when(menuServiceClient.validatePrice(anyString(), anyDouble())).thenReturn(true);
+        when(menuServiceClient.validatePrice(anyString(), anyDouble(), nullable(String.class), nullable(java.util.List.class), any(com.MaSoVa.shared.entity.Store.class))).thenReturn(true);
         when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
         when(orderJpaRepository.save(any(OrderJpaEntity.class))).thenAnswer(inv -> inv.getArgument(0));
     }

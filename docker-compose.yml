@@ -138,6 +138,11 @@ services:
       - RABBITMQ_PASSWORD=masova_secret
       - JWT_SECRET=dev-jwt-secret-key-at-least-64-characters-long-for-hs512-security
       - CORE_SERVICE_URL=http://masova-core:8085
+      - USER_SERVICE_URL=http://masova-core:8085
+      - CUSTOMER_SERVICE_URL=http://masova-core:8085
+      - NOTIFICATION_SERVICE_URL=http://masova-core:8085
+      - DELIVERY_SERVICE_URL=http://masova-logistics:8086
+      - LOGISTICS_SERVICE_URL=http://masova-logistics:8086
       - SPRING_DATASOURCE_URL=jdbc:postgresql://masova-postgres:5432/masova_db?currentSchema=commerce_schema
       - SPRING_DATASOURCE_USERNAME=masova
       - SPRING_DATASOURCE_PASSWORD=masova_secret
@@ -230,6 +235,7 @@ services:
       - RABBITMQ_PASSWORD=masova_secret
       - JWT_SECRET=dev-jwt-secret-key-at-least-64-characters-long-for-hs512-security
       - CORE_SERVICE_URL=http://masova-core:8085
+      - USER_SERVICE_URL=http://masova-core:8085
       - SPRING_DATASOURCE_URL=jdbc:postgresql://masova-postgres:5432/masova_db?currentSchema=logistics_schema
       - SPRING_DATASOURCE_USERNAME=masova
       - SPRING_DATASOURCE_PASSWORD=masova_secret

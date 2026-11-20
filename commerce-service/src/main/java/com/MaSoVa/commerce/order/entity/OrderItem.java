@@ -11,6 +11,7 @@ public class OrderItem {
     private String variant;
     private List<String> customizations;
     private String category;  // MenuCategory name e.g. "FOOD", "BEVERAGE", "ALCOHOL" — for VAT routing
+    private String notes;  // Customer preparation note for the kitchen; never affects price
 
     public OrderItem() {}
 
@@ -45,6 +46,9 @@ public class OrderItem {
     public String getCategory() { return category; }
     public void setCategory(String category) { this.category = category; }
 
+    public String getNotes() { return notes; }
+    public void setNotes(String notes) { this.notes = notes; }
+
     public Double getItemTotal() {
         return price * quantity;
     }
@@ -60,6 +64,7 @@ public class OrderItem {
         private String variant;
         private List<String> customizations;
         private String category;
+        private String notes;
 
         public Builder menuItemId(String menuItemId) { this.menuItemId = menuItemId; return this; }
         public Builder name(String name) { this.name = name; return this; }
@@ -68,10 +73,12 @@ public class OrderItem {
         public Builder variant(String variant) { this.variant = variant; return this; }
         public Builder customizations(List<String> customizations) { this.customizations = customizations; return this; }
         public Builder category(String category) { this.category = category; return this; }
+        public Builder notes(String notes) { this.notes = notes; return this; }
 
         public OrderItem build() {
             OrderItem item = new OrderItem(menuItemId, name, quantity, price, variant, customizations);
             item.setCategory(category);
+            item.setNotes(notes);
             return item;
         }
     }

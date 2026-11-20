@@ -183,7 +183,7 @@ public class OrderController {
             String userType = StoreContextUtil.getUserTypeFromHeaders(request);
             if (requiresCustomerOwnership(userType)) {
                 String callerId = StoreContextUtil.getUserIdFromHeaders(request);
-                if (callerId == null || !callerId.equals(customerId)) {
+                if (!orderService.callerOwnsCustomerId(callerId, customerId)) {
                     log.warn("Cross-customer order list access attempt: caller={}, requestedCustomerId={}",
                             callerId, customerId);
                     throw new AccessDeniedException("Cannot access another customer's orders");
@@ -532,9 +532,16 @@ public class OrderController {
                 .body(Map.of("code", ex.getErrorCode(), "error", ex.getMessage()));
     }
 
+    @ExceptionHandler(org.springframework.web.server.ResponseStatusException.class)
+    public ResponseEntity<Map<String, String>> handleResponseStatus(org.springframework.web.server.ResponseStatusException ex) {
+        log.warn("Order request failed with {}: {}", ex.getStatusCode(), ex.getReason());
+        return ResponseEntity.status(ex.getStatusCode())
+                .body(Map.of("error", ex.getReason() != null ? ex.getReason() : "Request could not be completed"));
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, String>> handleRuntimeException(RuntimeException ex) {
         log.error("Error processing order request", ex);
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", ex.getMessage()));
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", ex.getMessage() != null ? ex.getMessage() : "Order request failed"));
     }
 }

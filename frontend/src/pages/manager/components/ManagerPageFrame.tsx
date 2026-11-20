@@ -10,6 +10,8 @@ export interface ManagerPageFrameProps {
   /** Store code shown in header context (e.g. DOM001). */
   storeId?: string;
   primaryAction?: React.ReactNode;
+  /** Hide the page heading when the section prints its own (e.g. the dashboard greeting). */
+  hideHeading?: boolean;
   tabs?: React.ReactNode;
   children: React.ReactNode;
   /** Full-section loading (replaces children). */
@@ -33,6 +35,7 @@ export const ManagerPageFrame: React.FC<ManagerPageFrameProps> = ({
   subtitle,
   storeId,
   primaryAction,
+  hideHeading = false,
   tabs,
   children,
   loading = false,
@@ -44,26 +47,24 @@ export const ManagerPageFrame: React.FC<ManagerPageFrameProps> = ({
   emptyDescription,
 }) => (
   <div style={{ fontFamily: t.font, minHeight: 200 }} data-testid="manager-page-frame">
-    {/* Shell already prints the section title — only show actions + store here. */}
-    {(primaryAction || storeId) && (
-      <header
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 16,
-          marginBottom: tabs ? 10 : 16,
-        }}
-      >
-        {storeId ? (
-          <p style={{ margin: 0, fontSize: 12, color: t.gray }} data-testid="manager-frame-store">
-            {storeId}
-          </p>
-        ) : <span />}
-        {primaryAction && <div style={{ flexShrink: 0 }}>{primaryAction}</div>}
-      </header>
-    )}
-    <span style={{ display: 'none' }} aria-hidden>{title}{subtitle}</span>
+    {(!hideHeading || primaryAction) && <header
+      style={{
+        display: 'flex',
+        alignItems: 'flex-start',
+        justifyContent: 'space-between',
+        gap: 16,
+        marginBottom: tabs ? 12 : 20,
+      }}
+    >
+      <div>
+        {!hideHeading && <h2 style={{ margin: 0, fontSize: 28, fontWeight: 600, color: t.black, lineHeight: 1.15 }}>{title}</h2>}
+        {!hideHeading && subtitle && <p style={{ margin: '6px 0 0', fontSize: 15, color: t.gray }}>{subtitle}</p>}
+        {storeId && (
+          <span style={{ display: 'none' }} data-testid="manager-frame-store">{storeId}</span>
+        )}
+      </div>
+      {primaryAction && <div style={{ flexShrink: 0 }}>{primaryAction}</div>}
+    </header>}
 
     {tabs && <div style={{ marginBottom: 16 }}>{tabs}</div>}
 

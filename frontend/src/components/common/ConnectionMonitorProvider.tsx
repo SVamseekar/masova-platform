@@ -1,95 +1,34 @@
 /**
- * Phase 1: Connection Monitor Provider
- * Monitors backend connection and handles auto-logout on prolonged disconnection
+ * Connection Monitor Provider
+ * Keep authentication independent of network reachability and preserve workspace context.
  */
-
 import React, { useEffect, useState } from 'react';
-import { useDispatch } from 'react-redux';
-import { logout } from '../../store/slices/authSlice';
 import { ConnectionMonitor } from '../../utils/security';
 import { websocketService } from '../../services/websocketService';
 import API_CONFIG from '../../config/api.config';
 
-interface ConnectionStatus {
-  isConnected: boolean;
-  showWarning: boolean;
-}
-
-export const ConnectionMonitorProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
-  const dispatch = useDispatch();
-  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({
-    isConnected: true,
-    showWarning: false,
-  });
-
+export const ConnectionMonitorProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [showWarning, setShowWarning] = useState(false);
   useEffect(() => {
-    let connectionMonitor: ConnectionMonitor | null = null;
-
-    // Handle connection loss - show warning banner
-    const handleConnectionLost = () => {
-      console.warn('[App] Connection lost - showing warning banner');
-      setConnectionStatus({
-        isConnected: false,
-        showWarning: true,
-      });
-    };
-
-    // Handle auto-logout after prolonged disconnection
-    const handleAutoLogout = () => {
-      console.error('[App] Auto-logout triggered due to prolonged disconnection');
-
-      // Clear all storage
-      localStorage.clear();
-      sessionStorage.clear();
-
-      // Dispatch logout action
-      dispatch(logout());
-
-      // Redirect to login with message
-      window.location.href = '/login?reason=connection_lost';
-    };
-
-    // Initialize connection monitor
-    connectionMonitor = new ConnectionMonitor(handleAutoLogout);
-    connectionMonitor.start(API_CONFIG.BASE_URL);
-
-    // Set up WebSocket disconnect callbacks
-    websocketService.setConnectionLostCallbacks(handleConnectionLost, handleAutoLogout);
-
-    // Cleanup on unmount
+    const lost = () => setShowWarning(true);
+    const restored = () => setShowWarning(false);
+    const monitor = new ConnectionMonitor(lost);
+    monitor.start(API_CONFIG.BASE_URL);
+    // Both connection-loss durations describe reachability, never token validity.
+    websocketService.setConnectionLostCallbacks(lost, lost, restored);
     return () => {
-      if (connectionMonitor) {
-        connectionMonitor.stop();
-      }
+      monitor.stop();
+      websocketService.setConnectionLostCallbacks(undefined, undefined, undefined);
     };
-  }, [dispatch]);
-
-  return (
-    <>
-      {/* Connection Warning Banner */}
-      {connectionStatus.showWarning && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            zIndex: 9999,
-            backgroundColor: '#ff9800',
-            color: 'white',
-            padding: '12px 20px',
-            textAlign: 'center',
-            fontSize: '14px',
-            fontWeight: 500,
-            boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-          }}
-        >
-          ⚠️ Connection lost. Please refresh the page to continue.
-        </div>
-      )}
-      {children}
-    </>
-  );
+  }, []);
+  return <>
+    {showWarning && <div role="status" style={{
+      position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999,
+      backgroundColor: '#FFF1DA', color: '#7B4700', padding: '12px 24px',
+      textAlign: 'center', fontSize: '14px', fontFamily: 'Geist, Inter, system-ui, sans-serif',
+    }}>
+      Connection unavailable. Live updates may be delayed. Trying to reconnect.
+    </div>}
+    {children}
+  </>;
 };

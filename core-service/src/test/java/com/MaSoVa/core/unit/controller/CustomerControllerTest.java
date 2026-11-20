@@ -5,6 +5,7 @@ import com.MaSoVa.core.customer.entity.Customer;
 import com.MaSoVa.core.customer.service.CustomerService;
 import com.MaSoVa.shared.test.BaseServiceTest;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,6 +16,9 @@ import org.springframework.http.MediaType;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.List;
 import java.util.Optional;
@@ -40,10 +44,15 @@ class CustomerControllerTest extends BaseServiceTest {
 
     @BeforeEach
     void setUp() {
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(
+                "manager-user", null, List.of(new SimpleGrantedAuthority("ROLE_MANAGER"))));
         mockMvc = MockMvcBuilders.standaloneSetup(customerController)
             .setMessageConverters(new MappingJackson2HttpMessageConverter())
             .build();
     }
+
+    @AfterEach
+    void clearAuthentication() { SecurityContextHolder.clearContext(); }
 
     private Customer buildCustomer(String id) {
         Customer c = new Customer();
