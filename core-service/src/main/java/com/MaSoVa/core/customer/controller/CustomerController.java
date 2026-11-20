@@ -18,6 +18,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -50,13 +54,46 @@ public class CustomerController {
     }
 
     private String getStoreId(HttpServletRequest request) {
-        String userType = request.getHeader("X-User-Type");
+        Authentication authentication = authenticatedIdentity();
         String selected = request.getHeader("X-Selected-Store-Id");
-        String assigned = request.getHeader("X-User-Store-Id");
-        if ("MANAGER".equals(userType) || "CUSTOMER".equals(userType)) {
+        String assigned = (String) request.getAttribute("storeId");
+        if (hasRole(authentication, "MANAGER")) {
             return selected != null ? selected : assigned;
         }
         return assigned;
+    }
+
+    private Authentication authenticatedIdentity() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()
+                || authentication instanceof AnonymousAuthenticationToken
+                || authentication.getName() == null || authentication.getName().isBlank()) {
+            throw new AccessDeniedException("Authentication required");
+        }
+        return authentication;
+    }
+
+    private boolean hasRole(Authentication authentication, String role) {
+        return authentication.getAuthorities().stream()
+                .anyMatch(authority -> ("ROLE_" + role).equals(authority.getAuthority()));
+    }
+
+    private boolean privileged(Authentication authentication, boolean allowStaff) {
+        return hasRole(authentication, "MANAGER") || hasRole(authentication, "ASSISTANT_MANAGER")
+                || allowStaff && hasRole(authentication, "STAFF");
+    }
+
+    /** JWT subject is User.id; customer profile IDs are a separate identity namespace. */
+    private Customer requireCustomerAccess(String id, boolean allowStaff) {
+        Authentication authentication = authenticatedIdentity();
+        if (privileged(authentication, allowStaff)) return null;
+        if (!hasRole(authentication, "CUSTOMER")) throw new AccessDeniedException("Access denied");
+        Customer customer = customerService.getCustomerById(id)
+                .orElseThrow(() -> new NoSuchElementException("Customer not found"));
+        if (!authentication.getName().equals(customer.getUserId())) {
+            throw new AccessDeniedException("Access denied");
+        }
+        return customer;
     }
 
     // ── LIST ────────────────────────────────────────────────────────────────────
@@ -78,6 +115,17 @@ public class CustomerController {
             @RequestParam(required = false) String tier,
             @RequestParam(required = false) String search,
             HttpServletRequest request) {
+        Authentication authentication = authenticatedIdentity();
+        if (!privileged(authentication, false)) {
+            if (!hasRole(authentication, "CUSTOMER") || email != null || phone != null || tag != null
+                    || tier != null || search != null
+                    || userId != null && !authentication.getName().equals(userId)) {
+                throw new AccessDeniedException("Access denied");
+            }
+            return customerService.getCustomerByUserId(authentication.getName())
+                    .map(customer -> ResponseEntity.ok(List.of(customer)))
+                    .orElse(ResponseEntity.ok(List.of()));
+        }
         String storeId = getStoreId(request);
         if (email != null) {
             return customerService.getCustomerByEmail(email)
@@ -133,7 +181,8 @@ public class CustomerController {
     @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ASSISTANT_MANAGER')")
     public ResponseEntity<?> getCustomer(@PathVariable String id, HttpServletRequest request) {
         try {
-            Customer customer = customerService.getCustomerById(id)
+            Customer own = requireCustomerAccess(id, false);
+            Customer customer = own != null ? own : customerService.getCustomerById(id)
                     .orElseThrow(() -> new NoSuchElementException("Customer not found"));
             return ResponseEntity.ok(customer);
         } catch (NoSuchElementException e) {
@@ -142,13 +191,19 @@ public class CustomerController {
     }
 
     @PatchMapping("/{id}")
-    @PreAuthorize("#id == authentication.name or hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ASSISTANT_MANAGER')")
     @Operation(summary = "Update customer")
     @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<?> updateCustomer(
             @PathVariable String id,
             @Valid @RequestBody UpdateCustomerRequest request) {
         try {
+            requireCustomerAccess(id, false);
+            if (!privileged(authenticatedIdentity(), false) && (request.getEmailVerified() != null
+                    || request.getPhoneVerified() != null || request.getNote() != null
+                    || request.getOrderStats() != null)) {
+                throw new AccessDeniedException("Access denied");
+            }
             return ResponseEntity.ok(customerService.updateCustomer(id, request));
         } catch (NoSuchElementException e) {
             return ResponseEntity.notFound().build();
@@ -191,14 +246,22 @@ public class CustomerController {
      * Replaces: POST /loyalty/points and POST /loyalty/redeem
      */
     @PostMapping("/{id}/loyalty")
-    @PreAuthorize("#id == authentication.name or hasAnyRole('MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
     @Operation(summary = "Add or redeem loyalty points (body: type=EARNED|REDEEMED, points, description)")
     @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<?> manageLoyalty(
             @PathVariable String id,
             @RequestBody AddLoyaltyPointsRequest request) {
         try {
-            if ("REDEEMED".equals(request.getType()) || "REDEEM".equals(request.getType())) {
+            requireCustomerAccess(id, true);
+            boolean redemption = "REDEEMED".equals(request.getType()) || "REDEEM".equals(request.getType());
+            if (!privileged(authenticatedIdentity(), true) && !redemption) {
+                throw new AccessDeniedException("Access denied");
+            }
+            if (request.getPoints() <= 0) {
+                throw new IllegalArgumentException("Points must be at least 1");
+            }
+            if (redemption) {
                 Customer customer = customerService.redeemLoyaltyPoints(id, request.getPoints(), request.getOrderId());
                 return ResponseEntity.ok(customer);
             }
@@ -213,12 +276,14 @@ public class CustomerController {
     // ── ADDRESSES ────────────────────────────────────────────────────────────────
 
     @PostMapping("/{id}/addresses")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ASSISTANT_MANAGER')")
     @Operation(summary = "Add address")
     @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<?> addAddress(
             @PathVariable String id,
             @Valid @RequestBody AddAddressRequest request) {
         try {
+            requireCustomerAccess(id, false);
             return ResponseEntity.ok(customerService.addAddress(id, request));
         } catch (NoSuchElementException e) {
             return ResponseEntity.notFound().build();
@@ -230,14 +295,18 @@ public class CustomerController {
      * Replaces: PATCH /addresses/{aid} and PATCH /addresses/{aid}/set-default
      */
     @PatchMapping("/{id}/addresses/{addressId}")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ASSISTANT_MANAGER')")
     @Operation(summary = "Update address (includes isDefault flag in body)")
     @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<?> updateAddress(
             @PathVariable String id,
             @PathVariable String addressId,
-            @Valid @RequestBody AddAddressRequest request) {
+            @Valid @RequestBody UpdateAddressRequest request) {
         try {
-            Customer customer = customerService.updateAddress(id, addressId, request);
+            requireCustomerAccess(id, false);
+            Customer customer = request.isDefaultOnly()
+                    ? customerService.setDefaultAddress(id, addressId)
+                    : customerService.updateAddress(id, addressId, request.toAddressRequest());
             return ResponseEntity.ok(customer);
         } catch (NoSuchElementException e) {
             return ResponseEntity.notFound().build();
@@ -245,12 +314,14 @@ public class CustomerController {
     }
 
     @DeleteMapping("/{id}/addresses/{addressId}")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ASSISTANT_MANAGER')")
     @Operation(summary = "Remove address")
     @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<?> removeAddress(
             @PathVariable String id,
             @PathVariable String addressId) {
         try {
+            requireCustomerAccess(id, false);
             return ResponseEntity.ok(customerService.removeAddress(id, addressId));
         } catch (NoSuchElementException e) {
             return ResponseEntity.notFound().build();
@@ -265,6 +336,7 @@ public class CustomerController {
      * Replaces: POST /{id}/tags and DELETE /{id}/tags
      */
     @PostMapping("/{id}/tags")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
     @Operation(summary = "Add/remove tags (body: add[], remove[])")
     @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<?> manageTags(
@@ -296,6 +368,7 @@ public class CustomerController {
             @PathVariable String id,
             @RequestParam(required = false, defaultValue = "GDPR_REQUEST") String reason) {
         try {
+            requireCustomerAccess(id, false);
             Customer anonymized = customerService.anonymizeAndDeleteCustomer(id, reason);
             return ResponseEntity.ok(Map.of(
                     "message", "Customer data anonymized successfully per GDPR requirements",

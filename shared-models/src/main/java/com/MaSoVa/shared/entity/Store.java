@@ -262,6 +262,15 @@ public class Store {
             if (operatingConfig.containsKey("maxDeliveryTimeMinutes")) {
                 config.setMaxDeliveryTimeMinutes(((Number) operatingConfig.get("maxDeliveryTimeMinutes")).intValue());
             }
+            if (operatingConfig.get("deliveryZones") != null) {
+                List<DeliveryZone> zones = mapper.convertValue(
+                    operatingConfig.get("deliveryZones"),
+                    new TypeReference<List<DeliveryZone>>() {}
+                );
+                ServiceArea serviceArea = config.getServiceArea() != null ? config.getServiceArea() : new ServiceArea();
+                serviceArea.setZones(zones);
+                config.setServiceArea(serviceArea);
+            }
 
             this.configuration = config;
         } catch (Exception e) {
@@ -292,6 +301,10 @@ public class Store {
             combined.put("minimumOrderValueINR", this.configuration.getMinimumOrderValueINR());
             combined.put("acceptsCashPayments", this.configuration.isAcceptsCashPayments());
             combined.put("maxDeliveryTimeMinutes", this.configuration.getMaxDeliveryTimeMinutes());
+            // Zone fees are amounts in the store's own currency (the *INR field names are legacy)
+            if (this.configuration.getServiceArea() != null && this.configuration.getServiceArea().getZones() != null) {
+                combined.put("deliveryZones", this.configuration.getServiceArea().getZones());
+            }
         }
 
         return combined;

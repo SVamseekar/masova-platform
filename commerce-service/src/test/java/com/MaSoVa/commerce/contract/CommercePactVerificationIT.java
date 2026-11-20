@@ -145,11 +145,20 @@ class CommercePactVerificationIT extends BaseFullIntegrationTest {
         menuItem.setStoreId("store-1");
         menuItem.setIsAvailable(true);
         menuItemRepository.save(menuItem);
+
+        // The create-order interaction orders MENU-1 at 350.00 for STORE-PACT-1 (the stubbed INR store).
+        // Order creation checks each line against the server menu, so the item must exist at that price.
+        MenuItem orderedItem = new MenuItem("Margherita Pizza", Cuisine.NORTH_INDIAN, MenuCategory.DOSA, 35000L);
+        orderedItem.setId("MENU-1");
+        orderedItem.setStoreId("STORE-PACT-1");
+        orderedItem.setIsAvailable(true);
+        menuItemRepository.save(orderedItem);
     }
 
     @State(value = "menu items exist", action = StateChangeAction.TEARDOWN)
     void cleanupMenuItems() {
         menuItemRepository.deleteById("menu-1");
+        menuItemRepository.deleteById("MENU-1");
     }
 
     @State("menu item exists with id menu-pact-1")

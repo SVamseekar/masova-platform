@@ -550,7 +550,7 @@ export const saveReturnUrl = (url: string): boolean => {
  * @param userType - The user's type/role
  * @returns The default dashboard path for the user type
  */
-export const getDefaultDashboard = (userType: string): string => {
+export const getDefaultDashboard = (userType: string, staffRole?: string): string => {
   const normalizedType = userType?.toUpperCase();
 
   switch (normalizedType) {
@@ -558,8 +558,11 @@ export const getDefaultDashboard = (userType: string): string => {
     case 'ASSISTANT_MANAGER':
       return '/manager';
     case 'STAFF':
+      return staffRole?.toUpperCase() === 'CASHIER' ? '/pos' : '/kitchen';
     case 'KITCHEN_STAFF':
       return '/kitchen';
+    case 'KIOSK':
+      return '/pos';
     case 'DRIVER':
       return '/driver';
     case 'CUSTOMER':
@@ -568,3 +571,32 @@ export const getDefaultDashboard = (userType: string): string => {
       return '/';
   }
 };
+
+/** Choose the appropriate sign-in surface without losing staff route context. */
+export const getSignInUrl = (currentPath: string): string => {
+  const pathname = currentPath.split(/[?#]/)[0];
+  const staffPaths = ['/manager', '/staff', '/pos', '/kitchen', '/driver'];
+  const staff = staffPaths.some(path => pathname === path || pathname.startsWith(path + '/'));
+  return (staff ? '/staff-login' : '/customer-login') + '?reason=session-expired';
+};
+
+/** Preserve a validated destination; auth reducers clear only their own storage keys. */
+export const redirectToSignIn = (): void => {
+  const currentPath = window.location.pathname + window.location.search + window.location.hash;
+  saveReturnUrl(currentPath);
+  window.location.assign(getSignInUrl(currentPath));
+};
+
+type AuthSessionSource = {
+  accessToken?: string | null;
+  refreshToken?: string | null;
+  user?: { id: string } | null;
+};
+
+/** Capture primitives so an in-flight response cannot act on a later sign-in. */
+export const authSessionIdentity = (auth: AuthSessionSource) => ({
+  accessToken: auth.accessToken, refreshToken: auth.refreshToken, userId: auth.user?.id,
+});
+
+export const isCurrentAuthSession = (snapshot: ReturnType<typeof authSessionIdentity>, auth: AuthSessionSource): boolean =>
+  snapshot.accessToken === auth.accessToken && snapshot.refreshToken === auth.refreshToken && snapshot.userId === auth.user?.id;

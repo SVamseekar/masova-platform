@@ -1,0 +1,101 @@
+/* Board 06: order tracking and live delivery. */
+.track-page { max-width: 1180px; margin: 0 auto; padding: 16px 28px 48px; }
+.track-back { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; font-size: 14px; color: var(--masova-textSecondary) !important; }
+.track-back:hover { text-decoration: underline; }
+.track-title { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.customer-browse .track-title h1 { display: flex; align-items: center; gap: 10px; margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.customer-browse .track-copy { display: inline-grid; place-items: center; width: 40px; min-height: 40px; padding: 0; border-color: transparent; background: transparent; color: var(--masova-textSecondary); }
+.track-date { color: var(--masova-textSecondary); font-size: 14px; margin: 2px 0 14px !important; }
+.track-chip { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 16px; font-weight: 500; font-size: 14px; background: var(--masova-warningSurface); color: var(--masova-warningText); }
+.track-chip::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: currentColor; }
+.track-chip[data-tone="success"] { background: var(--masova-successSurface); color: var(--masova-successText); }
+.track-chip[data-tone="info"] { background: var(--masova-infoSurface); color: var(--masova-infoText); }
+.track-chip[data-tone="error"] { background: var(--masova-errorSurface); color: var(--masova-errorText); }
+.track-card { background: var(--masova-surface); border: 1px solid var(--masova-borderSubtle); border-radius: 12px; padding: 16px; }
+.track-store { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.track-store-mark { width: 64px; height: 48px; border-radius: 8px; background: var(--masova-selectionSurface); display: grid; place-items: center; flex-shrink: 0; overflow: hidden; }
+.track-store-mark img { width: 100%; height: 100%; object-fit: cover; }
+.track-store-text { flex: 1; min-width: 160px; display: grid; }
+.track-store-text strong { font-weight: 600; }
+.track-store-text span { color: var(--masova-textSecondary); font-size: 14px; }
+.track-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.customer-browse .track-action { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 8px 14px; border: 1px solid var(--masova-borderSubtle); border-radius: 8px; background: var(--masova-surface); font-weight: 500; }
+.customer-browse .track-action:hover { background: var(--masova-selectionSurface); }
+.track-steps { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); margin: 22px 0 14px; padding: 0; list-style: none; }
+.track-steps li { position: relative; display: grid; justify-items: center; align-content: start; gap: 6px; text-align: center; font-size: 13px; color: var(--masova-textSecondary); padding: 0 4px; }
+.track-steps li::before { content: ""; position: absolute; top: 11px; right: 50%; width: 100%; height: 2px; background: var(--masova-borderSubtle); }
+.track-steps li:first-child::before { display: none; }
+.track-steps li[data-state="done"]::before, .track-steps li[data-state="current"]::before { background: #16A34A; }
+.track-dot { position: relative; z-index: 1; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: var(--masova-surface); border: 2px solid var(--masova-borderControl); color: #fff; }
+.track-steps li[data-state="done"] .track-dot { background: #16A34A; border-color: #16A34A; }
+.track-steps li[data-state="current"] .track-dot { background: var(--masova-primary); border-color: var(--masova-primary); box-shadow: 0 0 0 4px color-mix(in srgb, var(--masova-primary) 18%, transparent); }
+.track-steps li[data-state="current"] .track-dot::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #fff; }
+.track-steps li[data-state="done"] b, .track-steps li[data-state="current"] b { color: var(--masova-text); font-weight: 600; }
+.track-steps b { font-weight: 400; }
+.track-steps small { font-size: 12px; }
+.track-banner { display: flex; gap: 14px; align-items: flex-start; padding: 14px 16px; border-radius: 10px; background: var(--masova-warningSurface); margin-bottom: 14px; }
+.track-banner svg { color: #E8890C; flex-shrink: 0; margin-top: 2px; }
+.track-banner strong { display: block; font-weight: 600; color: var(--masova-text); }
+.track-banner span { color: var(--masova-textSecondary); font-size: 14px; }
+.track-banner[data-tone="success"] { background: var(--masova-successSurface); }
+.track-banner[data-tone="success"] svg { color: #16A34A; }
+.track-banner[data-tone="info"] { background: var(--masova-infoSurface); }
+.track-banner[data-tone="info"] svg { color: #1D6FE8; }
+.track-banner[data-tone="error"] { background: var(--masova-errorSurface); }
+.track-banner[data-tone="error"] svg { color: var(--masova-errorText); }
+.track-banner .track-action { margin-left: auto; align-self: center; white-space: nowrap; }
+.track-otp { font-size: 22px; font-weight: 700; letter-spacing: 0.2em; font-variant-numeric: tabular-nums; color: var(--masova-text); }
+.track-columns { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
+.customer-browse .track-card h2 { font-size: 15px; font-weight: 600; margin: 0 0 12px; }
+.track-lines { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.track-lines li { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; font-variant-numeric: tabular-nums; }
+.track-lines small { display: block; color: var(--masova-textSecondary); font-size: 13px; }
+.track-lines .track-qty { color: var(--masova-textSecondary); }
+.track-totals { margin: 0; display: grid; gap: 8px; font-variant-numeric: tabular-nums; }
+.track-totals div { display: flex; justify-content: space-between; gap: 12px; color: var(--masova-textSecondary); }
+.track-totals dd { margin: 0; }
+.track-totals .track-total { color: var(--masova-text); font-weight: 600; font-size: 16px; padding-top: 10px; border-top: 1px solid var(--masova-borderSubtle); }
+.track-paid { display: flex; align-items: center; gap: 10px; margin: 10px 0 0 !important; font-size: 13px; color: var(--masova-textSecondary); }
+.track-state { max-width: 520px; margin: 72px auto; text-align: center; }
+.track-state svg { color: var(--masova-textSecondary); margin-bottom: 12px; }
+.track-state .browse-primary { margin-top: 8px; }
+.track-live { display: grid; grid-template-columns: minmax(0, 1.9fr) minmax(0, 1fr); gap: 14px; }
+.track-map { position: relative; overflow: hidden; padding: 0; min-height: 320px; }
+.track-map-status { position: absolute; z-index: 500; top: 12px; right: 12px; display: grid; gap: 2px; padding: 8px 12px; border-radius: 8px; background: var(--masova-surface); box-shadow: 0 1px 4px rgba(18, 22, 20, 0.16); font-size: 13px; }
+.track-map-status strong { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.track-map-status strong::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: #16A34A; }
+.track-map-status[data-live="false"] strong::before { background: #E8890C; }
+.track-map-status span { color: var(--masova-textSecondary); }
+.track-map-empty { min-height: 320px; display: grid; place-content: center; justify-items: center; gap: 6px; text-align: center; padding: 24px; color: var(--masova-textSecondary); }
+.track-map-empty strong { color: var(--masova-text); font-weight: 600; }
+.track-side { display: grid; gap: 14px; align-content: start; }
+.track-driver { display: flex; align-items: center; gap: 14px; }
+.track-avatar { width: 52px; height: 52px; border-radius: 50%; background: var(--masova-selectionSurface); display: grid; place-items: center; font-weight: 600; flex-shrink: 0; }
+.track-driver div { flex: 1; min-width: 0; display: grid; }
+.track-driver span { color: var(--masova-textSecondary); font-size: 14px; }
+.customer-browse .track-call { display: inline-grid; place-items: center; width: 48px; min-height: 48px; padding: 0; border: 1px solid var(--masova-borderSubtle); border-radius: 8px; background: var(--masova-surface); }
+.track-eta { margin: 16px 0 0; padding-top: 14px; border-top: 1px solid var(--masova-borderSubtle); }
+.track-eta small { display: block; color: var(--masova-textSecondary); font-size: 13px; }
+.track-eta strong { font-size: 20px; font-weight: 700; }
+.track-timeline { list-style: none; margin: 14px 0 0; padding: 0; display: grid; }
+.track-timeline li { position: relative; padding: 0 0 16px 30px; color: var(--masova-textSecondary); font-size: 14px; }
+.track-timeline li:last-child { padding-bottom: 0; }
+.track-timeline li::before { content: ""; position: absolute; left: 3px; top: 3px; width: 14px; height: 14px; border-radius: 50%; background: var(--masova-borderSubtle); }
+.track-timeline li::after { content: ""; position: absolute; left: 9px; top: 20px; bottom: 0; width: 2px; background: var(--masova-borderSubtle); }
+.track-timeline li:last-child::after { display: none; }
+.track-timeline li[data-state="done"]::before, .track-timeline li[data-state="current"]::before { background: #16A34A; }
+.track-timeline li[data-state="done"]::after { background: #16A34A; }
+.track-timeline li[data-state="current"] { color: var(--masova-text); font-weight: 600; }
+.track-help { display: flex; align-items: center; gap: 12px; }
+.track-help div { flex: 1; display: grid; }
+.track-help span { color: var(--masova-textSecondary); font-size: 14px; }
+@media (max-width: 800px) {
+  .track-page { padding: 12px 16px 32px; }
+  .track-columns, .track-live { grid-template-columns: 1fr; }
+  .track-steps { grid-auto-flow: row; grid-auto-columns: auto; gap: 0; margin: 16px 0; }
+  .track-steps li { grid-template-columns: 24px 1fr auto; justify-items: start; align-items: center; text-align: left; gap: 12px; padding: 0 0 18px; }
+  .track-steps li::before { top: -18px; right: auto; left: 11px; width: 2px; height: 18px; }
+  .track-banner { flex-wrap: wrap; }
+  .track-banner .track-action { margin-left: 34px; }
+}
+@media (prefers-reduced-motion: reduce) { .track-page * { animation: none !important; transition: none !important; } }

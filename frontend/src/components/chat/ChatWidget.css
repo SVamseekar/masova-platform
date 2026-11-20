@@ -4,13 +4,7 @@
 }
 
 .masova-chat-fab-wrap--pulse::before {
-  content: '';
-  position: absolute;
-  inset: -5px;
-  border-radius: 999px;
-  border: 1px solid rgba(250, 45, 72, 0.45);
-  animation: masova-chat-fab-ring 2.4s ease-in-out infinite;
-  pointer-events: none;
+  display: none;
 }
 
 .masova-chat-fab {
@@ -24,11 +18,21 @@
 }
 
 .masova-chat-fab:hover {
-  transform: scale(1.06);
+  background: #eceeeb !important;
 }
 
 .masova-chat-fab--closed {
   gap: 8px;
+  background: #fff !important;
+  color: #18221f !important;
+  border: 1px solid #7e8980;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+}
+
+.masova-chat-fab:focus-visible {
+  outline: 2px solid #1d5f47;
+  outline-offset: 3px;
 }
 
 .masova-chat-fab-agent-icon {
@@ -463,5 +467,16 @@
   .masova-chat-fab-wrap {
     right: 16px !important;
     bottom: 16px !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .masova-chat-panel,
+  .masova-chat-agent-core,
+  .masova-chat-agent-core-ring,
+  .masova-chat-status-dot,
+  .masova-chat-icon-btn {
+    animation: none;
+    transition: none;
   }
 }

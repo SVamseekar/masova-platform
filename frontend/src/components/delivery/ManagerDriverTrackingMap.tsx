@@ -3,7 +3,7 @@ import { DriverTrackingMap } from './DriverTrackingMap';
 import { useDriverLocationWebSocket } from '../../hooks/useDriverLocationWebSocket';
 import { useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../store/slices/authSlice';
-import { useTrackOrderQuery } from '../../store/api/deliveryApi';
+import { useTrackOrderForStaffQuery as useTrackOrderQuery } from '../../store/api/deliveryApi';
 import { colors, spacing, typography, borderRadius } from '../../styles/design-tokens';
 import { createCard, createBadge } from '../../styles/neumorphic-utils';
 import { Driver } from '../../store/api/driverApi';

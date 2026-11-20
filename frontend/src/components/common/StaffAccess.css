@@ -1,0 +1,70 @@
+/* Approved revamp tokens, scoped while existing surfaces migrate by workflow. */
+.staff-access {
+  --access-canvas: var(--masova-canvas); --access-surface: var(--masova-surface); --access-text: var(--masova-text);
+  --access-secondary: var(--masova-textSecondary); --access-primary: var(--masova-primary); --access-primary-hover: var(--masova-primaryHover);
+  --access-border: var(--masova-borderSubtle); --access-control: var(--masova-borderControl); --access-focus: var(--masova-focus);
+  color: var(--access-text); background: var(--access-canvas);
+  font-family: inherit; font-size: 15px; line-height: 1.5;
+  min-height: 100dvh; display: grid; place-items: center; padding: 48px 24px; box-sizing: border-box;
+}
+.staff-access *, .staff-access *::before, .staff-access *::after { box-sizing: border-box; }
+.staff-access h1, .staff-access h2, .staff-access p { margin: 0; font-family: inherit; }
+.staff-access__shell { display: grid; grid-template-columns: 1fr 1fr; width: min(100%, 960px); border: 1px solid var(--access-border); border-radius: 12px; overflow: hidden; background: var(--access-surface); }
+.staff-access__panel { padding: 40px; min-width: 0; }
+.staff-access__brand { display: inline-flex; text-decoration: none; color: var(--access-text); margin-bottom: 24px; }
+.masova-brand { display: inline-flex; align-items: center; gap: 12px; font-size: 28px; line-height: 1; font-weight: 700; letter-spacing: -1px; }
+.staff-access h1 { font-size: 28px; font-weight: 600; line-height: 1.15; letter-spacing: -.6px; }
+.staff-access__intro { margin-top: 12px !important; color: var(--access-secondary); max-width: 34ch; }
+.staff-access form { margin-top: 24px; display: grid; gap: 16px; }
+.staff-access__field { display: grid; gap: 8px; }
+.staff-access label { font-weight: 500; }
+.staff-access__input-wrap { position: relative; display: flex; align-items: center; }
+.staff-access__input-icon { position: absolute; left: 12px; pointer-events: none; color: var(--access-secondary); }
+.staff-access input:not([type="checkbox"]) { width: 100%; min-height: 48px; border: 1px solid var(--access-control); border-radius: 8px; background: var(--access-surface); color: var(--access-text); padding: 12px 48px 12px 40px; font: inherit; transition: border-color 150ms cubic-bezier(.2,0,0,1); }
+.staff-access input::placeholder { color: var(--access-secondary); opacity: 1; }
+.staff-access input[aria-invalid="true"] { border-color: var(--masova-errorText); }
+.staff-access input:disabled { background: var(--access-canvas); }
+.staff-access :is(input, button, a):focus-visible { outline: 3px solid var(--access-focus); outline-offset: 3px; }
+.staff-access button { font: inherit; cursor: pointer; }
+.staff-access button:disabled { cursor: wait; }
+.staff-access__password-toggle { position: absolute; right: 0; width: 48px; height: 48px; border: 0; border-radius: 8px; background: transparent; color: var(--access-secondary); display: grid; place-items: center; }
+.staff-access__options { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.staff-access__remember { display: inline-flex; align-items: center; gap: 8px; min-height: 48px; cursor: pointer; }
+.staff-access input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--access-primary); margin: 0; }
+.staff-access__text-button { min-height: 48px; padding: 8px 0; background: transparent; border: 0; color: var(--access-primary); }
+.staff-access__submit { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 48px; border: 0; border-radius: 8px; padding: 12px 16px; color: var(--masova-surface); background: var(--access-primary); font-weight: 600 !important; text-decoration: none; transition: background-color 150ms cubic-bezier(.2,0,0,1); }
+.staff-access__submit:hover { background: var(--access-primary-hover); }
+.staff-access__submit:disabled { background: var(--access-primary); opacity: .75; }
+.staff-access__submit span { transition: transform 100ms cubic-bezier(.2,0,0,1); }
+.staff-access__submit:active:not(:disabled) span { transform: scale(.98); }
+.staff-access__field-error { color: var(--masova-errorText); font-size: 13px; }
+.staff-access__notice { display: flex; gap: 12px; align-items: flex-start; padding: 16px; border-radius: 8px; background: var(--masova-errorSurface); color: var(--masova-errorText); animation: access-notice 150ms cubic-bezier(.2,0,0,1); }
+.staff-access__notice svg { flex-shrink: 0; }
+.staff-access__notice strong { display: block; font-weight: 600; }
+.staff-access__notice p { font-size: 14px; margin-top: 4px; }
+.staff-access__recovery { margin-top: 16px; padding: 16px; background: var(--access-canvas); border-radius: 8px; color: var(--access-secondary); }
+.staff-access__footer { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 24px; border-top: 1px solid var(--access-border); padding-top: 16px; font-size: 13px; }
+.staff-access__footer a { display: inline-flex; align-items: center; gap: 8px; color: var(--access-primary); min-height: 48px; text-decoration: none; }
+.staff-access__footer a:hover { text-decoration: underline; }
+.staff-access__photo { position: relative; overflow: hidden; background: var(--masova-forest); min-height: 600px; }
+.staff-access__photo img { height: 100%; width: 100%; position: absolute; object-fit: cover; animation: access-art 240ms cubic-bezier(.16,1,.3,1); }
+.staff-access__caption { position: absolute; inset: auto 0 0; padding: 32px; color: var(--masova-surface); background: rgba(16,27,23,.8); }
+.staff-access__caption h2 { font-size: 32px; line-height: 1.15; font-weight: 600; letter-spacing: -.7px; }
+.staff-access__caption p { margin-top: 12px; }
+.staff-access--compact .staff-access__shell { display: block; max-width: 440px; }
+.staff-access--compact .staff-access__brand { display: flex; justify-content: center; }
+.staff-access--compact h1 { font-size: 24px; }
+.staff-access__denied { display: grid; gap: 16px; }
+@keyframes access-notice { from { opacity: 0; } to { opacity: 1; } }
+@keyframes access-art { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@media (max-width: 639px) {
+  .staff-access { padding: 24px 16px; align-items: start; }
+  .staff-access__shell { display: block; max-width: 440px; }
+  .staff-access__panel { padding: 24px; }
+  .staff-access__photo { display: none; }
+  .staff-access h1 { font-size: 26px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .staff-access *, .staff-access *::before, .staff-access *::after { animation: none !important; transition: none !important; }
+  .staff-access__submit:active:not(:disabled) span { transform: none; }
+}

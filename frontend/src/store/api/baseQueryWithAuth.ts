@@ -4,163 +4,96 @@ import { Mutex } from 'async-mutex';
 import API_CONFIG from '../../config/api.config';
 import type { RootState } from '../store';
 import { logout, refreshTokenSuccess } from '../slices/authSlice';
+import { authSessionIdentity, isCurrentAuthSession, redirectToSignIn } from '../../utils/security';
 
 /**
- * Professional-grade baseQuery with automatic token refresh
- *
- * Features (like Google, Amazon, etc.):
- * - Automatic token refresh on 401 errors
- * - Request retry after token refresh
- * - Thread-safe refresh with mutex (prevents multiple simultaneous refresh calls)
- * - Token injection in headers
- * - User context headers
- * - Graceful logout only when refresh token fails
+ * Base query with token injection, store context and serialized token refresh.
+ * Authentication endpoints return their own failures inline. Only an expired
+ * protected session enters recovery; temporary refresh failures retain identity.
  */
-
-// Mutex to prevent multiple simultaneous refresh token requests
 const mutex = new Mutex();
+const publicAuthPaths = new Set(['/auth/login', '/auth/register', '/auth/google', '/auth/refresh', '/auth/validate-pin', '/users/kiosk/auto-login']);
 
-const baseQueryWithAuth: BaseQueryFn<
-  string | FetchArgs,
-  unknown,
-  FetchBaseQueryError
-> = async (args, api, extraOptions) => {
-  // Wait until the mutex is available without locking it
-  await mutex.waitForUnlock();
+const baseQueryWithAuth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> = async (args, api, extraOptions) => {
+  const requestPath = (typeof args === 'string' ? args : args.url).split('?')[0];
+  const publicAuth = publicAuthPaths.has(requestPath);
+  if (!publicAuth) await mutex.waitForUnlock();
 
-  // Base query configuration
   const baseQuery = fetchBaseQuery({
     baseUrl: API_CONFIG.BASE_URL,
+    timeout: API_CONFIG.TIMEOUT,
     prepareHeaders: (headers, { getState }) => {
       const state = getState() as RootState;
       const token = state.auth.accessToken;
       const user = state.auth.user;
       const selectedStoreId = state.cart?.selectedStoreId;
-
-      // Add authorization token
-      if (token) {
-        headers.set('Authorization', `Bearer ${token}`);
-      }
-
-      // Add user context headers
-      if (user) {
-        headers.set('X-User-Id', user.id);
-        headers.set('X-User-Type', user.type);
-        if (user.storeId) {
-          headers.set('X-User-Store-Id', user.storeId);
+      // Public authentication must not inherit a previous account's bearer/context.
+      if (!publicAuth) {
+        if (token) headers.set('Authorization', 'Bearer ' + token);
+        if (user) {
+          headers.set('X-User-Id', user.id);
+          headers.set('X-User-Type', user.type);
+          if (user.storeId) headers.set('X-User-Store-Id', user.storeId);
         }
+        if (selectedStoreId) headers.set('X-Selected-Store-Id', selectedStoreId);
       }
-
-      // Add selected store for managers/customers
-      if (selectedStoreId) {
-        headers.set('X-Selected-Store-Id', selectedStoreId);
-      }
-
       return headers;
     },
   });
 
-  // Execute the base query
+  const sessionAtRequest = authSessionIdentity((api.getState() as RootState).auth);
+  const sessionChangedError = (): { error: FetchBaseQueryError } => ({
+    error: { status: 'CUSTOM_ERROR', error: 'Session changed during the request. Please retry in your current workspace.' },
+  });
   let result = await baseQuery(args, api, extraOptions);
+  if (publicAuth) return result;
+  const currentAuth = (api.getState() as RootState).auth;
+  if (sessionAtRequest.refreshToken !== currentAuth.refreshToken || sessionAtRequest.userId !== currentAuth.user?.id) return sessionChangedError();
+  if (result.error?.status !== 401) return result;
 
-  // Handle 401 Unauthorized errors with automatic token refresh
-  if (result.error && result.error.status === 401) {
-    console.log('[Auth] 401 Unauthorized - Attempting token refresh');
-
-    // Check if we already have a refresh in progress
-    if (!mutex.isLocked()) {
-      const release = await mutex.acquire();
-
-      try {
-        const state = api.getState() as RootState;
-        const refreshToken = state.auth.refreshToken;
-
-        if (!refreshToken) {
-          console.warn('[Auth] No refresh token available - logging out');
-          api.dispatch(logout());
-          if (typeof window !== 'undefined') {
-            // Phase 12: Save current URL before redirecting to login
-            const currentPath = window.location.pathname + window.location.search;
-            if (currentPath !== '/login' && currentPath !== '/staff-login' && currentPath !== '/customer-login') {
-              sessionStorage.setItem('returnUrl', currentPath);
-            }
-            window.location.href = '/login';
-          }
-          return result;
-        }
-
-        // Attempt to refresh the token
-        console.log('[Auth] Refreshing access token...');
-        const refreshResult = await baseQuery(
-          {
-            url: '/auth/refresh',
-            method: 'POST',
-            body: { refreshToken },
-          },
-          api,
-          extraOptions
-        );
-
-        if (refreshResult.data) {
-          // Successfully refreshed token
-          const { accessToken } = refreshResult.data as { accessToken: string };
-          console.log('[Auth] Token refresh successful - New token received');
-          console.log('[Auth] New token preview:', accessToken.substring(0, 30) + '...');
-
-          // Update the access token in the store
-          api.dispatch(refreshTokenSuccess(accessToken));
-
-          // Wait a tiny bit to ensure Redux state is updated
-          await new Promise(resolve => setTimeout(resolve, 50));
-
-          // Retry the original request with the new token
-          console.log('[Auth] Retrying original request with new token');
-          result = await baseQuery(args, api, extraOptions);
-        } else {
-          // Refresh token failed - logout user
-          console.error('[Auth] Token refresh failed - Response:', refreshResult.error);
-          console.error('[Auth] Refresh token may be expired - logging out');
-          api.dispatch(logout());
-          if (typeof window !== 'undefined') {
-            // Clear all storage to prevent stale token issues
-            localStorage.clear();
-            sessionStorage.clear();
-
-            // Save current URL before redirecting to login
-            const currentPath = window.location.pathname + window.location.search;
-            if (currentPath !== '/login' && currentPath !== '/staff-login' && currentPath !== '/customer-login') {
-              sessionStorage.setItem('returnUrl', currentPath);
-            }
-            window.location.href = '/login';
-          }
-        }
-      } catch (error) {
-        console.error('[Auth] Token refresh error:', error);
-        console.error('[Auth] Forcing logout due to refresh failure');
-        api.dispatch(logout());
-        if (typeof window !== 'undefined') {
-          // Clear all storage to prevent stale token issues
-          localStorage.clear();
-          sessionStorage.clear();
-
-          // Save current URL before redirecting to login
-          const currentPath = window.location.pathname + window.location.search;
-          if (currentPath !== '/login' && currentPath !== '/staff-login' && currentPath !== '/customer-login') {
-            sessionStorage.setItem('returnUrl', currentPath);
-          }
-          window.location.href = '/login';
-        }
-      } finally {
-        // Release the mutex
-        release();
-      }
-    } else {
-      // Wait for the mutex to be available, then retry the request
-      await mutex.waitForUnlock();
-      result = await baseQuery(args, api, extraOptions);
-    }
+  function expireSession() {
+    api.dispatch(logout());
+    if (typeof window !== 'undefined') redirectToSignIn();
   }
 
+  if (!mutex.isLocked()) {
+    const release = await mutex.acquire();
+    try {
+      const state = api.getState() as RootState;
+      if (sessionAtRequest.refreshToken !== state.auth.refreshToken || sessionAtRequest.userId !== state.auth.user?.id) return sessionChangedError();
+      if (state.auth.accessToken && state.auth.accessToken !== sessionAtRequest.accessToken) {
+        return await baseQuery(args, api, extraOptions);
+      }
+      if (!state.auth.refreshToken) {
+        expireSession();
+        return result;
+      }
+      const recoveringSession = authSessionIdentity(state.auth);
+      const refreshed = await baseQuery({
+        url: '/auth/refresh', method: 'POST', body: { refreshToken: state.auth.refreshToken },
+      }, api, extraOptions);
+      if (!isCurrentAuthSession(recoveringSession, (api.getState() as RootState).auth)) return sessionChangedError();
+      const accessToken = (refreshed.data as { accessToken?: unknown } | undefined)?.accessToken;
+      if (typeof accessToken === 'string' && accessToken.length > 0) {
+        api.dispatch(refreshTokenSuccess(accessToken));
+        result = await baseQuery(args, api, extraOptions);
+      } else if (refreshed.error?.status === 401 || refreshed.error?.status === 403) {
+        expireSession();
+      } else {
+        // Network/provider errors are not evidence that credentials expired.
+        return refreshed.error ? { error: refreshed.error } : {
+          error: { status: 'CUSTOM_ERROR', error: 'Session refresh returned no access token.' },
+        };
+      }
+    } finally {
+      release();
+    }
+  } else {
+    await mutex.waitForUnlock();
+    const auth = (api.getState() as RootState).auth;
+    if (sessionAtRequest.refreshToken !== auth.refreshToken || sessionAtRequest.userId !== auth.user?.id) return sessionChangedError();
+    if (auth.accessToken) result = await baseQuery(args, api, extraOptions);
+  }
   return result;
 };
 

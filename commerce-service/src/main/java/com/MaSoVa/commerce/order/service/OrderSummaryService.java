@@ -19,6 +19,7 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -100,7 +101,7 @@ public class OrderSummaryService {
                 .as("topProducts")
                 .and(
                         Aggregation.match(Criteria.where("status").in(SALE_STATUSES)
-                                .and("createdByStaffId").exists(true).nin(List.of("", null))),
+                                .and("createdByStaffId").exists(true).nin(Arrays.asList("", null))),
                         Aggregation.group("createdByStaffId")
                                 .first("createdByStaffName").as("staffName")
                                 .sum("total").as("salesGenerated")

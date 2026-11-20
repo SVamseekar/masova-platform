@@ -1,0 +1,11 @@
+.payment-fields { display: flex; flex-direction: column; gap: 24px; }
+.payment-contact { margin-bottom: 24px; }
+.payment-contact dl { display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: 8px 12px; }
+.payment-contact dd { margin: 0; overflow-wrap: anywhere; }
+.payment-contact dt { color: var(--masova-textSecondary); }
+.payment-methods { margin-bottom: 24px; }
+.payment-status { padding: 16px; background: var(--masova-selectionSurface); border: 1px solid var(--masova-borderSubtle); border-radius: 10px; margin-bottom: 16px; }
+.payment-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 16px; }
+.payment-completion { max-width: 640px; margin: 24px auto; padding: 32px; background: var(--masova-surface); border: 1px solid var(--masova-borderSubtle); border-radius: 12px; }
+.payment-completion h1 { margin-bottom: 16px; }
+.payment-completion .payment-reference { font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }

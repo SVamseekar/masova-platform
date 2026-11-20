@@ -85,4 +85,23 @@ class OrderServiceOwnershipTest {
                 .isInstanceOf(AccessDeniedException.class)
                 .hasMessageContaining("do not own");
     }
+
+    @Test
+    @DisplayName("assertCustomerOwnsOrder accepts an order stored under the caller's customer profile id")
+    void profileOwnerSucceeds() {
+        when(orderRepository.findById("o1")).thenReturn(Optional.of(orderOwnedBy("profile-1")));
+        when(customerServiceClient.findCustomerIdsForUser("user-1")).thenReturn(java.util.Set.of("profile-1"));
+
+        assertThat(orderService.assertCustomerOwnsOrder("o1", "user-1").getId()).isEqualTo("o1");
+    }
+
+    @Test
+    @DisplayName("assertCustomerOwnsOrder denies an order under another user's customer profile")
+    void otherProfileDenied() {
+        when(orderRepository.findById("o1")).thenReturn(Optional.of(orderOwnedBy("profile-2")));
+        when(customerServiceClient.findCustomerIdsForUser("user-1")).thenReturn(java.util.Set.of("profile-1"));
+
+        assertThatThrownBy(() -> orderService.assertCustomerOwnsOrder("o1", "user-1"))
+                .isInstanceOf(AccessDeniedException.class);
+    }
 }

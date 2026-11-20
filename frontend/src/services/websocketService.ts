@@ -63,16 +63,19 @@ class WebSocketService {
   private disconnectLogoutTimer: NodeJS.Timeout | null = null;
   private onConnectionLost?: () => void;
   private onAutoLogout?: () => void;
+  private onConnectionRestored?: () => void;
 
   /**
    * Set callbacks for connection loss events
    */
   setConnectionLostCallbacks(
     onConnectionLost?: () => void,
-    onAutoLogout?: () => void
+    onAutoLogout?: () => void,
+    onConnectionRestored?: () => void
   ): void {
     this.onConnectionLost = onConnectionLost;
     this.onAutoLogout = onAutoLogout;
+    this.onConnectionRestored = onConnectionRestored;
   }
 
   /**
@@ -94,9 +97,9 @@ class WebSocketService {
       }
     }, 30000); // 30 seconds
 
-    // Auto-logout after 60 seconds of disconnection
+    // Notify the UI about prolonged disconnection; connection loss does not prove auth expiry.
     this.disconnectLogoutTimer = setTimeout(() => {
-      console.error('[WebSocket] Connection lost for 60s - initiating auto-logout');
+      console.warn('[WebSocket] Connection unavailable after 60s');
       if (this.onAutoLogout) {
         this.onAutoLogout();
       }
@@ -112,6 +115,7 @@ class WebSocketService {
     // Clear disconnect timers
     this.clearDisconnectTimers();
     this.disconnectTime = null;
+    this.onConnectionRestored?.();
   }
 
   /**

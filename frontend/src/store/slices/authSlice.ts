@@ -1,4 +1,4 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, isAnyOf, PayloadAction } from '@reduxjs/toolkit';
 import { User } from '../../types/user';
 import { authApi } from '../api/authApi';
 import { clearAllStoreContexts } from '../../contexts/pageStoreUtils';
@@ -217,7 +217,7 @@ const authSlice = createSlice({
       }
     );
     builder.addMatcher(
-      authApi.endpoints.login.matchFulfilled,
+      isAnyOf(authApi.endpoints.login.matchFulfilled, authApi.endpoints.googleLogin.matchFulfilled),
       (state, action) => {
         const { accessToken, refreshToken, user, rememberMe = true } = action.payload;
 
@@ -254,7 +254,7 @@ const authSlice = createSlice({
 
     // Handle register
     builder.addMatcher(
-      authApi.endpoints.register.matchFulfilled,
+      isAnyOf(authApi.endpoints.register.matchFulfilled, authApi.endpoints.googleRegister.matchFulfilled),
       (state, action) => {
         const { accessToken, refreshToken, user, rememberMe = true } = action.payload;
 

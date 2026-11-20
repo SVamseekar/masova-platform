@@ -1,4 +1,7 @@
 import React, { useState, useMemo } from 'react';
+import { useAppSelector } from '../../store/hooks';
+import { selectCartCurrency } from '../../store/slices/cartSlice';
+import { formatMajorAmount } from '../../utils/currency';
 import { t, cardStyle, tableHeaderStyle, tableCellStyle, sectionTitleStyle, selectStyle, statusBadge } from './manager-tokens';
 import { ManagerPageFrame, ManagerTabBar, ManagerLoadingBlock, ManagerEmptyState, ManagerErrorState } from './components';
 import { validateStaffCreateForm } from './staffFormValidation';
@@ -612,6 +615,7 @@ const SchedulingTab = ({ storeId }: { storeId: string }) => {
 // LEADERBOARD TAB
 // =============================================
 const LeaderboardTab = ({ storeId }: { storeId: string }) => {
+  const currency = useAppSelector(selectCartCurrency);
   const [period, setPeriod] = useState('TODAY');
   const { data, isLoading, error } = useGetStaffLeaderboardQuery({ storeId, period }, { skip: !storeId });
 
@@ -646,8 +650,8 @@ const LeaderboardTab = ({ storeId }: { storeId: string }) => {
                 </td>
                 <td style={tableCellStyle}><div style={{ fontWeight: 600, color: t.black }}>{s.staffName}</div><div style={{ fontSize: 11, color: t.gray }}>ID: {s.staffId}</div></td>
                 <td style={tableCellStyle}>{s.ordersProcessed}</td>
-                <td style={{ ...tableCellStyle, fontWeight: 600 }}>Rs.{s.salesGenerated.toLocaleString()}</td>
-                <td style={tableCellStyle}>Rs.{s.averageOrderValue.toFixed(0)}</td>
+                <td style={{ ...tableCellStyle, fontWeight: 600 }}>{formatMajorAmount(s.salesGenerated, currency)}</td>
+                <td style={tableCellStyle}>{formatMajorAmount(s.averageOrderValue, currency)}</td>
                 <td style={tableCellStyle}>{s.percentOfTotalSales.toFixed(1)}%</td>
                 <td style={tableCellStyle}><span style={statusBadge(perfColor(s.performanceLevel))}>{s.performanceLevel.replace('_', ' ')}</span></td>
               </tr>
@@ -663,6 +667,7 @@ const LeaderboardTab = ({ storeId }: { storeId: string }) => {
 // CUSTOMERS TAB
 // =============================================
 const CustomersTab = ({ storeId }: { storeId: string }) => {
+  const currency = useAppSelector(selectCartCurrency);
   const { data: allCustomers, isLoading } = useGetAllCustomersQuery(storeId, { pollingInterval: 30000 });
   const [search, setSearch] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -727,7 +732,7 @@ const CustomersTab = ({ storeId }: { storeId: string }) => {
                 <td style={tableCellStyle}>{c.phone || 'N/A'}</td>
                 <td style={tableCellStyle}><span style={{ ...statusBadge(tierColor(c.loyaltyInfo?.tier)), color: '#000' }}>{c.loyaltyInfo?.tier || 'BRONZE'}</span></td>
                 <td style={tableCellStyle}>{c.orderStats?.totalOrders ?? 0}</td>
-                <td style={tableCellStyle}>Rs.{Math.round(c.orderStats?.totalSpent ?? 0)}</td>
+                <td style={tableCellStyle}>{formatMajorAmount(c.orderStats?.totalSpent ?? 0, currency)}</td>
                 <td style={tableCellStyle}><span style={statusBadge(c.active ? t.green : t.red)}>{c.active ? 'Active' : 'Inactive'}</span></td>
                 <td style={tableCellStyle}>
                   <div style={{ display: 'flex', gap: 6 }}>
@@ -772,7 +777,7 @@ const CustomersTab = ({ storeId }: { storeId: string }) => {
               <div style={{ display: 'grid', gap: 12 }}>
                 <div><span style={{ fontSize: 12, color: t.gray }}>Points</span><div style={{ fontSize: 22, fontWeight: 700, color: t.orange }}>{selectedCustomer.loyaltyInfo?.totalPoints}</div></div>
                 <div><span style={{ fontSize: 12, color: t.gray }}>Orders</span><div style={{ fontSize: 22, fontWeight: 700, color: t.green }}>{selectedCustomer.orderStats?.totalOrders}</div></div>
-                <div><span style={{ fontSize: 12, color: t.gray }}>Total Spent</span><div style={{ fontSize: 22, fontWeight: 700 }}>Rs.{Math.round(selectedCustomer.orderStats?.totalSpent ?? 0)}</div></div>
+                <div><span style={{ fontSize: 12, color: t.gray }}>Total Spent</span><div style={{ fontSize: 22, fontWeight: 700 }}>{formatMajorAmount(selectedCustomer.orderStats?.totalSpent ?? 0, currency)}</div></div>
               </div>
             )}
 

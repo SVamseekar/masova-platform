@@ -91,6 +91,7 @@ frontend/tsconfig.tsbuildinfo
 *.jpg
 *.jpeg
 !frontend/public/images/menu/*.jpg
+!frontend/public/images/brand/*.jpg
 !frontend/public/site/*.webp
 !frontend/public/site/og-image.jpg
 

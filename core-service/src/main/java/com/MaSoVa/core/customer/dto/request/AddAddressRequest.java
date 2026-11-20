@@ -1,5 +1,8 @@
 package com.MaSoVa.core.customer.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
 
 public class AddAddressRequest {
@@ -30,6 +33,7 @@ public class AddAddressRequest {
     private String landmark;
 
     private boolean isDefault = false;
+    private boolean defaultSpecified;
 
     public AddAddressRequest() {}
 
@@ -64,6 +68,11 @@ public class AddAddressRequest {
     public String getLandmark() { return landmark; }
     public void setLandmark(String landmark) { this.landmark = landmark; }
 
+    @JsonProperty("isDefault")
     public boolean isDefault() { return isDefault; }
-    public void setDefault(boolean aDefault) { isDefault = aDefault; }
+    @JsonProperty("isDefault")
+    @JsonAlias("default")
+    public void setDefault(boolean aDefault) { isDefault = aDefault; defaultSpecified = true; }
+    @JsonIgnore
+    public boolean isDefaultSpecified() { return defaultSpecified; }
 }

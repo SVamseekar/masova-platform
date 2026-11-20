@@ -75,8 +75,10 @@ public class StoreServiceClient {
             );
             Map<String, Object> result = response.getBody();
             if (result == null) return true;
-            Boolean within = (Boolean) result.get("withinDeliveryZone");
-            return within == null || within;
+            // Logistics answers with "isWithinDeliveryZone"; "withinDeliveryZone" is the older key.
+            Object within = result.containsKey("isWithinDeliveryZone")
+                    ? result.get("isWithinDeliveryZone") : result.get("withinDeliveryZone");
+            return !(within instanceof Boolean flag) || flag;
         } catch (Exception e) {
             log.warn("Delivery radius check failed for store {} — failing open: {}", storeId, e.getMessage());
             return true;
