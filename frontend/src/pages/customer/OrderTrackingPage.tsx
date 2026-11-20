@@ -13,6 +13,7 @@ import { useGetCustomerByUserIdQuery } from '../../store/api/customerApi';
 import { ORDER_STATUS_CONFIG, ORDER_TYPE_CONFIG, PAYMENT_STATUS_CONFIG, ORDER_STATUS_FLOW } from '../../types/order';
 import { useCustomerOrdersWebSocket } from '../../hooks/useCustomerOrdersWebSocket';
 import { OrderTrackingUpdate } from '../../services/websocketService';
+import { CONTACT_EMAILS } from '../../config/contact';
 
 const OrderTrackingPage: React.FC = () => {
   const { t } = useTranslation();
@@ -270,7 +271,7 @@ const OrderTrackingPage: React.FC = () => {
           </button>
           {isActive && (
             <a
-              href="mailto:support@masova.app?subject=Help%20with%20order"
+              href={`mailto:${CONTACT_EMAILS.support}?subject=Help%20with%20order`}
               onClick={(e) => e.stopPropagation()}
               style={{
                 padding: '10px 18px',

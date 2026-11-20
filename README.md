@@ -133,7 +133,7 @@ Event-driven communication via RabbitMQ (`masova.orders.exchange`, `masova.notif
 | **Payments** | Stripe (SCA/3D Secure, EU/international), Razorpay (India legacy) — routed by store `countryCode` |
 | **Auth** | JWT (HS512), Redis blacklist for logout, PIN auth for POS |
 | **Testing** | JUnit 5, Mockito, Vitest, React Testing Library, Pact, Playwright |
-| **Deployment** | GCP Cloud Run, Firebase Hosting, Docker Compose |
+| **Deployment** | GCP Cloud Run, Cloudflare Workers (frontend), Docker Compose |
 
 ---
 

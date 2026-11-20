@@ -3,11 +3,11 @@ import { SITE_NAME, SITE_TAGLINE, SITE_URL } from './site'
 export const DEFAULT_TITLE = `${SITE_NAME} — ${SITE_TAGLINE}`
 
 export const DEFAULT_DESCRIPTION =
-  'MaSoVa is an AI-native restaurant management platform for multi-store operations: POS, kitchen display, delivery, inventory, staff scheduling, and customer ordering — built for modern EU restaurants.'
+  'Online ordering, counter, kitchen display, delivery, stock, rotas, guests and reports in one connected system, with AI assistants that prepare decisions for a manager to approve. Runs alongside the till you already use.'
 
 export const SITE_KEYWORDS = [
   'restaurant management system',
-  'restaurant POS',
+  'restaurant ordering system',
   'kitchen display system',
   'multi-store restaurant software',
   'food delivery platform',
@@ -37,27 +37,9 @@ export function buildWebSiteSchema() {
   }
 }
 
-export function buildSoftwareApplicationSchema() {
-  return {
-    '@context': 'https://schema.org',
-    '@type': 'SoftwareApplication',
-    name: SITE_NAME,
-    applicationCategory: 'BusinessApplication',
-    operatingSystem: 'Web',
-    description: DEFAULT_DESCRIPTION,
-    url: SITE_URL,
-    offers: {
-      '@type': 'Offer',
-      price: '0',
-      priceCurrency: 'EUR',
-    },
-  }
-}
-
 export function buildHomeJsonLd() {
   return [
     buildOrganizationSchema(),
     buildWebSiteSchema(),
-    buildSoftwareApplicationSchema(),
   ]
 }
