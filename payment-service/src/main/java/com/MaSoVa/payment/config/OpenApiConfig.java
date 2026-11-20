@@ -31,8 +31,8 @@ public class OpenApiConfig {
                                 .name("MaSoVa Development Team")
                                 .email("dev@getmasova.rest"))
                         .license(new License()
-                                .name("MIT License")
-                                .url("https://opensource.org/licenses/MIT")))
+                                .name("Proprietary, all rights reserved")
+                                .url("https://github.com/SVamseekar/masova-platform/blob/main/LICENSE")))
                 .servers(List.of(
                         new Server()
                                 .url("http://localhost:" + serverPort)
