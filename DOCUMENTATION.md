@@ -7,7 +7,7 @@ Public documentation for the MaSoVa platform repository.
 | Document | Description |
 |---|---|
 | [README.md](README.md) | Platform overview, architecture summary, quick start |
-| [DEMO.md](DEMO.md) | Demo guide for restaurant clients |
+| [DEMO.md](docs/DEMO.md) | Demo guide for restaurant clients |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Branching, commits, development workflow |
 | [CHANGELOG.md](CHANGELOG.md) | Release history |
 

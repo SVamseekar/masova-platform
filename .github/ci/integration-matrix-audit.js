@@ -8,7 +8,7 @@
  *
  * Usage:
  *   node scripts/integration-matrix-audit.js
- *   node scripts/integration-matrix-audit.js --live http://192.168.50.88:8080
+ *   node scripts/integration-matrix-audit.js --live http://localhost:8080
  *   node scripts/integration-matrix-audit.js --live http://localhost:8080 --token <jwt>
  */
 

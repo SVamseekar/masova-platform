@@ -143,7 +143,9 @@ class CorePactVerificationIT extends BaseFullIntegrationTest {
         User.PersonalInfo personalInfo = new User.PersonalInfo();
         personalInfo.setName("John Manager");
         personalInfo.setEmail("john.manager@example.com");
-        personalInfo.setPhone("9876543210");
+        // Unique phone: the Mongo container is shared with AuthControllerIT, which registers
+        // 9876543210, and users.personalInfo.phone has a unique index.
+        personalInfo.setPhone("9876500001");
         user.setPersonalInfo(personalInfo);
         user.setActive(true);
         userRepository.save(user);

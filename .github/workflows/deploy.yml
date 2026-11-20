@@ -1,6 +1,7 @@
 name: Deploy to GCP Cloud Run
 
-# Deployment is manual until GCP/Firebase production cutover is ready.
+# Backend deployment is manual until GCP production cutover is ready.
+# The frontend deploys separately via Cloudflare Workers Builds (frontend/wrangler.jsonc).
 # Run from Actions → "Deploy to GCP Cloud Run" → Run workflow.
 on:
   workflow_dispatch:
@@ -111,7 +112,7 @@ jobs:
           RABBITMQ_USERNAME=${{ secrets.CLOUDAMQP_USERNAME }},\
           RABBITMQ_PASSWORD=${{ secrets.CLOUDAMQP_PASSWORD }},\
           RABBITMQ_VHOST=${{ secrets.CLOUDAMQP_VHOST }},\
-          FRONTEND_URL=https://masova.souravamseekar.com,\
+          FRONTEND_URL=https://getmasova.rest,\
           SPRING_DATASOURCE_URL=jdbc:postgresql://${{ secrets.POSTGRES_HOST }}:5432/masova_db,\
           SPRING_DATASOURCE_USERNAME=${{ secrets.POSTGRES_USERNAME }},\
           SPRING_DATASOURCE_PASSWORD=${{ secrets.POSTGRES_PASSWORD }},\
@@ -266,39 +267,3 @@ jobs:
             --region ${{ env.REGION }} \
             --platform managed \
             --update-env-vars "BACKEND_BASE_URL=${API_GATEWAY_URL}"
-
-  # ============================================================
-  # Job 5: Build and deploy frontend to Firebase Hosting
-  # ============================================================
-  deploy-frontend:
-    name: Deploy Frontend to Firebase
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v7
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
-
-      - name: Install dependencies
-        run: cd frontend && npm ci
-
-      - name: Build
-        run: cd frontend && npm run build
-        env:
-          VITE_API_BASE_URL: https://api.masova.app
-          VITE_API_GATEWAY_URL: https://api.masova.app/api
-          VITE_WS_URL: wss://api.masova.app/ws
-          VITE_AGENT_URL: https://agent.masova.app
-          VITE_GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
-          VITE_GOOGLE_OAUTH_CLIENT_ID: ${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
-
-      - uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-          channelId: live
-          projectId: masova-app
-          entryPoint: frontend
