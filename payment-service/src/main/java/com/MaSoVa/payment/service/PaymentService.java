@@ -1,5 +1,8 @@
 package com.MaSoVa.payment.service;
 
+import com.MaSoVa.payment.client.OrderChargeClient;
+import com.MaSoVa.payment.client.OrderChargeClient.OrderCharge;
+
 import com.MaSoVa.payment.config.RazorpayConfig;
 import com.MaSoVa.payment.dto.InitiatePaymentRequest;
 import com.MaSoVa.payment.dto.PaymentCallbackRequest;
@@ -13,7 +16,6 @@ import com.MaSoVa.payment.gateway.GatewayWebhookResult;
 import com.MaSoVa.payment.gateway.PaymentGateway;
 import com.MaSoVa.payment.gateway.PaymentGatewayResolver;
 import com.MaSoVa.payment.repository.TransactionRepository;
-import com.MaSoVa.payment.util.StoreCurrencyResolver;
 import com.razorpay.Order;
 import com.razorpay.Payment;
 import com.razorpay.RazorpayException;
@@ -58,6 +60,7 @@ public class PaymentService {
     private final PaymentNotificationService paymentNotificationService;
     private final com.MaSoVa.payment.messaging.PaymentEventPublisher paymentEventPublisher;
     private final PaymentGatewayResolver paymentGatewayResolver;
+    private final OrderChargeClient orderChargeClient;
     private TransactionLedgerWriter transactionLedgerWriter;
 
     public PaymentService(TransactionRepository transactionRepository, RazorpayService razorpayService,
@@ -65,7 +68,8 @@ public class PaymentService {
                          PiiEncryptionService encryptionService,
                          PaymentNotificationService paymentNotificationService,
                          com.MaSoVa.payment.messaging.PaymentEventPublisher paymentEventPublisher,
-                         PaymentGatewayResolver paymentGatewayResolver) {
+                         PaymentGatewayResolver paymentGatewayResolver,
+                         OrderChargeClient orderChargeClient) {
         this.transactionRepository = transactionRepository;
         this.razorpayService = razorpayService;
         this.razorpayConfig = razorpayConfig;
@@ -73,6 +77,7 @@ public class PaymentService {
         this.paymentNotificationService = paymentNotificationService;
         this.paymentEventPublisher = paymentEventPublisher;
         this.paymentGatewayResolver = paymentGatewayResolver;
+        this.orderChargeClient = orderChargeClient;
     }
 
     @Autowired(required = false)
@@ -112,19 +117,18 @@ public class PaymentService {
                 throw new RuntimeException("Payment already completed for this order");
             }
 
-            PaymentGateway gateway = paymentGatewayResolver.resolve(request.getCountryCode());
+            // Charge what the order costs, not what the client sent
+            OrderCharge charge = chargeFor(request);
+            String currency = charge.currency();
+            PaymentGateway gateway = paymentGatewayResolver.resolveForCurrency(currency);
+            boolean isIndia = "INR".equals(currency);
 
             // Generate receipt number
             String receipt = "RCP_" + UUID.randomUUID().toString().substring(0, 8);
 
-            boolean isIndia = paymentGatewayResolver.isIndiaStore(request.getCountryCode());
-            String currency = isIndia
-                    ? "INR"
-                    : StoreCurrencyResolver.resolveCurrency(request.getCountryCode(), request.getCurrency());
-
             GatewayPaymentResult gatewayResult = gateway.initiatePayment(new GatewayPaymentRequest(
                     request.getOrderId(),
-                    request.getAmount(),
+                    charge.amount(),
                     currency,
                     request.getCustomerEmail(),
                     request.getCustomerPhone(),
@@ -135,7 +139,7 @@ public class PaymentService {
             // Create transaction record with encrypted PII (GDPR compliance)
             Transaction.Builder builder = Transaction.builder()
                     .orderId(request.getOrderId())
-                    .amount(request.getAmount())
+                    .amount(charge.amount())
                     .status(Transaction.PaymentStatus.INITIATED)
                     .customerId(request.getCustomerId())
                     .customerEmail(encryptionService.encrypt(request.getCustomerEmail()))
@@ -573,16 +577,15 @@ public class PaymentService {
             // Generate receipt number
             String receipt = "CASH_" + UUID.randomUUID().toString().substring(0, 8);
 
-            boolean isIndia = paymentGatewayResolver.isIndiaStore(request.getCountryCode());
-            String currency = isIndia
-                    ? "INR"
-                    : StoreCurrencyResolver.resolveCurrency(request.getCountryCode(), request.getCurrency());
+            // Record what the order costs, not what the client sent
+            OrderCharge charge = chargeFor(request);
+            String currency = charge.currency();
 
             // Create transaction record with SUCCESS status (cash collected immediately)
             Transaction transaction = Transaction.builder()
                     .orderId(request.getOrderId())
                     .razorpayOrderId("CASH_" + request.getOrderId()) // No PSP order for cash
-                    .amount(request.getAmount())
+                    .amount(charge.amount())
                     .status(Transaction.PaymentStatus.SUCCESS) // Cash is collected immediately
                     .customerId(request.getCustomerId())
                     .customerEmail(encryptionService.encrypt(request.getCustomerEmail()))
@@ -619,6 +622,20 @@ public class PaymentService {
             log.error("Error recording cash payment", e);
             throw new RuntimeException("Failed to record cash payment", e);
         }
+    }
+
+    /**
+     * The order's own total and currency from commerce-service. A client amount that differs is
+     * logged and ignored, so a tampered or stale amount can never be charged.
+     */
+    private OrderCharge chargeFor(InitiatePaymentRequest request) {
+        OrderCharge charge = orderChargeClient.getOrderCharge(request.getOrderId());
+        if (request.getAmount() != null
+                && request.getAmount().setScale(2, java.math.RoundingMode.HALF_UP).compareTo(charge.amount()) != 0) {
+            log.warn("Order {}: client sent amount {} but the order total is {} {}; charging the order total",
+                    request.getOrderId(), request.getAmount(), charge.amount(), charge.currency());
+        }
+        return charge;
     }
 
     private PaymentResponse buildPaymentResponse(Transaction transaction) {

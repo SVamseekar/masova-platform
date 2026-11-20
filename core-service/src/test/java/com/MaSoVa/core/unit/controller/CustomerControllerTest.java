@@ -39,6 +39,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class CustomerControllerTest extends BaseServiceTest {
 
     @Mock private CustomerService customerService;
+    @Mock private com.MaSoVa.core.user.service.UserService userService;
     @InjectMocks private CustomerController customerController;
     private MockMvc mockMvc;
 
@@ -48,7 +49,10 @@ class CustomerControllerTest extends BaseServiceTest {
                 "manager-user", null, List.of(new SimpleGrantedAuthority("ROLE_MANAGER"))));
         mockMvc = MockMvcBuilders.standaloneSetup(customerController)
             .setMessageConverters(new MappingJackson2HttpMessageConverter())
+            .setControllerAdvice(new com.MaSoVa.core.user.exception.UserServiceExceptionHandler())
+            .defaultRequest(get("/").header("X-Selected-Store-Id", "store-1"))
             .build();
+        when(customerService.getCustomerById("cust-1")).thenReturn(Optional.of(buildCustomer("cust-1")));
     }
 
     @AfterEach
@@ -57,6 +61,7 @@ class CustomerControllerTest extends BaseServiceTest {
     private Customer buildCustomer(String id) {
         Customer c = new Customer();
         c.setId(id);
+        c.setStoreIds(new java.util.HashSet<>(java.util.Set.of("store-1")));
         return c;
     }
 
@@ -150,7 +155,7 @@ class CustomerControllerTest extends BaseServiceTest {
     @Test
     @DisplayName("POST /api/customers/get-or-create returns existing or new customer")
     void getOrCreate_returns200() throws Exception {
-        when(customerService.getOrCreateCustomer(any())).thenReturn(buildCustomer("cust-1"));
+        when(customerService.getOrCreateOwnCustomer(any())).thenReturn(buildCustomer("cust-1"));
 
         mockMvc.perform(post("/api/customers/get-or-create")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -312,5 +317,142 @@ class CustomerControllerTest extends BaseServiceTest {
 
         mockMvc.perform(get("/api/customers").param("search", "John"))
             .andExpect(status().isOk());
+    }
+
+    // ── Store scoping: managers only reach customers of their own store ──────────
+
+    private Customer otherStoreCustomer() {
+        Customer c = new Customer();
+        c.setId("cust-other");
+        c.setStoreIds(new java.util.HashSet<>(java.util.Set.of("store-2")));
+        when(customerService.getCustomerById("cust-other")).thenReturn(Optional.of(c));
+        return c;
+    }
+
+    @Test
+    @DisplayName("MANAGER cannot read a customer of another store")
+    void managerCannotReadOtherStoreCustomer() throws Exception {
+        otherStoreCustomer();
+        mockMvc.perform(get("/api/customers/cust-other"))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("MANAGER cannot patch, edit addresses of, tag, deactivate or anonymise another store's customer")
+    void managerCannotChangeOtherStoreCustomer() throws Exception {
+        otherStoreCustomer();
+        mockMvc.perform(patch("/api/customers/cust-other")
+                .contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"Updated Name\"}"))
+            .andExpect(status().isForbidden());
+        mockMvc.perform(post("/api/customers/cust-other/addresses")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"label\":\"Home\",\"addressLine1\":\"Street 1\",\"city\":\"Berlin\",\"state\":\"Berlin\",\"postalCode\":\"10115\",\"country\":\"Germany\"}"))
+            .andExpect(status().isForbidden());
+        mockMvc.perform(delete("/api/customers/cust-other/addresses/addr-1"))
+            .andExpect(status().isForbidden());
+        mockMvc.perform(post("/api/customers/cust-other/tags")
+                .contentType(MediaType.APPLICATION_JSON).content("{\"add\":[\"VIP\"]}"))
+            .andExpect(status().isForbidden());
+        mockMvc.perform(post("/api/customers/cust-other/deactivate"))
+            .andExpect(status().isForbidden());
+        mockMvc.perform(delete("/api/customers/cust-other"))
+            .andExpect(status().isForbidden());
+
+        org.mockito.Mockito.verify(customerService, org.mockito.Mockito.never()).updateCustomer(anyString(), any());
+        org.mockito.Mockito.verify(customerService, org.mockito.Mockito.never()).addAddress(anyString(), any());
+        org.mockito.Mockito.verify(customerService, org.mockito.Mockito.never()).removeAddress(anyString(), anyString());
+        org.mockito.Mockito.verify(customerService, org.mockito.Mockito.never()).addTags(anyString(), any());
+        org.mockito.Mockito.verify(customerService, org.mockito.Mockito.never()).deactivateCustomer(anyString());
+        org.mockito.Mockito.verify(customerService, org.mockito.Mockito.never()).anonymizeAndDeleteCustomer(anyString(), any());
+    }
+
+    @Test
+    @DisplayName("MANAGER email, phone and userId lookups do not return another store's customer")
+    void managerLookupsAreStoreScoped() throws Exception {
+        Customer other = otherStoreCustomer();
+        when(customerService.getCustomerByEmail("x@example.com")).thenReturn(Optional.of(other));
+        when(customerService.getCustomerByPhone("123")).thenReturn(Optional.of(other));
+        when(customerService.getCustomerByUserId("user-x")).thenReturn(Optional.of(other));
+
+        mockMvc.perform(get("/api/customers").param("email", "x@example.com"))
+            .andExpect(status().isOk()).andExpect(jsonPath("$").isEmpty());
+        mockMvc.perform(get("/api/customers").param("phone", "123"))
+            .andExpect(status().isOk()).andExpect(jsonPath("$").isEmpty());
+        mockMvc.perform(get("/api/customers").param("userId", "user-x"))
+            .andExpect(status().isOk()).andExpect(jsonPath("$").isEmpty());
+    }
+
+    // ── POST /api/customers/me: checkout profile for signed-in customers ─────────
+
+    private void signInAsCustomer(String userId) {
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(
+                userId, null, List.of(new SimpleGrantedAuthority("ROLE_CUSTOMER"))));
+    }
+
+    @Test
+    @DisplayName("POST /api/customers/me get-or-creates the caller's profile from their own account details")
+    void ensureOwnProfileUsesServerSideIdentity() throws Exception {
+        signInAsCustomer("user-1");
+        com.MaSoVa.shared.entity.User user = new com.MaSoVa.shared.entity.User();
+        user.setId("user-1");
+        com.MaSoVa.shared.entity.User.PersonalInfo info = new com.MaSoVa.shared.entity.User.PersonalInfo();
+        info.setName("Asha");
+        info.setEmail("asha@example.com");
+        info.setPhone("+919876543210");
+        user.setPersonalInfo(info);
+        when(userService.getUserByIdUncached("user-1")).thenReturn(user);
+        when(customerService.getOrCreateOwnCustomer(any())).thenReturn(buildCustomer("cust-1"));
+
+        mockMvc.perform(post("/api/customers/me")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"storeId\":\"store-1\",\"userId\":\"victim\",\"email\":\"victim@example.com\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.id").value("cust-1"));
+
+        org.mockito.ArgumentCaptor<com.MaSoVa.core.customer.dto.request.CreateCustomerRequest> captor =
+                org.mockito.ArgumentCaptor.forClass(com.MaSoVa.core.customer.dto.request.CreateCustomerRequest.class);
+        org.mockito.Mockito.verify(customerService).getOrCreateOwnCustomer(captor.capture());
+        org.assertj.core.api.Assertions.assertThat(captor.getValue().getUserId()).isEqualTo("user-1");
+        org.assertj.core.api.Assertions.assertThat(captor.getValue().getEmail()).isEqualTo("asha@example.com");
+        org.assertj.core.api.Assertions.assertThat(captor.getValue().getName()).isEqualTo("Asha");
+        org.assertj.core.api.Assertions.assertThat(captor.getValue().getStoreId()).isEqualTo("store-1");
+    }
+
+    @Test
+    @DisplayName("POST /api/customers/me returns 409 without leaking the other profile when the phone is taken")
+    void ensureOwnProfileConflictIsClear() throws Exception {
+        signInAsCustomer("user-1");
+        com.MaSoVa.shared.entity.User user = new com.MaSoVa.shared.entity.User();
+        com.MaSoVa.shared.entity.User.PersonalInfo info = new com.MaSoVa.shared.entity.User.PersonalInfo();
+        info.setName("Asha");
+        info.setEmail("asha@example.com");
+        info.setPhone("+919876543210");
+        user.setPersonalInfo(info);
+        when(userService.getUserByIdUncached("user-1")).thenReturn(user);
+        when(customerService.getOrCreateOwnCustomer(any()))
+                .thenThrow(new IllegalArgumentException("Customer with phone +919876543210 already exists"));
+
+        mockMvc.perform(post("/api/customers/me").contentType(MediaType.APPLICATION_JSON).content("{}"))
+            .andExpect(status().isConflict())
+            .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("9876543210"))));
+    }
+
+    @Test
+    @DisplayName("POST /api/customers/me returns the profile a concurrent request just created")
+    void ensureOwnProfileRaceReturnsExisting() throws Exception {
+        signInAsCustomer("user-1");
+        com.MaSoVa.shared.entity.User user = new com.MaSoVa.shared.entity.User();
+        com.MaSoVa.shared.entity.User.PersonalInfo info = new com.MaSoVa.shared.entity.User.PersonalInfo();
+        info.setName("Asha");
+        info.setEmail("asha@example.com");
+        user.setPersonalInfo(info);
+        when(userService.getUserByIdUncached("user-1")).thenReturn(user);
+        when(customerService.getOrCreateOwnCustomer(any()))
+                .thenThrow(new IllegalArgumentException("Customer with userId user-1 already exists"));
+        when(customerService.getCustomerByUserId("user-1")).thenReturn(Optional.of(buildCustomer("cust-1")));
+
+        mockMvc.perform(post("/api/customers/me").contentType(MediaType.APPLICATION_JSON).content("{}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.id").value("cust-1"));
     }
 }

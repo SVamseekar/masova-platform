@@ -132,6 +132,31 @@ public class CustomerService {
         return createCustomer(request);
     }
 
+    /**
+     * Get or create the profile of a signed-in customer (POST /api/customers/me).
+     * Unlike {@link #getOrCreateCustomer}, this never re-assigns an existing profile to the caller:
+     * account emails are not verified, so linking a profile by email would let anyone who registers
+     * with someone else's email take over that profile (orders, addresses, loyalty).
+     *
+     * @throws IllegalArgumentException when another profile already uses the email or phone
+     */
+    public Customer getOrCreateOwnCustomer(CreateCustomerRequest request) {
+        Optional<Customer> own = customerRepository.findByUserId(request.getUserId());
+        if (own.isPresent()) {
+            Customer existing = own.get();
+            if (request.getStoreId() != null && !request.getStoreId().isEmpty()
+                    && !existing.getStoreIds().contains(request.getStoreId())) {
+                existing.addStoreId(request.getStoreId());
+                return customerRepository.save(existing);
+            }
+            return existing;
+        }
+        if (customerRepository.findByEmail(request.getEmail()).isPresent()) {
+            throw new IllegalArgumentException("Another customer profile already uses this email");
+        }
+        return createCustomer(request);
+    }
+
     @CacheEvict(value = "customers", allEntries = true)
     public Customer createCustomer(CreateCustomerRequest request) {
         logger.info("Creating customer for userId: {}", request.getUserId());
@@ -141,18 +166,20 @@ public class CustomerService {
             throw new IllegalArgumentException("Customer with userId " + request.getUserId() + " already exists");
         }
         String storeId = request.getStoreId();
+        // Accounts without a phone (e.g. Google sign-in) must not collide with every other phone-less profile
+        boolean hasPhone = request.getPhone() != null && !request.getPhone().isBlank();
         if (storeId != null && !storeId.isEmpty()) {
             if (customerRepository.existsByStoreIdAndEmail(storeId, request.getEmail())) {
                 throw new IllegalArgumentException("Customer with email already exists in this store");
             }
-            if (customerRepository.existsByStoreIdAndPhone(storeId, request.getPhone())) {
+            if (hasPhone && customerRepository.existsByStoreIdAndPhone(storeId, request.getPhone())) {
                 throw new IllegalArgumentException("Customer with phone already exists in this store");
             }
         } else {
             if (customerRepository.findByEmail(request.getEmail()).isPresent()) {
                 throw new IllegalArgumentException("Customer with email " + request.getEmail() + " already exists");
             }
-            if (customerRepository.findByPhone(request.getPhone()).isPresent()) {
+            if (hasPhone && customerRepository.findByPhone(request.getPhone()).isPresent()) {
                 throw new IllegalArgumentException("Customer with phone " + request.getPhone() + " already exists");
             }
         }
@@ -165,7 +192,7 @@ public class CustomerService {
         }
         customer.setName(request.getName());
         customer.setEmail(request.getEmail());
-        customer.setPhone(request.getPhone());
+        customer.setPhone(hasPhone ? request.getPhone() : null);
         customer.setDateOfBirth(request.getDateOfBirth());
         customer.setGender(request.getGender());
         customer.setMarketingOptIn(request.isMarketingOptIn());

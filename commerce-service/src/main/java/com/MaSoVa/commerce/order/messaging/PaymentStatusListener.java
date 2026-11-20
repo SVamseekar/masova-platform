@@ -27,6 +27,7 @@ public class PaymentStatusListener {
     public void onPaymentStatus(OrderPaymentStatusEvent event) {
         log.info("Payment status {} for order {} (event {})",
                 event.getPaymentStatus(), event.getOrderId(), event.getEventId());
-        orderService.applyPaymentStatusEvent(event.getOrderId(), event.getPaymentStatus(), event.getTransactionId());
+        orderService.applyPaymentStatusEvent(event.getOrderId(), event.getPaymentStatus(), event.getTransactionId(),
+                event.getAmount(), event.getCurrency());
     }
 }

@@ -58,6 +58,7 @@ const mockCustomer = {
 export const customerHandlers = [
   http.post(apiUrl('/customers'), () => HttpResponse.json(mockCustomer)),
   http.post(apiUrl('/customers/get-or-create'), () => HttpResponse.json(mockCustomer)),
+  http.post(apiUrl('/customers/me'), () => HttpResponse.json(mockCustomer)),
 
   http.get(apiUrl('/customers'), ({ request }) => {
     const url = new URL(request.url);

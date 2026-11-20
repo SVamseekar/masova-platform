@@ -12,7 +12,7 @@ import { checkoutCartConfiguration } from './components/checkoutContext';
 const mocks = vi.hoisted(() => ({ create: vi.fn(), initiate: vi.fn(), customer: vi.fn(), radius: vi.fn() }));
 vi.mock('../../store/api/orderApi', async () => ({ ...await vi.importActual('../../store/api/orderApi'), useCreateOrderMutation: () => [mocks.create, { isLoading: false }] }));
 vi.mock('../../store/api/paymentApi', async () => ({ ...await vi.importActual('../../store/api/paymentApi'), useInitiatePaymentMutation: () => [mocks.initiate, { isLoading: false }] }));
-vi.mock('../../store/api/customerApi', async () => ({ ...await vi.importActual('../../store/api/customerApi'), useGetCustomerByUserIdQuery: () => mocks.customer(), useGetOrCreateCustomerMutation: () => [vi.fn()], useUpdatePreferencesMutation: () => [vi.fn()] }));
+vi.mock('../../store/api/customerApi', async () => ({ ...await vi.importActual('../../store/api/customerApi'), useGetCustomerByUserIdQuery: () => mocks.customer(), useEnsureMyCustomerProfileMutation: () => [vi.fn()], useUpdatePreferencesMutation: () => [vi.fn()] }));
 vi.mock('../../store/api/storeApi', async () => ({ ...await vi.importActual('../../store/api/storeApi'), useCheckDeliveryRadiusQuery: (...args: unknown[]) => mocks.radius(...args) }));
 const cart = { ...syncedEuCartPreload, items: [{ id: 'pizza', name: 'Pizza', quantity: 1, price: 12, variant: 'Large', customizations: ['Olives'] }], itemCount: 1, total: 12 };
 const guestInfo = { name: 'Guest Person', email: 'guest@example.test', phone: '+491701234567', street: 'Differentstrasse 1', city: 'Berlin', state: 'Berlin', pincode: '10115' };

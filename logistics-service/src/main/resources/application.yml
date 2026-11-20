@@ -120,7 +120,7 @@ services:
   user-service:
     url: ${USER_SERVICE_URL:http://localhost:8085}
   order-service:
-    url: ${ORDER_SERVICE_URL:http://localhost:8084}
+    url: ${ORDER_SERVICE_URL:${COMMERCE_SERVICE_URL:http://localhost:8084}}
 
 # Inventory scheduling
 scheduling:

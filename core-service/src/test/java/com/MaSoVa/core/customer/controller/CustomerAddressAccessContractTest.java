@@ -32,6 +32,7 @@ class CustomerAddressAccessContractTest {
     @Autowired MockMvc mvc;
     @MockBean CustomerService customers;
     @MockBean JwtTokenProvider tokens;
+    @MockBean com.MaSoVa.core.user.service.UserService users;
     private Customer own;
     private Customer other;
     private static final String ADDRESS = "{\"label\":\"Home\",\"addressLine1\":\"Synthetic street\",\"city\":\"Berlin\",\"state\":\"Berlin\",\"postalCode\":\"10115\",\"country\":\"Germany\"}";
@@ -187,7 +188,9 @@ class CustomerAddressAccessContractTest {
 
     @Test
     void managerAddressAccessRemainsSupported() throws Exception {
+        other.setStoreIds(new java.util.HashSet<>(java.util.Set.of("store-1")));
         mvc.perform(post("/api/customers/profile-other/addresses").with(user("manager-user").roles("MANAGER"))
+                .header("X-Selected-Store-Id", "store-1")
                 .contentType(MediaType.APPLICATION_JSON).content(ADDRESS)).andExpect(status().isOk());
     }
 

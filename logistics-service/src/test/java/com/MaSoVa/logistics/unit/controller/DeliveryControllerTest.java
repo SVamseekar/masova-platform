@@ -23,6 +23,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -326,8 +327,54 @@ class DeliveryControllerTest extends BaseServiceTest {
         void returns200() throws Exception {
             when(proofOfDeliveryService.generateDeliveryOtp("order-1")).thenReturn("4321");
 
-            mockMvc.perform(post("/api/delivery/order-1/otp"))
+            mockMvc.perform(post("/api/delivery/order-1/otp")
+                    .header("X-User-Type", "DRIVER"))
                 .andExpect(status().isOk());
+        }
+
+        @Test
+        @DisplayName("CUSTOMER never replaces the OTP; the owner gets the OTP issued at dispatch")
+        void customerReadsExistingOtpWithoutRegenerating() throws Exception {
+            when(proofOfDeliveryService.findDeliveryOtpForCaller("order-1")).thenReturn(Optional.of("4321"));
+
+            mockMvc.perform(post("/api/delivery/order-1/otp")
+                    .header("X-User-Type", "CUSTOMER")
+                    .header("X-User-Id", "cust-1"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("4321")));
+
+            verify(proofOfDeliveryService, org.mockito.Mockito.never()).generateDeliveryOtp(anyString());
+        }
+
+        @Test
+        @DisplayName("a CUSTOMER-role caller with a blank X-User-Type still cannot regenerate the OTP")
+        void customerAuthorityWithoutHeaderCannotRegenerate() throws Exception {
+            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                    new org.springframework.security.authentication.UsernamePasswordAuthenticationToken("cust-1", null,
+                            List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_CUSTOMER"))));
+            try {
+                when(proofOfDeliveryService.findDeliveryOtpForCaller("order-1")).thenReturn(Optional.of("4321"));
+
+                mockMvc.perform(post("/api/delivery/order-1/otp").header("X-User-Type", ""))
+                    .andExpect(status().isOk());
+
+                verify(proofOfDeliveryService, org.mockito.Mockito.never()).generateDeliveryOtp(anyString());
+            } finally {
+                org.springframework.security.core.context.SecurityContextHolder.clearContext();
+            }
+        }
+
+        @Test
+        @DisplayName("CUSTOMER gets 409 when no OTP has been issued yet")
+        void customerWithoutIssuedOtpGets409() throws Exception {
+            when(proofOfDeliveryService.findDeliveryOtpForCaller("order-1")).thenReturn(Optional.empty());
+
+            mockMvc.perform(post("/api/delivery/order-1/otp")
+                    .header("X-User-Type", "CUSTOMER")
+                    .header("X-User-Id", "cust-1"))
+                .andExpect(status().isConflict());
+
+            verify(proofOfDeliveryService, org.mockito.Mockito.never()).generateDeliveryOtp(anyString());
         }
     }
 
