@@ -164,14 +164,16 @@ export interface AutoDispatchResponse {
 
 export interface TrackingResponse {
   orderId: string;
-  driverId: string;
-  driverName: string;
-  driverPhone: string;
-  currentLocation: DeliveryLocation;
-  destination: DeliveryLocation;
+  /** Not returned by the public tracking endpoint. */
+  driverId?: string;
+  driverName?: string;
+  /** Not returned by the public tracking endpoint. */
+  driverPhone?: string;
+  currentLocation?: DeliveryLocation;
+  destination?: DeliveryLocation;
   status: string;
-  estimatedArrival: string;
-  distanceRemaining: number; // in meters
+  estimatedArrival?: string;
+  distanceRemaining?: number; // in meters; unset when the service has no figure
   lastUpdated: string;
   orderType?: 'DELIVERY' | 'PICKUP' | 'DINE_IN'; // Order type to restrict tracking
   deliveryOtp?: string; // Shown to customer when status is DISPATCHED
@@ -207,6 +209,26 @@ export interface LocationUpdateRequest {
 }
 
 // API Slice
+/** The delivery service nests the driver and reports minutes; pages read the flat fields below. */
+interface RawTrackingResponse extends Partial<TrackingResponse> {
+  orderStatus?: string;
+  driver?: { driverId?: string; driverName?: string; driverPhone?: string } | null;
+  estimatedArrivalMinutes?: number | null;
+  distanceRemainingKm?: number | null;
+}
+
+export const normalizeTracking = (raw: RawTrackingResponse): TrackingResponse => ({
+  ...raw,
+  orderId: raw.orderId ?? '',
+  status: raw.status ?? raw.orderStatus ?? '',
+  driverId: raw.driverId ?? raw.driver?.driverId ?? undefined,
+  driverName: raw.driverName ?? raw.driver?.driverName ?? undefined,
+  driverPhone: raw.driverPhone ?? raw.driver?.driverPhone ?? undefined,
+  estimatedArrival: raw.estimatedArrival ?? (raw.estimatedArrivalMinutes != null ? new Date(Date.now() + raw.estimatedArrivalMinutes * 60000).toISOString() : undefined),
+  distanceRemaining: raw.distanceRemaining ?? (raw.distanceRemainingKm != null ? raw.distanceRemainingKm * 1000 : undefined),
+  lastUpdated: raw.lastUpdated ?? '',
+});
+
 export const deliveryApi = createApi({
   reducerPath: 'deliveryApi',
   baseQuery: fetchBaseQuery({
@@ -326,6 +348,14 @@ export const deliveryApi = createApi({
     // Track order
     trackOrder: builder.query<TrackingResponse, string>({
       query: (orderId) => `/delivery/track/${orderId}`,
+      transformResponse: normalizeTracking,
+      providesTags: (result, error, orderId) => [{ type: 'Tracking', id: orderId }],
+    }),
+
+    // Track order as store staff: includes the driver's contact details
+    trackOrderForStaff: builder.query<TrackingResponse, string>({
+      query: (orderId) => `/delivery/orders/${orderId}/tracking`,
+      transformResponse: normalizeTracking,
       providesTags: (result, error, orderId) => [{ type: 'Tracking', id: orderId }],
     }),
 
@@ -473,6 +503,7 @@ export const {
   useGetOptimizedRouteMutation,
   useUpdateLocationMutation,
   useTrackOrderQuery,
+  useTrackOrderForStaffQuery,
   useGetETAQuery,
   useGetDeliveryMetricsQuery,
   useGetTodayMetricsQuery,

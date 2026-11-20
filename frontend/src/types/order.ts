@@ -45,6 +45,7 @@ export interface OrderItem {
   price: number;
   variant?: string;
   customizations?: string[];
+  notes?: string;
 }
 
 export interface DeliveryAddress {

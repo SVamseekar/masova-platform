@@ -9,7 +9,7 @@ import { withPageStoreContext } from '../../hoc/withPageStoreContext';
 import {
   useGetTodayMetricsQuery,
   useAutoDispatchMutation,
-  useTrackOrderQuery,
+  useTrackOrderForStaffQuery as useTrackOrderQuery,
   useGetAvailableDriversQuery,
 } from '../../store/api/deliveryApi';
 import { useGetRecentStoreOrdersQuery, type Order } from '../../store/api/orderApi';

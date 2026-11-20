@@ -93,7 +93,8 @@ const AutoCenter: React.FC<{ position: [number, number] }> = ({ position }) => {
 
 interface DriverTrackingMapProps {
   driverPosition: [number, number]; // [lat, lng]
-  restaurantPosition: [number, number];
+  /** Omit when the store's coordinates are not known; no pickup marker is drawn. */
+  restaurantPosition?: [number, number];
   customerPosition: [number, number];
   route?: [number, number][]; // Optional route coordinates
   eta?: string; // Estimated time of arrival
@@ -147,11 +148,11 @@ export const DriverTrackingMap: React.FC<DriverTrackingMapProps> = ({
       )}
 
       {/* Restaurant marker */}
-      <Marker position={restaurantPosition} icon={restaurantIcon}>
+      {restaurantPosition && <Marker position={restaurantPosition} icon={restaurantIcon}>
         <Popup>
           <strong>🍕 Restaurant (Pickup)</strong>
         </Popup>
-      </Marker>
+      </Marker>}
 
       {/* Customer marker */}
       <Marker position={customerPosition} icon={customerIcon}>

@@ -24,6 +24,11 @@ vi.mock('../store/slices/authSlice', () => ({
 }));
 
 import { useTokenRefresh } from './useTokenRefresh';
+import { redirectToSignIn } from '../utils/security';
+
+vi.mock('../utils/security', async importOriginal => ({
+  ...await importOriginal<typeof import('../utils/security')>(), redirectToSignIn: vi.fn(),
+}));
 
 interface MockAuthState {
   isAuthenticated: boolean;
@@ -50,6 +55,7 @@ describe('useTokenRefresh', () => {
     vi.useFakeTimers();
     mockLogout.mockClear();
     mockRefreshTokenSuccess.mockClear();
+    vi.mocked(redirectToSignIn).mockClear();
     global.fetch = vi.fn();
   });
 
@@ -70,6 +76,32 @@ describe('useTokenRefresh', () => {
 
     // No fetch calls should be made
     expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('uses role-aware session recovery when proactive refresh expires', async () => {
+    vi.mocked(fetch).mockResolvedValue({ ok: false, status: 401 } as Response);
+    const payload = btoa(JSON.stringify({ exp: Math.floor(Date.now() / 1000) - 1 }));
+    const store = createMockStore({ accessToken: `header.${payload}.signature`, refreshToken: 'expired-test-refresh', isAuthenticated: true });
+    renderHook(() => useTokenRefresh(), { wrapper: createWrapper(store) });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(mockLogout).toHaveBeenCalledTimes(1);
+    expect(redirectToSignIn).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([200, 401])('ignores stale proactive refresh response %s after another account signs in', async status => {
+    let finish!: (response: Response) => void;
+    vi.mocked(fetch).mockImplementation(() => new Promise(resolve => { finish = resolve; }));
+    const payload = btoa(JSON.stringify({ exp: Math.floor(Date.now() / 1000) - 1 }));
+    const auth = { accessToken: `header.${payload}.signature`, refreshToken: 'refresh-A', isAuthenticated: true };
+    const store = createMockStore(auth);
+    renderHook(() => useTokenRefresh(), { wrapper: createWrapper(store) });
+    auth.accessToken = 'account-B';
+    auth.refreshToken = 'refresh-B';
+    finish({ ok: status === 200, status, json: async () => ({ accessToken: 'refreshed-A' }) } as Response);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(mockRefreshTokenSuccess).not.toHaveBeenCalled();
+    expect(mockLogout).not.toHaveBeenCalled();
+    expect(redirectToSignIn).not.toHaveBeenCalled();
   });
 
   it('adds visibilitychange event listener when authenticated', () => {

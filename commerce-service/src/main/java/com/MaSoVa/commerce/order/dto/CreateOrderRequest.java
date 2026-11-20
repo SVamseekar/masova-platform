@@ -4,9 +4,13 @@ import com.MaSoVa.commerce.order.entity.Order.OrderType;
 import com.MaSoVa.commerce.order.entity.Order.PaymentMethod;
 import com.MaSoVa.commerce.order.entity.DeliveryAddress;
 import com.MaSoVa.shared.enums.OrderSource;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 import java.util.List;
 
@@ -25,6 +29,7 @@ public class CreateOrderRequest {
     private String storeId;
 
     @NotEmpty(message = "Order must have at least one item")
+    @Valid
     private List<OrderItemRequest> items;
 
     @NotNull(message = "Order type is required")
@@ -108,6 +113,8 @@ public class CreateOrderRequest {
         private String name;
 
         @NotNull(message = "Quantity is required")
+        @Min(value = 1, message = "Quantity must be at least 1")
+        @Max(value = 99, message = "Quantity must be at most 99")
         private Integer quantity;
 
         @NotNull(message = "Price is required")
@@ -118,6 +125,10 @@ public class CreateOrderRequest {
         private List<String> customizations;
 
         private String category;  // MenuCategory name for VAT routing e.g. "FOOD", "BEVERAGE", "ALCOHOL"
+
+        /** Free-text preparation note from the customer, e.g. spice level. Never affects price. */
+        @Size(max = 200, message = "Item notes must be 200 characters or fewer")
+        private String notes;
 
         public OrderItemRequest() {}
 
@@ -142,5 +153,8 @@ public class CreateOrderRequest {
 
         public String getCategory() { return category; }
         public void setCategory(String category) { this.category = category; }
+
+        public String getNotes() { return notes; }
+        public void setNotes(String notes) { this.notes = notes; }
     }
 }

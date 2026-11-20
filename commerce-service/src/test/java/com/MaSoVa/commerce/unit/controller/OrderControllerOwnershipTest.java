@@ -154,6 +154,7 @@ class OrderControllerOwnershipTest extends BaseServiceTest {
     @Test
     @DisplayName("CUSTOMER can list own orders via ?customerId=")
     void customerCanListOwnOrders() throws Exception {
+        when(orderService.callerOwnsCustomerId("cust-1", "cust-1")).thenReturn(true);
         when(orderService.getCustomerOrders("cust-1")).thenReturn(List.of(buildOrder("o1", "cust-1", "store-a")));
 
         mockMvc.perform(get("/api/orders")

@@ -1,0 +1,84 @@
+/* Board 07: customer sign in and create account. */
+.cauth { min-height: 100vh; display: grid; grid-template-columns: minmax(0, 59fr) minmax(0, 41fr); background: var(--masova-canvas); color: var(--masova-text); font-size: 15px; line-height: 1.5; }
+.cauth *, .cauth *::before { box-sizing: border-box; }
+.cauth a { color: inherit; text-decoration: none; }
+.cauth :focus-visible { outline: 3px solid var(--masova-focus); outline-offset: 3px; border-radius: 4px; }
+.cauth-art { position: relative; overflow: hidden; background: #F8F7F5; padding: 44px 48px; display: flex; flex-direction: column; }
+.cauth-art > img { position: absolute; top: 0; right: 0; height: 100%; width: 52%; object-fit: cover; object-position: left center; -webkit-mask-image: linear-gradient(to right, transparent 0, #000 22%); mask-image: linear-gradient(to right, transparent 0, #000 22%); }
+.cauth-art > * { position: relative; z-index: 1; }
+.cauth-art > img { z-index: 0; }
+.cauth-art .masova-brand { display: flex; align-items: center; gap: 8px; font-size: 26px; font-weight: 700; letter-spacing: -0.01em; }
+.cauth-art .masova-brand svg { width: 32px; height: 32px; }
+.cauth-art h1 { margin: 56px 0 0; max-width: 46%; font-size: clamp(32px, 3.6vw, 52px); line-height: 1.08; font-weight: 700; letter-spacing: -0.035em; }
+.cauth-art > p { margin: 20px 0 0; max-width: 44%; font-size: 17px; color: var(--masova-text); }
+.cauth-points { list-style: none; margin: 40px 0 0; padding: 0; display: grid; gap: 28px; max-width: 44%; }
+.cauth-points li { display: flex; gap: 20px; align-items: center; }
+.cauth-points svg { flex-shrink: 0; }
+.cauth-main { display: grid; align-content: center; justify-items: center; padding: 40px 24px; }
+.cauth-card { width: 100%; max-width: 440px; background: var(--masova-surface); border-radius: 12px; padding: 40px; box-shadow: 0 1px 3px rgba(18, 22, 20, 0.06), 0 12px 32px rgba(18, 22, 20, 0.06); }
+.cauth-card h2 { margin: 0; font-size: 28px; line-height: 1.15; font-weight: 700; letter-spacing: -0.02em; }
+.cauth-card > p { margin: 8px 0 24px; color: var(--masova-textSecondary); }
+.cauth-form { display: grid; gap: 18px; }
+.cauth-field { display: grid; gap: 6px; min-width: 0; }
+.cauth-field label, .cauth-field legend { font-weight: 600; font-size: 14px; padding: 0; }
+.cauth input[type="text"], .cauth input[type="email"], .cauth input[type="tel"], .cauth input[type="password"], .cauth select, .cregister input[type="text"], .cregister input[type="email"], .cregister input[type="tel"], .cregister input[type="password"], .cregister select { width: 100%; min-height: 48px; padding: 10px 14px; font: inherit; color: var(--masova-text); background: var(--masova-surface); border: 1px solid var(--masova-borderControl); border-radius: 8px; }
+.cauth [aria-invalid="true"], .cregister [aria-invalid="true"] { border-color: var(--masova-errorText) !important; }
+.cauth-password { position: relative; }
+.cauth-password input { padding-right: 52px !important; }
+.cauth-password button { position: absolute; top: 0; right: 0; width: 48px; height: 48px; min-height: 0; padding: 0; display: grid; place-items: center; background: none; border: 0; color: var(--masova-textSecondary); cursor: pointer; }
+.cauth-check { display: flex; align-items: flex-start; gap: 12px; color: var(--masova-textSecondary); font-size: 14px; cursor: pointer; }
+.cauth-check input { width: 20px; height: 20px; min-height: 0; margin: 1px 0 0; padding: 0; flex-shrink: 0; accent-color: var(--masova-primary); }
+.cauth-check a { color: var(--masova-primary) !important; text-decoration: underline !important; }
+.cauth-submit { min-height: 50px; border: 1px solid var(--masova-primary); border-radius: 8px; background: var(--masova-primary); color: var(--masova-onPrimary); font: inherit; font-weight: 600; cursor: pointer; }
+.cauth-submit:hover { background: var(--masova-primaryHover); border-color: var(--masova-primaryHover); }
+.cauth-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+.cauth-or { display: flex; align-items: center; gap: 12px; color: var(--masova-textSecondary); font-size: 14px; }
+.cauth-or::before, .cauth-or::after { content: ""; flex: 1; height: 1px; background: var(--masova-borderSubtle); }
+.cauth-google { display: flex; justify-content: center; min-height: 44px; }
+.cauth-alt { margin: 4px 0 0 !important; text-align: center; color: var(--masova-textSecondary); font-size: 14px; }
+.cauth-alt a { color: var(--masova-primary) !important; font-weight: 500; }
+.cauth-alt a:hover { text-decoration: underline; }
+.cauth-error { color: var(--masova-errorText); font-size: 13px; }
+.cauth-alert { margin: 0 0 16px !important; padding: 12px 14px; border-radius: 8px; background: var(--masova-errorSurface); color: var(--masova-errorText) !important; }
+.cauth-note { margin: 0 0 16px !important; padding: 12px 14px; border-radius: 8px; background: var(--masova-successSurface); color: var(--masova-successText) !important; }
+.cauth-hint { color: var(--masova-textSecondary); font-size: 13px; }
+
+/* Create account, inside the ordering shell */
+.cregister { display: grid; grid-template-columns: minmax(0, 35fr) minmax(0, 65fr); min-height: calc(100vh - 68px); }
+.cregister-art { position: relative; overflow: hidden; background: #F3F1EE; padding: 44px 40px; }
+.cregister-art img { position: absolute; left: 0; bottom: 0; width: 100%; height: 56%; object-fit: cover; object-position: center 35%; -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 28%); mask-image: linear-gradient(to bottom, transparent 0, #000 28%); }
+.customer-browse .cregister-art h1 { position: relative; margin: 0 0 12px; font-size: clamp(28px, 3vw, 40px); font-weight: 700; letter-spacing: -0.03em; }
+.cregister-art > p { position: relative; max-width: 300px; color: var(--masova-text) !important; }
+.cregister-art ul { position: relative; list-style: none; margin: 24px 0 0; padding: 0; display: grid; gap: 14px; }
+.cregister-art li { display: flex; align-items: center; gap: 12px; }
+.cregister-art li svg { color: #16A34A; }
+.cregister-main { padding: 20px 32px 40px; display: grid; align-content: start; }
+.cregister-card { background: var(--masova-surface); border-radius: 12px; padding: 32px 40px; max-width: 760px; width: 100%; box-shadow: 0 1px 3px rgba(18, 22, 20, 0.06); }
+.customer-browse .cregister-card h2 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 20px; }
+.cregister-phone { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 8px; }
+.cregister-meter { display: flex; align-items: center; gap: 6px; }
+.cregister-meter i { width: 56px; height: 5px; border-radius: 3px; background: var(--masova-borderSubtle); }
+.cregister-meter i[data-on="true"] { background: #16A34A; }
+.cregister-meter[data-level="1"] i[data-on="true"] { background: var(--masova-errorText); }
+.cregister-meter[data-level="2"] i[data-on="true"] { background: #E8890C; }
+.cregister-meter span { margin-left: 8px; font-size: 13px; font-weight: 600; color: var(--masova-successText); }
+.cregister-meter[data-level="1"] span { color: var(--masova-errorText); }
+.cregister-meter[data-level="2"] span { color: var(--masova-warningText); }
+.customer-browse .cregister .cauth-submit { width: 100%; }
+.customer-browse .cregister .cauth-password button { border: 0; background: none; }
+
+@media (max-width: 900px) {
+  .cauth { grid-template-columns: 1fr; }
+  .cauth-art { padding: 24px 20px; min-height: 0; }
+  .cauth-art > img { opacity: 0.35; width: 60%; }
+  .cauth-art h1 { margin-top: 24px; max-width: 80%; }
+  .cauth-art > p { max-width: 80%; }
+  .cauth-points { display: none; }
+  .cauth-main { padding: 20px 16px 40px; align-content: start; }
+  .cauth-card { padding: 28px 20px; }
+  .cregister { grid-template-columns: 1fr; }
+  .cregister-art { padding: 24px 20px; }
+  .cregister-art img, .cregister-art ul { display: none; }
+  .cregister-main { padding: 16px; }
+  .cregister-card { padding: 24px 20px; }
+}

@@ -85,7 +85,7 @@ describe('ProtectedRoute', () => {
     expect(screen.getByText('Manager only content')).toBeInTheDocument();
   });
 
-  it('redirects when user role is not in allowedRoles', () => {
+  it('shows access denied without a login loop when an authenticated role is refused', () => {
     renderProtectedRoute(
       '/manager',
       <ProtectedRoute allowedRoles={['MANAGER']}>
@@ -94,8 +94,15 @@ describe('ProtectedRoute', () => {
       mockCustomerAuthState
     );
 
-    expect(screen.getByText('Staff Login')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Access not available' })).toBeInTheDocument();
     expect(screen.queryByText('Manager only content')).not.toBeInTheDocument();
+  });
+
+  it('fails closed when authenticated storage has no user identity', () => {
+    renderProtectedRoute('/manager', <ProtectedRoute allowedRoles={['MANAGER']}><div>Protected content</div></ProtectedRoute>,
+      { auth: { ...mockAuthState.auth, user: null, isAuthenticated: true } });
+    expect(screen.getByText('Staff Login')).toBeInTheDocument();
+    expect(screen.queryByText('Protected content')).not.toBeInTheDocument();
   });
 
   it('does not require auth when requireAuth is false', () => {

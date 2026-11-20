@@ -122,6 +122,8 @@ jwt:
 services:
   delivery:
     url: ${DELIVERY_SERVICE_URL:http://localhost:8086}
+  logistics:
+    url: ${LOGISTICS_SERVICE_URL:http://localhost:8086}
   customer-service:
     url: ${CUSTOMER_SERVICE_URL:http://localhost:8085}
   notification:

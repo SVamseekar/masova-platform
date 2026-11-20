@@ -380,3 +380,166 @@ export type Animation = typeof animation;
 export type Breakpoints = typeof breakpoints;
 export type ZIndex = typeof zIndex;
 export type Components = typeof components;
+
+/** Approved MaSoVa revamp. Existing consumers migrate by complete workflow. */
+export const revamp = {
+  "colors": {
+    "canvas": "#FAFAF8",
+    "surface": "#FFFFFF",
+    "text": "#121614",
+    "textSecondary": "#56615B",
+    "primary": "#DE4212",
+    "primaryHover": "#C2370C",
+    "onPrimary": "#FFFFFF",
+    "forest": "#203D32",
+    "borderSubtle": "#E5E6E1",
+    "borderControl": "#7E8980",
+    "focus": "#1D5F47",
+    "successText": "#0F7B45",
+    "successSurface": "#E3F6EA",
+    "warningText": "#A84B06",
+    "warningSurface": "#FFF0DC",
+    "errorText": "#C42B2B",
+    "errorSurface": "#FDEBE9",
+    "infoText": "#1463B8",
+    "infoSurface": "#E6F0FE",
+    "darkCanvas": "#101B17",
+    "darkSurface": "#1A2923",
+    "darkText": "#F4F5F0",
+    "darkSecondary": "#BECBC2",
+    "selectionSurface": "#F0F1EE",
+    "selectionText": "#121614",
+    "darkSelectionSurface": "#28302C",
+    "darkSelectionText": "#F4F5F0"
+  },
+  "typography": {
+    "uiFont": "Geist, Inter, system-ui, sans-serif",
+    "numbers": "tabular-nums",
+    "webBodyPx": 15,
+    "mobileBodyPx": 16,
+    "kitchenTicketPx": 20,
+    "kitchenTimerPx": 28,
+    "desktopPageTitlePx": 28,
+    "mobilePageTitlePx": 26,
+    "marketingHeroPx": 64,
+    "bodyLineHeight": 1.5,
+    "headingLineHeight": 1.15,
+    "weights": [
+      400,
+      500,
+      600,
+      700
+    ]
+  },
+  "spacingPx": [
+    4,
+    8,
+    12,
+    16,
+    24,
+    32,
+    48,
+    64,
+    96
+  ],
+  "radiiPx": {
+    "control": 8,
+    "card": 12,
+    "dialog": 16
+  },
+  "sizesPx": {
+    "mobileTarget": 48,
+    "posTarget": 56,
+    "kitchenTarget": 56,
+    "managerSidebar": 240,
+    "managerTableRow": 52
+  },
+  "responsive": {
+    "mobileMaxPx": 639,
+    "tabletMaxPx": 1023,
+    "desktopMinPx": 1024,
+    "marketingContentMaxPx": 1280
+  },
+  "motion": {
+    "microMs": 150,
+    "drawerMs": 220,
+    "respectReducedMotion": true,
+    "avoidAutoplayMarketingCarousels": true,
+    "durationsMs": {
+      "instant": 0,
+      "press": 100,
+      "micro": 150,
+      "status": 180,
+      "exit": 180,
+      "drawer": 220,
+      "screen": 240,
+      "reveal": 360,
+      "eventEmphasis": 700,
+      "marketingArt": 480,
+      "connector": 500
+    },
+    "easing": {
+      "standard": [
+        0.2,
+        0,
+        0,
+        1
+      ],
+      "enter": [
+        0.16,
+        1,
+        0.3,
+        1
+      ],
+      "exit": [
+        0.4,
+        0,
+        1,
+        1
+      ],
+      "ambient": "linear"
+    },
+    "travelPx": {
+      "menu": 4,
+      "content": 8,
+      "reveal": 12,
+      "drawer": 16
+    },
+    "staggerMs": 40,
+    "maximumRevealSequenceMs": 540,
+    "marketingSignalCycleMs": 12000,
+    "reducedMotion": {
+      "translation": false,
+      "scale": false,
+      "stagger": false,
+      "ambientLoops": false,
+      "waveformAnimation": false,
+      "mapInterpolation": false,
+      "optionalOpacityMaxMs": 80,
+      "keepStateLabels": true
+    },
+    "loops": {
+      "marketingRequiresPauseControl": true,
+      "maximumDecorativeElementsPerViewport": 1,
+      "pauseWhenHiddenOrOffscreen": true,
+      "pendingIndicatorMaxMs": 5000,
+      "voiceRequiresActualSignal": true
+    },
+    "invariants": {
+      "successRequiresAuthoritativeResult": true,
+      "operationalTargetsStayFixed": true,
+      "noBusinessProgressFromElapsedTime": true,
+      "noFlashingUrgency": true,
+      "noSpringOvershootForCriticalUI": true
+    },
+    "specification": "motion-plan-v2.md",
+    "coverage": "motion-storyboards-v2.json",
+    "sourceControlInventory": "motion-source-inventory.json"
+  }
+} as const;
+
+/** CSS variables and font for surfaces using the approved tokens. */
+export const revampCssVariables = {
+  fontFamily: revamp.typography.uiFont,
+  ...Object.fromEntries(Object.entries(revamp.colors).map(([name, value]) => [`--masova-${name}`, value])),
+};

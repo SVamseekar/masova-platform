@@ -11,6 +11,7 @@ export interface OrderItem {
   price: number;
   variant?: string;
   customizations?: string[];
+  notes?: string;
 }
 
 export interface QualityCheckpoint {
@@ -68,6 +69,8 @@ export interface Order {
   createdByStaffName?: string;
   assignedKitchenStaffName?: string;
   assignedToKitchenAt?: string;
+  /** Code the customer gives the driver; only in the owner's or staff's view of the order. */
+  deliveryOtp?: string;
   cancellationRequested?: boolean;
   cancellationRequestReason?: string;
   cancellationRequestedBy?: string;
@@ -108,6 +111,7 @@ export interface CreateOrderRequest {
     variant?: string;
     customizations?: string[];
     category?: string;
+    notes?: string;
   }>;
   orderType: 'DINE_IN' | 'TAKEAWAY' | 'DELIVERY';
   paymentMethod?: 'CASH' | 'CARD' | 'UPI' | 'WALLET' | 'AGGREGATOR_COLLECTED';
@@ -171,6 +175,16 @@ export const orderApi = createApi({
         if (endDate) params.append('endDate', endDate);
         const queryString = params.toString();
         return queryString ? `/orders?${queryString}` : '/orders';
+      },
+      transformResponse: (raw: unknown): Order[] => {
+        if (Array.isArray(raw)) return raw as Order[];
+        if (raw && typeof raw === 'object') {
+          const o = raw as Record<string, unknown>;
+          if (Array.isArray(o.content)) return o.content as Order[];
+          if (Array.isArray(o.orders)) return o.orders as Order[];
+          if (Array.isArray(o.data)) return o.data as Order[];
+        }
+        return [];
       },
       providesTags: (result) =>
         result
@@ -253,7 +267,7 @@ export const orderApi = createApi({
 
     // Get customer orders
     getCustomerOrders: builder.query<Order[], string>({
-      query: (customerId) => `/orders/customer/${customerId}`,
+      query: (customerId) => `/orders?customerId=${encodeURIComponent(customerId)}`,
       providesTags: (result) =>
         result
           ? [...result.map(({ id }) => ({ type: 'Order' as const, id })), { type: 'Orders', id: 'LIST' }]
