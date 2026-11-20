@@ -32,6 +32,12 @@ updates:
         update-types:
           - version-update:semver-major
           - version-update:semver-minor
+      # resilience4j 2.4.0 breaks commerce-service startup (RxJava3FallbackDecorator
+      # not on classpath); held at 2.1.0 until that is fixed upstream or worked around.
+      - dependency-name: "io.github.resilience4j:*"
+        update-types:
+          - version-update:semver-major
+          - version-update:semver-minor
 
   # ── Frontend (customer + staff web) ───────────────────────────────────────
   - package-ecosystem: npm
