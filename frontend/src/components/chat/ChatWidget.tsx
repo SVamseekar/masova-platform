@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { useLocation } from 'react-router-dom'
+import { isPublicSitePath } from '../../apps/ProductSite/locales'
 import { useChatMutation } from '../../store/api/agentApi'
 import { useAppSelector } from '../../store/hooks'
 import { getChatTheme } from './chatWidgetTheme'
@@ -103,11 +104,9 @@ const AgentAvatar: React.FC<AgentAvatarProps> = ({ theme, thinking = false, size
   </div>
 )
 
-export const ChatWidget: React.FC = () => {
-  const { pathname } = useLocation()
-  const isProductSite = pathname === '/'
-  const theme = useMemo(() => getChatTheme(isProductSite), [isProductSite])
-  const capabilityPills = useMemo(() => getCapabilityPills(isProductSite), [isProductSite])
+const ChatWidgetPanel: React.FC = () => {
+  const theme = useMemo(() => getChatTheme(), [])
+  const capabilityPills = useMemo(() => getCapabilityPills(), [])
 
   const [open, setOpen] = useState(false)
   const [input, setInput] = useState('')
@@ -131,8 +130,8 @@ export const ChatWidget: React.FC = () => {
   const [sendChat, { isLoading }] = useChatMutation()
 
   const thinkingSteps = useMemo(
-    () => getThinkingSteps(pendingUserMessage, isProductSite),
-    [pendingUserMessage, isProductSite],
+    () => getThinkingSteps(pendingUserMessage),
+    [pendingUserMessage],
   )
 
   const showQuickActions = messages.length === 1 && messages[0].id === 'welcome'
@@ -231,7 +230,7 @@ export const ChatWidget: React.FC = () => {
       sessionId.current = res.sessionId
       sessionStorage.setItem(SESSION_KEY, res.sessionId)
       const reply = res.reply
-      const toolTrace = inferToolTrace(text, isProductSite)
+      const toolTrace = inferToolTrace(text)
       setMessages((prev) => [
         ...prev,
         { id: crypto.randomUUID(), role: 'agent', text: reply, ts: Date.now(), toolTrace },
@@ -245,7 +244,7 @@ export const ChatWidget: React.FC = () => {
       ])
       if (voiceModeRef.current) speakResponse(errorText)
     }
-  }, [input, isLoading, sendChat, customerId, speakResponse, isProductSite])
+  }, [input, isLoading, sendChat, customerId, speakResponse])
 
   useEffect(() => { handleSendRef.current = handleSend }, [handleSend])
 
@@ -266,10 +265,10 @@ export const ChatWidget: React.FC = () => {
     }
   }
 
-  const fabBottom = isProductSite ? 32 : 24
-  const fabRight = isProductSite ? 32 : 24
-  const panelBottom = isProductSite ? 100 : 88
-  const panelRight = isProductSite ? 32 : 24
+  const fabBottom = 24
+  const fabRight = 24
+  const panelBottom = 88
+  const panelRight = 24
 
   const headerGradient = `linear-gradient(180deg, ${theme.accent} 0%, ${theme.accentDark} 100%)`
   const currentThinkingStep = thinkingSteps[thinkingStepIndex] ?? thinkingSteps[0]
@@ -562,6 +561,16 @@ export const ChatWidget: React.FC = () => {
       </div>
     </>
   )
+}
+
+/**
+ * Guest support chat. Not shown on the getmasova.rest marketing and legal pages: the agent endpoint
+ * needs a signed-in customer and a live backend, so a public visitor could only get errors there.
+ */
+export const ChatWidget: React.FC = () => {
+  const { pathname } = useLocation()
+  if (isPublicSitePath(pathname)) return null
+  return <ChatWidgetPanel />
 }
 
 export default ChatWidget
