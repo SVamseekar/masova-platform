@@ -15,6 +15,8 @@ public class RestTemplateConfig {
         HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory();
         factory.setConnectTimeout(Duration.ofSeconds(3));
         factory.setConnectionRequestTimeout(Duration.ofSeconds(5));
+        // Payment initiation now reads the order from commerce-service synchronously; never hang on it
+        factory.setReadTimeout(Duration.ofSeconds(10));
         return new RestTemplate(factory);
     }
 }

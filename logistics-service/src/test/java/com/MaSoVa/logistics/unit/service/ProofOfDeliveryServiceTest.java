@@ -72,6 +72,50 @@ class ProofOfDeliveryServiceTest {
     }
 
     @Nested
+    @DisplayName("findDeliveryOtpForCaller")
+    class FindDeliveryOtpForCaller {
+
+        @Test
+        @DisplayName("returns the order's existing OTP and never writes a new one")
+        void returnsExistingOtp() {
+            when(orderServiceClient.getOrderForCaller("order-1")).thenReturn(Map.of("deliveryOtp", "4321"));
+
+            assertThat(proofOfDeliveryService.findDeliveryOtpForCaller("order-1")).contains("4321");
+            verify(orderServiceClient, org.mockito.Mockito.never()).setDeliveryOtp(anyString(), anyString(), any(), any());
+        }
+
+        @Test
+        @DisplayName("is empty when the OTP has expired, so the customer is not handed a code verification rejects")
+        void emptyWhenExpired() {
+            when(orderServiceClient.getOrderForCaller("order-1")).thenReturn(Map.of(
+                    "deliveryOtp", "4321",
+                    "deliveryOtpExpiresAt", LocalDateTime.now().minusMinutes(1).toString()));
+
+            assertThat(proofOfDeliveryService.findDeliveryOtpForCaller("order-1")).isEmpty();
+        }
+
+        @Test
+        @DisplayName("is empty when the order has no OTP yet")
+        void emptyWithoutOtp() {
+            when(orderServiceClient.getOrderForCaller("order-1")).thenReturn(Map.of("id", "order-1"));
+
+            assertThat(proofOfDeliveryService.findDeliveryOtpForCaller("order-1")).isEmpty();
+        }
+
+        @Test
+        @DisplayName("denies a caller that commerce refuses (not the order's customer)")
+        void deniesNonOwner() {
+            when(orderServiceClient.getOrderForCaller("order-1")).thenThrow(
+                    org.springframework.web.client.HttpClientErrorException.create(
+                            org.springframework.http.HttpStatus.FORBIDDEN, "Forbidden", null, null, null));
+
+            org.assertj.core.api.Assertions.assertThatThrownBy(
+                    () -> proofOfDeliveryService.findDeliveryOtpForCaller("order-1"))
+                    .isInstanceOf(org.springframework.security.access.AccessDeniedException.class);
+        }
+    }
+
+    @Nested
     @DisplayName("verifyDeliveryOtp")
     class VerifyDeliveryOtp {
 

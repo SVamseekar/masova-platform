@@ -94,7 +94,7 @@ stripe:
 # Service URLs
 services:
   order-service:
-    url: ${ORDER_SERVICE_URL:http://localhost:8084}
+    url: ${ORDER_SERVICE_URL:${COMMERCE_SERVICE_URL:http://localhost:8084}}
 
 # Notification Service Configuration (now part of core-service)
 notification:

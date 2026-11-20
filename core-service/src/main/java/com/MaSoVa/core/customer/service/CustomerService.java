@@ -141,18 +141,20 @@ public class CustomerService {
             throw new IllegalArgumentException("Customer with userId " + request.getUserId() + " already exists");
         }
         String storeId = request.getStoreId();
+        // Accounts without a phone (e.g. Google sign-in) must not collide with every other phone-less profile
+        boolean hasPhone = request.getPhone() != null && !request.getPhone().isBlank();
         if (storeId != null && !storeId.isEmpty()) {
             if (customerRepository.existsByStoreIdAndEmail(storeId, request.getEmail())) {
                 throw new IllegalArgumentException("Customer with email already exists in this store");
             }
-            if (customerRepository.existsByStoreIdAndPhone(storeId, request.getPhone())) {
+            if (hasPhone && customerRepository.existsByStoreIdAndPhone(storeId, request.getPhone())) {
                 throw new IllegalArgumentException("Customer with phone already exists in this store");
             }
         } else {
             if (customerRepository.findByEmail(request.getEmail()).isPresent()) {
                 throw new IllegalArgumentException("Customer with email " + request.getEmail() + " already exists");
             }
-            if (customerRepository.findByPhone(request.getPhone()).isPresent()) {
+            if (hasPhone && customerRepository.findByPhone(request.getPhone()).isPresent()) {
                 throw new IllegalArgumentException("Customer with phone " + request.getPhone() + " already exists");
             }
         }
@@ -165,7 +167,7 @@ public class CustomerService {
         }
         customer.setName(request.getName());
         customer.setEmail(request.getEmail());
-        customer.setPhone(request.getPhone());
+        customer.setPhone(hasPhone ? request.getPhone() : null);
         customer.setDateOfBirth(request.getDateOfBirth());
         customer.setGender(request.getGender());
         customer.setMarketingOptIn(request.isMarketingOptIn());

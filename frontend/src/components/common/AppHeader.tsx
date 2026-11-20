@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { logout, selectCurrentUser } from '../../store/slices/authSlice';
 import { selectCartItemCount } from '../../store/slices/cartSlice';
+import { getDefaultDashboard } from '../../utils/security';
 import { colors, spacing, typography, shadows, components } from '../../styles/design-tokens';
 import { createNeumorphicSurface } from '../../styles/neumorphic-utils';
 import StoreSelector from '../StoreSelector';
@@ -230,10 +231,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({
                   transition: 'var(--transition)',
                 }}
                 onClick={() => {
-                  const userType = currentUser?.type;
-                  if (userType === 'MANAGER' || userType === 'ASSISTANT_MANAGER') navigate('/manager');
-                  else if (userType === 'STAFF') navigate('/staff');
-                  else if (userType === 'DRIVER') navigate('/driver');
+                  if (currentUser) navigate(getDefaultDashboard(currentUser.type, currentUser.role));
                 }}
               >
                 {currentUser?.name} → Dashboard

@@ -279,5 +279,29 @@ class PaymentControllerTest extends BaseServiceTest {
                     .content("{\"orderId\":\"order-1\",\"amount\":200.00,\"customerId\":\"cust-1\",\"storeId\":\"store-1\",\"paymentMethod\":\"UPI\"}"))
                 .andExpect(status().isInternalServerError());
         }
+
+        @Test
+        @DisplayName("returns 403 when commerce refuses the caller the order")
+        void returns403WhenOrderRefused() throws Exception {
+            when(paymentService.initiatePayment(any()))
+                    .thenThrow(new org.springframework.security.access.AccessDeniedException("not yours"));
+
+            mockMvc.perform(post("/api/payments/initiate")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"orderId\":\"order-1\",\"amount\":200.00,\"customerId\":\"cust-1\",\"storeId\":\"store-1\",\"paymentMethod\":\"UPI\"}"))
+                .andExpect(status().isForbidden());
+        }
+
+        @Test
+        @DisplayName("returns 503 when the order total cannot be read from commerce")
+        void returns503WhenCommerceUnavailable() throws Exception {
+            when(paymentService.recordCashPayment(any()))
+                    .thenThrow(new org.springframework.web.client.ResourceAccessException("connection refused"));
+
+            mockMvc.perform(post("/api/payments/cash")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"orderId\":\"order-1\",\"amount\":200.00,\"customerId\":\"cust-1\",\"storeId\":\"store-1\",\"paymentMethod\":\"CASH\"}"))
+                .andExpect(status().isServiceUnavailable());
+        }
     }
 }

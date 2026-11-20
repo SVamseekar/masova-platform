@@ -71,6 +71,8 @@ public class Order {
     private PaymentStatus paymentStatus;
     private PaymentMethod paymentMethod;
     private String paymentTransactionId;
+    // Set when a payment could not be matched to this order's total/currency; staff must review (refund or re-charge)
+    private String paymentReviewReason;
 
     private Priority priority;
 
@@ -236,6 +238,9 @@ public class Order {
 
     public String getPaymentTransactionId() { return paymentTransactionId; }
     public void setPaymentTransactionId(String paymentTransactionId) { this.paymentTransactionId = paymentTransactionId; }
+
+    public String getPaymentReviewReason() { return paymentReviewReason; }
+    public void setPaymentReviewReason(String paymentReviewReason) { this.paymentReviewReason = paymentReviewReason; }
 
     public Priority getPriority() { return priority; }
     public void setPriority(Priority priority) { this.priority = priority; }

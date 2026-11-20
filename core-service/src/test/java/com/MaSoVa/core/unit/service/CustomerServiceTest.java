@@ -202,6 +202,20 @@ class CustomerServiceTest {
         }
 
         @Test
+        @DisplayName("a phone-less account is not rejected as a duplicate of other phone-less profiles")
+        void blankPhoneSkipsPhoneDedupe() {
+            when(customerRepository.findByUserId(any())).thenReturn(Optional.empty());
+            when(customerRepository.existsByStoreIdAndEmail(any(), any())).thenReturn(false);
+            when(customerRepository.existsByStoreIdAndPhone(any(), any())).thenReturn(true);
+            when(customerRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+            CreateCustomerRequest req = buildCreateRequest("new-user", "new@example.com", "");
+            customerService.createCustomer(req);
+
+            verify(customerRepository).save(argThat(c -> c.getPhone() == null));
+        }
+
+        @Test
         @DisplayName("creates customer with signup bonus points")
         void createsWithSignupBonus() {
             when(customerRepository.findByUserId(any())).thenReturn(Optional.empty());

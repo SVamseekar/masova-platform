@@ -5,6 +5,8 @@ import com.MaSoVa.core.customer.dto.response.CustomerStatsResponse;
 import com.MaSoVa.core.customer.dto.response.MessageResponse;
 import com.MaSoVa.core.customer.entity.Customer;
 import com.MaSoVa.core.customer.service.CustomerService;
+import com.MaSoVa.core.user.service.UserService;
+import com.MaSoVa.shared.entity.User;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -27,6 +29,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -48,9 +51,11 @@ public class CustomerController {
     private static final Logger log = LoggerFactory.getLogger(CustomerController.class);
 
     private final CustomerService customerService;
+    private final UserService userService;
 
-    public CustomerController(CustomerService customerService) {
+    public CustomerController(CustomerService customerService, UserService userService) {
         this.customerService = customerService;
+        this.userService = userService;
     }
 
     private String getStoreId(HttpServletRequest request) {
@@ -83,10 +88,20 @@ public class CustomerController {
                 || allowStaff && hasRole(authentication, "STAFF");
     }
 
-    /** JWT subject is User.id; customer profile IDs are a separate identity namespace. */
-    private Customer requireCustomerAccess(String id, boolean allowStaff) {
+    /**
+     * Loads the customer the caller may act on, or throws.
+     * Customers may only reach their own profile (JWT subject is User.id; customer profile IDs are a
+     * separate identity namespace). Managers, assistant managers and (when allowed) staff may only
+     * reach customers of the store they are working in.
+     */
+    private Customer requireCustomerAccess(String id, boolean allowStaff, HttpServletRequest request) {
         Authentication authentication = authenticatedIdentity();
-        if (privileged(authentication, allowStaff)) return null;
+        if (privileged(authentication, allowStaff)) {
+            Customer customer = customerService.getCustomerById(id)
+                    .orElseThrow(() -> new NoSuchElementException("Customer not found"));
+            requireSameStore(customer, request);
+            return customer;
+        }
         if (!hasRole(authentication, "CUSTOMER")) throw new AccessDeniedException("Access denied");
         Customer customer = customerService.getCustomerById(id)
                 .orElseThrow(() -> new NoSuchElementException("Customer not found"));
@@ -94,6 +109,24 @@ public class CustomerController {
             throw new AccessDeniedException("Access denied");
         }
         return customer;
+    }
+
+    private void requireSameStore(Customer customer, HttpServletRequest request) {
+        String storeId = getStoreId(request);
+        if (!belongsToStore(customer, storeId)) {
+            log.warn("Cross-store customer access: caller store={}, customer={}", storeId, customer.getId());
+            throw new AccessDeniedException("Cannot access a customer of another store");
+        }
+    }
+
+    /** A customer belongs to every store they have ordered from (storeIds) and to their legacy storeId. */
+    @SuppressWarnings("deprecation")
+    private static boolean belongsToStore(Customer customer, String storeId) {
+        if (storeId == null || storeId.isBlank()) {
+            return false;
+        }
+        return storeId.equals(customer.getStoreId())
+                || customer.getStoreIds() != null && customer.getStoreIds().contains(storeId);
     }
 
     // ── LIST ────────────────────────────────────────────────────────────────────
@@ -129,16 +162,19 @@ public class CustomerController {
         String storeId = getStoreId(request);
         if (email != null) {
             return customerService.getCustomerByEmail(email)
+                    .filter(c -> belongsToStore(c, storeId))
                     .map(c -> ResponseEntity.ok(List.of(c)))
                     .orElse(ResponseEntity.ok(List.of()));
         }
         if (phone != null) {
             return customerService.getCustomerByPhone(phone)
+                    .filter(c -> belongsToStore(c, storeId))
                     .map(c -> ResponseEntity.ok(List.of(c)))
                     .orElse(ResponseEntity.ok(List.of()));
         }
         if (userId != null) {
             return customerService.getCustomerByUserId(userId)
+                    .filter(c -> belongsToStore(c, storeId))
                     .map(c -> ResponseEntity.ok(List.of(c)))
                     .orElse(ResponseEntity.ok(List.of()));
         }
@@ -181,10 +217,7 @@ public class CustomerController {
     @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ASSISTANT_MANAGER')")
     public ResponseEntity<?> getCustomer(@PathVariable String id, HttpServletRequest request) {
         try {
-            Customer own = requireCustomerAccess(id, false);
-            Customer customer = own != null ? own : customerService.getCustomerById(id)
-                    .orElseThrow(() -> new NoSuchElementException("Customer not found"));
-            return ResponseEntity.ok(customer);
+            return ResponseEntity.ok(requireCustomerAccess(id, false, request));
         } catch (NoSuchElementException e) {
             return ResponseEntity.notFound().build();
         }
@@ -196,9 +229,10 @@ public class CustomerController {
     @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<?> updateCustomer(
             @PathVariable String id,
-            @Valid @RequestBody UpdateCustomerRequest request) {
+            @Valid @RequestBody UpdateCustomerRequest request,
+            HttpServletRequest httpRequest) {
         try {
-            requireCustomerAccess(id, false);
+            requireCustomerAccess(id, false, httpRequest);
             if (!privileged(authenticatedIdentity(), false) && (request.getEmailVerified() != null
                     || request.getPhoneVerified() != null || request.getNote() != null
                     || request.getOrderStats() != null)) {
@@ -218,8 +252,9 @@ public class CustomerController {
     @Operation(summary = "Activate customer")
     @SecurityRequirement(name = "bearerAuth")
     @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
-    public ResponseEntity<?> activate(@PathVariable String id) {
+    public ResponseEntity<?> activate(@PathVariable String id, HttpServletRequest request) {
         try {
+            requireCustomerAccess(id, false, request);
             return ResponseEntity.ok(customerService.activateCustomer(id));
         } catch (NoSuchElementException e) {
             return ResponseEntity.notFound().build();
@@ -230,8 +265,9 @@ public class CustomerController {
     @Operation(summary = "Deactivate customer")
     @SecurityRequirement(name = "bearerAuth")
     @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER')")
-    public ResponseEntity<?> deactivate(@PathVariable String id) {
+    public ResponseEntity<?> deactivate(@PathVariable String id, HttpServletRequest request) {
         try {
+            requireCustomerAccess(id, false, request);
             return ResponseEntity.ok(customerService.deactivateCustomer(id));
         } catch (NoSuchElementException e) {
             return ResponseEntity.notFound().build();
@@ -251,9 +287,10 @@ public class CustomerController {
     @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<?> manageLoyalty(
             @PathVariable String id,
-            @RequestBody AddLoyaltyPointsRequest request) {
+            @RequestBody AddLoyaltyPointsRequest request,
+            HttpServletRequest httpRequest) {
         try {
-            requireCustomerAccess(id, true);
+            requireCustomerAccess(id, true, httpRequest);
             boolean redemption = "REDEEMED".equals(request.getType()) || "REDEEM".equals(request.getType());
             if (!privileged(authenticatedIdentity(), true) && !redemption) {
                 throw new AccessDeniedException("Access denied");
@@ -281,9 +318,10 @@ public class CustomerController {
     @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<?> addAddress(
             @PathVariable String id,
-            @Valid @RequestBody AddAddressRequest request) {
+            @Valid @RequestBody AddAddressRequest request,
+            HttpServletRequest httpRequest) {
         try {
-            requireCustomerAccess(id, false);
+            requireCustomerAccess(id, false, httpRequest);
             return ResponseEntity.ok(customerService.addAddress(id, request));
         } catch (NoSuchElementException e) {
             return ResponseEntity.notFound().build();
@@ -301,9 +339,10 @@ public class CustomerController {
     public ResponseEntity<?> updateAddress(
             @PathVariable String id,
             @PathVariable String addressId,
-            @Valid @RequestBody UpdateAddressRequest request) {
+            @Valid @RequestBody UpdateAddressRequest request,
+            HttpServletRequest httpRequest) {
         try {
-            requireCustomerAccess(id, false);
+            requireCustomerAccess(id, false, httpRequest);
             Customer customer = request.isDefaultOnly()
                     ? customerService.setDefaultAddress(id, addressId)
                     : customerService.updateAddress(id, addressId, request.toAddressRequest());
@@ -319,9 +358,10 @@ public class CustomerController {
     @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<?> removeAddress(
             @PathVariable String id,
-            @PathVariable String addressId) {
+            @PathVariable String addressId,
+            HttpServletRequest httpRequest) {
         try {
-            requireCustomerAccess(id, false);
+            requireCustomerAccess(id, false, httpRequest);
             return ResponseEntity.ok(customerService.removeAddress(id, addressId));
         } catch (NoSuchElementException e) {
             return ResponseEntity.notFound().build();
@@ -341,12 +381,12 @@ public class CustomerController {
     @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<?> manageTags(
             @PathVariable String id,
-            @RequestBody Map<String, Set<String>> request) {
+            @RequestBody Map<String, Set<String>> request,
+            HttpServletRequest httpRequest) {
         try {
             Set<String> add = request.getOrDefault("add", Set.of());
             Set<String> remove = request.getOrDefault("remove", Set.of());
-            Customer customer = customerService.getCustomerById(id)
-                    .orElseThrow(() -> new NoSuchElementException("Customer not found"));
+            Customer customer = requireCustomerAccess(id, false, httpRequest);
             if (!add.isEmpty()) customer = customerService.addTags(id, add);
             if (!remove.isEmpty()) customer = customerService.removeTags(id, remove);
             return ResponseEntity.ok(customer);
@@ -366,9 +406,10 @@ public class CustomerController {
     @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ASSISTANT_MANAGER')")
     public ResponseEntity<?> gdprDelete(
             @PathVariable String id,
-            @RequestParam(required = false, defaultValue = "GDPR_REQUEST") String reason) {
+            @RequestParam(required = false, defaultValue = "GDPR_REQUEST") String reason,
+            HttpServletRequest httpRequest) {
         try {
-            requireCustomerAccess(id, false);
+            requireCustomerAccess(id, false, httpRequest);
             Customer anonymized = customerService.anonymizeAndDeleteCustomer(id, reason);
             return ResponseEntity.ok(Map.of(
                     "message", "Customer data anonymized successfully per GDPR requirements",
@@ -376,6 +417,49 @@ public class CustomerController {
                     "deletedAt", anonymized.getDeletedAt()));
         } catch (NoSuchElementException e) {
             return ResponseEntity.notFound().build();
+        }
+    }
+
+    // ── SELF-SERVICE PROFILE ─────────────────────────────────────────────────────
+
+    /**
+     * POST /api/customers/me — get or create the signed-in customer's own profile (checkout).
+     * Body (optional): { "storeId": "..." } adds the store to the profile's stores.
+     * Name, email and phone come from the caller's own account, never from the body:
+     * get-or-create links an existing profile with the same email, so a body email would let
+     * a caller take over someone else's profile.
+     */
+    @PostMapping("/me")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    @Operation(summary = "Get or create the signed-in customer's own profile")
+    @SecurityRequirement(name = "bearerAuth")
+    public ResponseEntity<?> ensureOwnProfile(@RequestBody(required = false) Map<String, Object> body) {
+        String userId = authenticatedIdentity().getName();
+        User user = userService.getUserByIdUncached(userId);
+        User.PersonalInfo info = user.getPersonalInfo();
+        if (info == null || info.getEmail() == null || info.getEmail().isBlank()) {
+            log.warn("Account {} has no email; no customer profile can be created", userId);
+            return ResponseEntity.unprocessableEntity()
+                    .body(new MessageResponse("Add an email address to your account to check out."));
+        }
+        CreateCustomerRequest request = new CreateCustomerRequest(userId, info.getName(), info.getEmail(),
+                info.getPhone() != null ? info.getPhone() : "");
+        Object storeId = body != null ? body.get("storeId") : null;
+        if (storeId instanceof String store && !store.isBlank()) {
+            request.setStoreId(store);
+        }
+        try {
+            return ResponseEntity.ok(customerService.getOrCreateCustomer(request));
+        } catch (IllegalArgumentException e) {
+            // A concurrent request may have just created this account's profile
+            Optional<Customer> created = customerService.getCustomerByUserId(userId);
+            if (created.isPresent()) {
+                return ResponseEntity.ok(created.get());
+            }
+            // Another profile already uses this email or phone; the message names it, so keep it in the log only
+            log.warn("Customer profile for account {} could not be created: {}", userId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(new MessageResponse(
+                    "Your email or phone number is already on another customer profile. Contact the store to merge them."));
         }
     }
 
