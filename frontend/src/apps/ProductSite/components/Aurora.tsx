@@ -3,28 +3,24 @@ import { Sparkles } from 'lucide-react'
 import { usePrefersReducedMotion } from './Effects'
 
 /**
- * Colour sets for the backdrop, all from the site palette: forest, ember, sand and sage.
- * Dark tones sit behind light text; soft tones are pale card surfaces like a lit room.
+ * One palette colour per backdrop, never a blend of hues. Dark tones sit behind light
+ * text; soft tones are pale card surfaces.
  */
 const AURORA_TONES = {
-  forest: ['#2f6650', '#c63f19', '#1d3a2f', '#7d6a43'],
-  ember: ['#c63f19', '#2f6650', '#8a4a2a', '#1d3a2f'],
-  sand: ['#ecc3a6', '#d3ddd2', '#f3dfca', '#c9d2c6'],
-  clay: ['#e8ab8c', '#f0d9c6', '#dccbb7', '#cfd8cd'],
-  sage: ['#bfd1c3', '#ead6c1', '#d6e0d4', '#d9c3a8'],
+  forest: '#1d3a2f',
+  ember: '#24362f',
+  sand: '#efe4d6',
+  clay: '#f0dccd',
+  sage: '#dfe6dc',
 } as const
 
 export type AuroraTone = keyof typeof AURORA_TONES
 
-/**
- * A slow, grainy gradient field drawn in CSS: the site's backdrop instead of stock photography.
- */
+/** A flat card backdrop in one site colour with a faint grain, like printed card stock. */
 export function Aurora({ tone = 'forest', className }: { tone?: AuroraTone; className?: string }) {
-  const [a, b, c, d] = AURORA_TONES[tone]
-  const style = { '--au-1': a, '--au-2': b, '--au-3': c, '--au-4': d } as CSSProperties
+  const style = { '--au-bg': AURORA_TONES[tone] } as CSSProperties
   return (
     <div className={className ? `ms-aurora ${className}` : 'ms-aurora'} data-variant={tone === 'forest' || tone === 'ember' ? 'dark' : 'soft'} style={style} aria-hidden="true">
-      <i /><i /><i /><i />
       <span className="ms-aurora-grain" />
     </div>
   )

@@ -3,6 +3,7 @@ import { ArrowUp, Check, Image as ImageIcon, MessageSquare, Mic, Pause, Search, 
 import { useSite } from '../SiteContext'
 import { Aurora, SparkRibbon, type AuroraTone } from './Aurora'
 import { BrandMark } from './Brand'
+import { PhoneFrame } from './Devices'
 import { SectionHead, StatusChip } from './Layout'
 import { usePrefersReducedMotion } from './Effects'
 
@@ -18,34 +19,6 @@ function Card({ tone, title, text, dark, preview, children }: { tone: AuroraTone
       </div>
       <div className="ms-prep-stage" aria-hidden="true">{children}</div>
     </li>
-  )
-}
-
-/** Status bar icons drawn like iOS: signal, wifi, battery. */
-function StatusIcons() {
-  return (
-    <span className="dv-status-icons">
-      <svg width="17" height="11" viewBox="0 0 17 11"><rect x="0" y="7" width="3" height="4" rx="1" /><rect x="4.5" y="5" width="3" height="6" rx="1" /><rect x="9" y="2.5" width="3" height="8.5" rx="1" /><rect x="13.5" y="0" width="3" height="11" rx="1" /></svg>
-      <svg width="15" height="11" viewBox="0 0 15 11"><path d="M7.5 2.2c2.1 0 4 .8 5.4 2.1l1.1-1.1A9.3 9.3 0 0 0 7.5.6 9.3 9.3 0 0 0 1 3.2l1.1 1.1a7.7 7.7 0 0 1 5.4-2.1Zm0 3.2c1.2 0 2.3.5 3.1 1.2l1.1-1.1a6 6 0 0 0-8.4 0l1.1 1.1a4.4 4.4 0 0 1 3.1-1.2Zm0 3.2c-.5 0-.9.2-1.2.5l1.2 1.2 1.2-1.2c-.3-.3-.7-.5-1.2-.5Z" /></svg>
-      <svg width="25" height="12" viewBox="0 0 25 12"><rect x="0.5" y="0.5" width="21" height="11" rx="3.5" fill="none" stroke="currentColor" strokeOpacity="0.4" /><rect x="2" y="2" width="16" height="8" rx="2" /><rect x="22.5" y="4" width="1.6" height="4" rx="0.8" fillOpacity="0.4" /></svg>
-    </span>
-  )
-}
-
-/** A realistic phone: thin metal frame, side keys, Dynamic Island, status bar and home indicator. */
-export function Device({ children, className }: { children: ReactNode; className?: string }) {
-  return (
-    <div className={className ? `dv-phone ${className}` : 'dv-phone'}>
-      <div className="dv-phone-screen">
-        <div className="dv-status">
-          <span>9:41</span>
-          <span className="dv-island" />
-          <StatusIcons />
-        </div>
-        {children}
-        <span className="dv-home" />
-      </div>
-    </div>
   )
 }
 
@@ -69,7 +42,7 @@ function ChatScreen() {
   // stage 0: question only · 1: checking · 2 and 3: answer shown
   const shown = reduced ? 3 : stage
   return (
-    <Device className="ms-prep-phone">
+    <PhoneFrame className="ms-prep-phone">
       <div className="dv-app-bar">
         <BrandMark size={22} />
         <span className="dv-app-actions"><i><Search size={13} /></i><i><Plus size={13} /></i><i><Bell size={13} /></i></span>
@@ -95,7 +68,7 @@ function ChatScreen() {
         <i className="dv-input-mic"><Mic size={13} /></i>
         <i className="dv-input-send"><ArrowUp size={13} /></i>
       </div>
-    </Device>
+    </PhoneFrame>
   )
 }
 
