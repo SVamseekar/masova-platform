@@ -288,8 +288,7 @@
 .ms-hero h1 span { display: block; color: var(--ms-accent-dark); }
 .ms-hero-sub { font-size: clamp(17px, 1.5vw, 20px); color: var(--ms-dark-text-2); margin-top: 24px; max-width: 540px; text-wrap: pretty; }
 .ms-hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
-.ms-hero-art { position: relative; padding-right: 64px; padding-bottom: 28px; animation: ms-rise 900ms var(--ms-ease) 200ms backwards; }
-.ms-hero-phone { position: absolute; right: 0; bottom: 0; width: 34%; max-width: 210px; animation: ms-float 7s ease-in-out infinite; }
+.ms-hero-art { position: relative; padding-bottom: 28px; animation: ms-rise 900ms var(--ms-ease) 200ms backwards; }
 @keyframes ms-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
 
 .ms-lifecycle { border-top: 1px solid var(--ms-border-dark); padding: 26px 0 30px; }
@@ -1039,7 +1038,7 @@
 @media (max-width: 640px) {
   .ms-wrap { padding: 0 20px; }
   .ms-section { padding: 72px 0; }
-  .ms-hero-art { padding-right: 36px; }
+
   .ms-hero-actions .ms-btn, .ms-cta-actions .ms-btn { flex: 1 1 100%; }
   .pv-dash { grid-template-columns: minmax(0, 1fr); }
   .pv-rail { display: none; }
@@ -1144,7 +1143,7 @@
 .ms .ms-on-dark [data-glow], .ms [data-glow].ms-on-dark { background-image: radial-gradient(280px circle at var(--gx, -400px) var(--gy, -400px), rgba(242, 139, 91, 0.12), rgba(242, 139, 91, 0) 70%); }
 .ms [data-glow]:not(:hover) { background-image: none; }
 .ms-hero-art { perspective: 1200px; }
-.ms-hero-art > .dv-laptop { transform: rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg)); transition: transform 300ms var(--ms-ease); will-change: transform; }
+.ms-hero-art > .sc-hero { transform: rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg)); transition: transform 300ms var(--ms-ease); will-change: transform; }
 .ms-page-head-copy > * { animation: ms-rise 600ms var(--ms-ease) backwards; }
 .ms-page-head-copy > :nth-child(2) { animation-delay: 70ms; }
 .ms-page-head-copy > :nth-child(3) { animation-delay: 140ms; }
@@ -1198,7 +1197,6 @@
 @media (max-width: 640px) {
   .ms-hero-grid { padding-top: 112px; }
   .ms-hero-art { padding-right: 0; padding-bottom: 0; }
-  .ms-hero-phone { display: none; }
   .ms-show-copy, .ms-roles-copy { padding: 26px 22px; }
   .ms-show-stage, .ms-roles-stage { padding: 26px 18px 36px; }
   .ms-show-stage[data-wide='false'] > :first-child, .ms-roles-stage[data-wide='false'] > :first-child { width: 210px; }
@@ -1211,7 +1209,7 @@
   .pv-chat-text { opacity: 1; }
   .ms-story-steps > li { opacity: 1; }
   .ms-progress { display: none; }
-  .ms-hero-art > .dv-laptop { transform: none; }
+  .ms-hero-art > .sc-hero { transform: none; }
 }
 
 /* ---------- Legal pages (English only) ---------- */

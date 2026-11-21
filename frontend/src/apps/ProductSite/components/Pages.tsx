@@ -8,7 +8,7 @@ import { useSite } from '../SiteContext'
 import { PRODUCT_AREAS, SITE_LOCALE_NAMES, SITE_LOCALE_TAGS, countryPath, isSiteLocale, type CountryCode, type ProductArea } from '../locales'
 import { APP_STATUS, AREA_META, ASSISTANT_SCHEDULE, DEFAULT_COUNTRY_FOR_LOCALE, INTEGRATION_BRANDS, REGIONS, SITE_COUNTRIES, countryFacts } from '../content/shared'
 import { APP_ICONS, ASSISTANT_ICONS, CountryLink, PAGE_ICONS, PageHeader, PageLink, SectionHead, StatusChip } from './Layout'
-import { AreaPreview, CopilotPreview, SupportPhone } from './Previews'
+import { AiCopilotScene, AiGuestChatScene, AreaScene } from './scenes'
 import DecisionInbox from './DecisionInbox'
 import { AgentGrid, AiHero, VoiceSection } from './AiShowcase'
 import SupportEmailLink from './SupportEmailLink'
@@ -92,7 +92,7 @@ export function AreaPage({ area }: { area: ProductArea }) {
               </dl>
             </div>
             <figure className="ms-stage" data-rv>
-              <AreaPreview area={area} group={g} />
+              <AreaScene area={area} group={g} />
               <figcaption className="ms-stage-note">{copy.ui.sampleData}</figcaption>
             </figure>
           </div>
@@ -237,7 +237,7 @@ function AiCycle() {
 export function AiPage() {
   const { copy } = useSite()
   const ai = copy.ai
-  const moreVisuals = [<CopilotPreview key="c" />, <div className="ms-stage-phone" key="s"><SupportPhone /></div>]
+  const moreVisuals = [<AiCopilotScene key="c" />, <AiGuestChatScene key="s" />]
   return (
     <>
       <AiHero />

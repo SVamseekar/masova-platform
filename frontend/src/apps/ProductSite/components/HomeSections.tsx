@@ -3,7 +3,8 @@ import { ArrowRight, Check } from 'lucide-react'
 import { useSite } from '../SiteContext'
 import { PRODUCT_AREAS } from '../locales'
 import { REGIONS, SITE_COUNTRIES } from '../content/shared'
-import { APP_PREVIEW_WIDE, ApprovalPreview, AreaThumb, DashboardPreview, DriverPhone, KdsPreview, OrderingPhone, ROLE_APPS, RolePreview, TrackingPhone } from './Previews'
+import { ROLE_APPS } from './Previews'
+import { AreaThumbScene, HeroTonightScene, JourneyAiScene, JourneyDriverScene, JourneyKitchenScene, JourneyManagerScene, JourneyOrderScene, RoleScene } from './scenes'
 import { CountUp, useTilt } from './Effects'
 import { CountryLink, PAGE_ICONS, PageLink, SectionHead } from './Layout'
 import DecisionInbox from './DecisionInbox'
@@ -62,10 +63,7 @@ export function HeroSection() {
           </div>
 
           <figure className="ms-hero-art" ref={artRef}>
-            <DashboardPreview />
-            <div className="ms-hero-phone">
-              <OrderingPhone />
-            </div>
+            <HeroTonightScene />
             <figcaption className="ms-sr">{hero.previewLabel}</figcaption>
             <p className="pv-sample" aria-hidden="true">{copy.ui.sampleData}</p>
           </figure>
@@ -107,15 +105,15 @@ export function HeroSection() {
 function JourneyStage({ index }: { index: number }): ReactNode {
   switch (index) {
     case 0:
-      return <div className="ms-stage-phone"><OrderingPhone dishes={4} /></div>
+      return <JourneyOrderScene />
     case 1:
-      return <div className="ms-stage-wide"><KdsPreview /></div>
+      return <JourneyKitchenScene />
     case 2:
-      return <div className="pv-pair"><DriverPhone /><TrackingPhone /></div>
+      return <JourneyDriverScene />
     case 3:
-      return <div className="ms-stage-wide"><DashboardPreview /></div>
+      return <JourneyManagerScene />
     case 4:
-      return <div className="ms-stage-mid"><ApprovalPreview /></div>
+      return <JourneyAiScene />
     default:
       return <div className="ms-stage-mid"><DecisionCard /></div>
   }
@@ -210,7 +208,7 @@ export function AreasGrid({ head = true }: { head?: boolean }) {
             return (
               <li key={area} className="ms-bento-card" data-glow data-rv style={{ '--rv-delay': `${(i % 4) * 60}ms` } as React.CSSProperties}>
                 <PageLink page={area} className="ms-bento-link">
-                  <div className="ms-bento-visual" aria-hidden="true"><AreaThumb area={area} /></div>
+                  <div className="ms-bento-visual" aria-hidden="true"><AreaThumbScene area={area} /></div>
                   <div className="ms-bento-copy">
                     <span className="ms-bento-icon">{Icon && <Icon size={18} aria-hidden="true" />}</span>
                     <h3>{item.label}</h3>
@@ -278,8 +276,8 @@ export function RolesSection({ head = true }: { head?: boolean }) {
               </PageLink>
             )}
           </div>
-          <figure className="ms-roles-stage" key={index} data-wide={index === 0 || APP_PREVIEW_WIDE[appKey]} aria-hidden="true">
-            <RolePreview index={index} />
+          <figure className="ms-roles-stage" key={index} aria-hidden="true">
+            <RoleScene index={index} />
           </figure>
         </div>
       </div>

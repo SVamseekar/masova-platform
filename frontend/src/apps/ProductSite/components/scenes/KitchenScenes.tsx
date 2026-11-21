@@ -1,5 +1,5 @@
 /**
- * Product scenes: one moment of the product at real reading size, not a whole app shrunk
+ * Kitchen scenes: one moment of the product at real reading size, not a whole app shrunk
  * into a frame. Three kinds, mixed across the site:
  *  - fragments: two or three floating cards with depth, one of them moving
  *  - photo: a real restaurant photograph with a live card on top
@@ -8,14 +8,8 @@
  * Decorative (aria-hidden); the caller describes the scene in text.
  */
 import { Check, Thermometer } from 'lucide-react'
-import { BrandMark } from './Brand'
-import { usePreviewClock } from './Devices'
-
-function clock(totalSeconds: number): string {
-  const m = Math.floor(totalSeconds / 60)
-  const s = totalSeconds % 60
-  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
-}
+import { BrandMark } from '../Brand'
+import { clock, useScene as usePreviewClock } from './kit'
 
 /* ---------- Kitchen ---------- */
 
@@ -25,7 +19,7 @@ export function KitchenTicketsScene() {
   const t = tick % 9
   const ready = still || t >= 6
   return (
-    <div ref={ref} className="sc sc-fragments" aria-hidden="true">
+    <div ref={ref} className="sc sc-fragments sc-k-tickets" aria-hidden="true">
       <div className="sc-pillbar">
         <span><i data-tone="new" />Received <b>2</b></span>
         <span><i data-tone="cook" />Preparing <b>{ready ? 1 : 2}</b></span>
@@ -67,7 +61,7 @@ export function KitchenQualityScene() {
   const done = still ? QUALITY_CHECKS.length : Math.min(QUALITY_CHECKS.length, t)
   const temp = still ? 78 : Math.min(78, 61 + t * 5)
   return (
-    <div ref={ref} className="sc sc-photo" aria-hidden="true">
+    <div ref={ref} className="sc sc-photo sc-k-quality" aria-hidden="true">
       <img src="/site/kitchen-chef.webp" alt="" loading="lazy" decoding="async" />
       <div className="sc-card sc-float sc-float--bl">
         <header className="sc-head"><BrandMark size={18} /><b>Quality check · #1043</b><span className="sc-count">{done}/{QUALITY_CHECKS.length}</span></header>
@@ -101,7 +95,7 @@ export function KitchenEquipmentScene() {
     ['Blast chiller', '-18.2 °C', 'In use', 'ok'],
   ]
   return (
-    <div ref={ref} className="sc sc-canvas" aria-hidden="true">
+    <div ref={ref} className="sc sc-canvas sc-k-equipment" aria-hidden="true">
       <div className="sc-window">
         <div className="sc-window-bar"><BrandMark size={18} /><b>Equipment</b><span className="sc-store">Old Town</span><span className="sc-live">Live</span></div>
         <table className="sc-table">
