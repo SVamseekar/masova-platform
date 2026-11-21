@@ -6,7 +6,7 @@ import { StockCostScene, StockReceiveScene, StockTanksScene, TeamAccessScene, Te
 import { GuestCampaignScene, GuestCardScene, GuestPrivacyScene, GuestReviewScene, InsightAskScene, InsightLiveScene, InsightMarginScene, InsightStoresScene } from './InsightScenes'
 import { KitchenEquipmentScene, KitchenQualityScene, KitchenTicketsScene } from './KitchenScenes'
 
-export { HeroTonightScene, JourneyAiScene, JourneyDriverScene, JourneyKitchenScene, JourneyManagerScene, JourneyOrderScene } from './HomeScenes'
+export { HeroPinsList, HeroTonightScene, JourneyAiScene, JourneyDriverScene, JourneyKitchenScene, JourneyManagerScene, JourneyOrderScene } from './HomeScenes'
 export { RoleScene } from './RoleScenes'
 export { AreaThumbScene } from './ThumbScenes'
 export { AiCopilotScene, AiGuestChatScene } from './InsightScenes'
