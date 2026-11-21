@@ -9,8 +9,8 @@ import { usePrefersReducedMotion } from './Effects'
 const AURORA_TONES = {
   forest: '#1d3a2f',
   ember: '#24362f',
-  sand: '#efe4d6',
-  clay: '#f0dccd',
+  pistachio: '#dde9c7',
+  pistachioPale: '#e4eed2',
   sage: '#dfe6dc',
 } as const
 

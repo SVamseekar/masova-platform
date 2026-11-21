@@ -492,7 +492,7 @@
 .ms-features dt { display: flex; gap: 10px; font-weight: 600; font-size: 15.5px; }
 .ms-features dt svg { flex-shrink: 0; margin-top: 4px; color: var(--ms-success); }
 .ms-features dd { color: var(--ms-text-2); font-size: 15px; }
-.ms-stage { position: relative; isolation: isolate; overflow: hidden; margin: 0; border-radius: 24px; background: #efe6da; padding: 36px 32px 44px; display: grid; place-items: center; min-height: 440px; }
+.ms-stage { position: relative; isolation: isolate; overflow: hidden; margin: 0; border-radius: 24px; background: #e4eed2; padding: 36px 32px 44px; display: grid; place-items: center; min-height: 440px; }
 .ms-section--alt .ms-stage { background: #e2e8df; }
 .ms-stage > .dv-laptop, .ms-stage > .dv-kitchen, .ms-stage > .dv-tablet { width: 100%; max-width: 600px; }
 .ms-stage > .dv-phone { width: min(250px, 70%); }
@@ -1252,7 +1252,7 @@
 
 /* ======================================================================
  * Soft backdrops, demo cards and realistic device frames.
- * Palette stays the site's own: forest, warm canvas, burnt orange; soft cards use sand, sage and clay.
+ * Palette stays the site's own: forest, warm canvas, burnt orange; soft cards use pistachio, sage and pale pistachio (never cream).
  * ====================================================================== */
 
 /* Backdrop: one flat palette colour with a faint grain. */
