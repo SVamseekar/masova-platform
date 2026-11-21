@@ -1,33 +1,35 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, ArrowRight, BookOpen, CalendarCheck, Mail, Sparkles, X } from 'lucide-react'
 import { CONTACT_EMAILS } from '../../../config/contact'
 import { useSite } from '../SiteContext'
+import { CONCIERGE_TOPICS } from '../content/shared'
 import { sitePath } from '../locales'
 import { BrandMark } from './Brand'
 import { PageLink } from './Layout'
 
-/** Same order as `concierge.topics` in the copy. */
-const CONCIERGE_TOPICS = ['ai', 'pilot', 'sales', 'question'] as const
 type Topic = (typeof CONCIERGE_TOPICS)[number]
 
 const SEEN_KEY = 'masova-concierge-seen'
+/** Remembers "seen" for this page load when session storage is blocked. */
+let seenFallback = false
 const AUTO_OPEN_MS = 12_000
 const TYPING_MS = 650
 
 function readSeen(): boolean {
   try {
-    return window.sessionStorage.getItem(SEEN_KEY) === '1'
+    return seenFallback || window.sessionStorage.getItem(SEEN_KEY) === '1'
   } catch {
-    return false
+    return seenFallback
   }
 }
 
 function markSeen() {
+  seenFallback = true
   try {
     window.sessionStorage.setItem(SEEN_KEY, '1')
   } catch {
-    // Private mode or blocked storage: the guide may open again next visit, which is harmless.
+    // Private mode or blocked storage: seenFallback covers this page load.
   }
 }
 
@@ -48,12 +50,15 @@ export default function Concierge() {
   const [typing, setTyping] = useState(false)
   const panelRef = useRef<HTMLDivElement>(null)
   const launcherRef = useRef<HTMLButtonElement>(null)
+  // Focus moves into the panel only when the visitor opened it, never when it opens by itself
+  const openedByUser = useRef(false)
 
   useEffect(() => {
     if (readSeen() || !window.matchMedia?.('(min-width: 861px)').matches) return
     const id = window.setTimeout(() => {
       if (readSeen()) return
       markSeen()
+      openedByUser.current = false
       setOpen(true)
     }, AUTO_OPEN_MS)
     return () => window.clearTimeout(id)
@@ -61,16 +66,14 @@ export default function Concierge() {
 
   useEffect(() => {
     if (!open) return
-    panelRef.current?.focus()
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return
-      markSeen()
-      setOpen(false)
-      launcherRef.current?.focus()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+    if (openedByUser.current) panelRef.current?.focus()
   }, [open])
+
+  function onPanelKeyDown(event: ReactKeyboardEvent) {
+    if (event.key !== 'Escape') return
+    event.stopPropagation()
+    close()
+  }
 
   useEffect(() => {
     if (!typing) return
@@ -81,6 +84,7 @@ export default function Concierge() {
   function close() {
     markSeen()
     setOpen(false)
+    setTopic(null)
     launcherRef.current?.focus()
   }
 
@@ -90,10 +94,13 @@ export default function Concierge() {
       return
     }
     markSeen()
+    openedByUser.current = true
     setOpen(true)
   }
 
   function choose(next: Topic | null) {
+    // The button that was clicked disappears with the new view, so keep focus in the panel
+    panelRef.current?.focus()
     setTopic(next)
     setTyping(next !== null && !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches)
   }
@@ -101,6 +108,7 @@ export default function Concierge() {
   function toContact(sitesIndex?: number) {
     markSeen()
     setOpen(false)
+    setTopic(null)
     const query = sitesIndex === undefined ? '' : `?sites=${sitesIndex}`
     navigate(`${sitePath(locale, 'contact')}${query}#contact-form`)
   }
@@ -122,6 +130,7 @@ export default function Concierge() {
           aria-modal="false"
           aria-labelledby={titleId}
           tabIndex={-1}
+          onKeyDown={onPanelKeyDown}
         >
           <div className="ms-concierge-head">
             <BrandMark size={34} />
@@ -131,7 +140,7 @@ export default function Concierge() {
             </button>
           </div>
 
-          <div className="ms-concierge-body">
+          <div className="ms-concierge-body" aria-live="polite">
             {topic === null ? (
               <>
                 <p className="ms-concierge-bubble"><strong>{c.greeting}</strong> {c.intro}</p>
@@ -156,7 +165,7 @@ export default function Concierge() {
                 {typing ? (
                   <p className="ms-concierge-bubble ms-concierge-typing" aria-hidden="true"><i /><i /><i /></p>
                 ) : (
-                  <div className="ms-concierge-answer" aria-live="polite">
+                  <div className="ms-concierge-answer">
                     {topic === 'ai' && (
                       <>
                         <p className="ms-concierge-bubble">{c.aiAnswer}</p>
@@ -221,6 +230,7 @@ export default function Concierge() {
         type="button"
         className="ms-concierge-launcher"
         aria-expanded={open}
+        aria-label={c.open}
         onClick={toggle}
       >
         <BrandMark size={26} />

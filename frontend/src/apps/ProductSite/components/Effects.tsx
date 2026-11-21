@@ -131,8 +131,14 @@ const REDUCED_QUERY = '(prefers-reduced-motion: reduce)'
 
 function subscribeReducedMotion(onChange: () => void): () => void {
   const query = window.matchMedia?.(REDUCED_QUERY)
-  query?.addEventListener('change', onChange)
-  return () => query?.removeEventListener('change', onChange)
+  if (!query) return () => {}
+  if (typeof query.addEventListener === 'function') {
+    query.addEventListener('change', onChange)
+    return () => query.removeEventListener('change', onChange)
+  }
+  // Safari before 14 only has the older listener API
+  query.addListener?.(onChange)
+  return () => query.removeListener?.(onChange)
 }
 
 /** True when the visitor asks for less motion; false on the server and in old browsers. */

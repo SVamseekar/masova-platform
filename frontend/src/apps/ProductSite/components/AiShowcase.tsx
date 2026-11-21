@@ -18,7 +18,7 @@ export function AgentConstellation() {
 
   useEffect(() => {
     if (reduced) return
-    const id = window.setInterval(() => setActive((i) => (i + 1) % assistants.length), 1600)
+    const id = window.setInterval(() => !document.hidden && setActive((i) => (i + 1) % assistants.length), 1600)
     return () => window.clearInterval(id)
   }, [reduced, assistants.length])
 
@@ -38,7 +38,7 @@ export function AgentConstellation() {
         <BrandMark size={64} />
       </div>
       {assistants.map((assistant, i) => {
-        const Icon = ASSISTANT_ICONS[i]
+        const Icon = ASSISTANT_ICONS[i] ?? Sparkles
         const angle = (i / assistants.length) * Math.PI * 2 - Math.PI / 2
         const style = { left: `${50 + Math.cos(angle) * 38}%`, top: `${50 + Math.sin(angle) * 38}%` } as CSSProperties
         return (
@@ -95,7 +95,7 @@ export function AgentGrid() {
         </div>
         <ul className="ms-agent-grid">
           {ai.assistants.map((assistant, i) => {
-            const Icon = ASSISTANT_ICONS[i]
+            const Icon = ASSISTANT_ICONS[i] ?? Sparkles
             return (
               <li key={assistant.name} className="ms-agent" data-glow data-rv style={{ '--rv-delay': `${(i % 4) * 60}ms` } as CSSProperties}>
                 <div className="ms-agent-head">
@@ -138,7 +138,7 @@ export function VoiceSection() {
 
   useEffect(() => {
     if (reduced) return
-    const id = window.setInterval(() => setTick((t) => t + 1), 3200)
+    const id = window.setInterval(() => !document.hidden && setTick((t) => t + 1), 3200)
     return () => window.clearInterval(id)
   }, [reduced])
 

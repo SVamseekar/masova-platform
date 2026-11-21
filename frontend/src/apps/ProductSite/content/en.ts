@@ -3,7 +3,7 @@ import type { SiteCopy } from './types'
 const en: SiteCopy = {
   meta: {
     title: 'MaSoVa: the restaurant operating system for multi-site groups',
-    description: 'Ordering, counter, kitchen, delivery, stock, rotas and guests in one connected system, with eight AI assistants, a manager Copilot and MaSoVa Voice preparing decisions for a manager to approve. Runs alongside the till you already use.',
+    description: 'Ordering, counter, kitchen, delivery, stock, rotas and guests in one connected system, with eight AI assistants and a manager Copilot preparing decisions for a manager to approve, and MaSoVa Voice in preview. Runs alongside the till you already use.',
   },
   pages: {
     home: {
@@ -64,7 +64,7 @@ const en: SiteCopy = {
     ai: {
       eyebrow: 'AI assistants',
       heading: 'AI prepares. You decide.',
-      lead: 'Eight assistants, a manager Copilot and MaSoVa Voice read your own restaurant data around the clock. They forecast, draft and explain. A manager approves every change.',
+      lead: 'Eight assistants read your own restaurant data around the clock, and the Copilot and MaSoVa Voice answer when you ask. They forecast, draft and explain. A manager approves every change.',
     },
     solutions: {
       eyebrow: 'Solutions',
@@ -150,7 +150,7 @@ const en: SiteCopy = {
     eyebrow: 'Restaurant operating system',
     titleLead: 'The restaurant OS that thinks ahead.',
     titleAccent: 'AI prepares. You decide.',
-    sub: 'One connected system for orders, kitchen, delivery, stock, staff and guests. Eight AI assistants and MaSoVa Voice work through it all day, preparing reorders, rotas and replies for a manager to approve. It runs alongside the till you already use.',
+    sub: 'One connected system for orders, kitchen, delivery, stock, staff and guests. Eight AI assistants work through it all day, preparing reorders, rotas and replies for a manager to approve. It runs alongside the till you already use.',
     secondary: 'Follow one order',
     lifecycleLabel: 'The life of one order',
     lifecycle: ['Order received', 'Kitchen', 'Ready', 'Driver assigned', 'Delivered', 'Data recorded', 'Proposal ready'],
@@ -855,7 +855,7 @@ const en: SiteCopy = {
       {
         title: 'Languages and pricing',
         items: [
-          { q: 'Which languages are supported?', a: 'This site is in 16 languages. Guest ordering is translated into several languages, and the staff apps are in English, with more languages added alongside our design partners.' },
+          { q: 'Which languages are supported?', a: 'This site is in English, German, French, Italian and Spanish. Guest ordering is translated into several languages, and the staff apps are in English, with more languages added alongside our design partners.' },
           { q: 'How is MaSoVa priced?', a: 'Per site, per month, with no fees per staff member. The price is agreed with each group before they start.' },
           { q: 'Is there a long contract?', a: 'No. You start with a pilot of 60 to 90 days and continue only if it works for you.' },
         ],
@@ -874,7 +874,7 @@ const en: SiteCopy = {
       { value: '12', label: 'apps and assistants in the family' },
       { value: '8', label: 'product areas working from one order record' },
       { value: '26', label: 'countries with store set-up and local currency' },
-      { value: '16', label: 'languages on this site' },
+      { value: '5', label: 'languages on this site' },
     ],
     principlesTitle: 'How we work',
     principles: [

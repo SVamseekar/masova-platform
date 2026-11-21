@@ -3,7 +3,7 @@ import type { SiteCopy } from './types'
 const de: SiteCopy = {
   meta: {
     title: 'MaSoVa: das Betriebssystem für Restaurantgruppen mit mehreren Standorten',
-    description: 'Bestellungen, Kasse, Küche, Lieferung, Lager, Dienstpläne und Gäste in einem verbundenen System, mit acht KI-Assistenten, einem Manager-Copilot und MaSoVa Voice, die Entscheidungen zur Freigabe vorbereiten. Läuft neben der Kasse, die Sie schon nutzen.',
+    description: 'Bestellungen, Kasse, Küche, Lieferung, Lager, Dienstpläne und Gäste in einem verbundenen System, mit acht KI-Assistenten und einem Manager-Copilot, die Entscheidungen zur Freigabe vorbereiten, und MaSoVa Voice als Vorschau. Läuft neben der Kasse, die Sie schon nutzen.',
   },
   pages: {
     home: {
@@ -64,7 +64,7 @@ const de: SiteCopy = {
     ai: {
       eyebrow: 'KI-Assistenten',
       heading: 'Die KI bereitet vor. Sie entscheiden.',
-      lead: 'Acht Assistenten, ein Manager-Copilot und MaSoVa Voice lesen rund um die Uhr Ihre eigenen Restaurantdaten. Sie prognostizieren, entwerfen und erklären. Jede Änderung gibt eine Führungskraft frei.',
+      lead: 'Acht Assistenten lesen rund um die Uhr Ihre eigenen Restaurantdaten, und der Copilot und MaSoVa Voice antworten, wenn Sie fragen. Sie prognostizieren, entwerfen und erklären. Jede Änderung gibt eine Führungskraft frei.',
     },
     solutions: {
       eyebrow: 'Lösungen',
@@ -150,7 +150,7 @@ const de: SiteCopy = {
     eyebrow: 'Betriebssystem für Restaurants',
     titleLead: 'Das Restaurant-Betriebssystem, das vorausdenkt.',
     titleAccent: 'KI bereitet vor. Sie entscheiden.',
-    sub: 'Ein verbundenes System für Bestellungen, Küche, Lieferung, Lager, Team und Gäste. Acht KI-Assistenten und MaSoVa Voice arbeiten den ganzen Tag darin und bereiten Nachbestellungen, Dienstpläne und Antworten zur Freigabe vor. Läuft neben der Kasse, die Sie schon nutzen.',
+    sub: 'Ein verbundenes System für Bestellungen, Küche, Lieferung, Lager, Team und Gäste. Acht KI-Assistenten arbeiten den ganzen Tag darin und bereiten Nachbestellungen, Dienstpläne und Antworten zur Freigabe vor. Läuft neben der Kasse, die Sie schon nutzen.',
     secondary: 'Einer Bestellung folgen',
     lifecycleLabel: 'Der Weg einer Bestellung',
     lifecycle: ['Bestellung eingegangen', 'Küche', 'Fertig', 'Fahrer zugeteilt', 'Geliefert', 'Daten erfasst', 'Vorschlag bereit'],
@@ -855,7 +855,7 @@ const de: SiteCopy = {
       {
         title: 'Sprachen und Preise',
         items: [
-          { q: 'Welche Sprachen werden unterstützt?', a: 'Diese Website gibt es in 16 Sprachen. Die Bestellseite für Gäste ist in mehrere Sprachen übersetzt, die Team-Apps sind auf Englisch, und weitere Sprachen kommen gemeinsam mit unseren Designpartnern hinzu.' },
+          { q: 'Welche Sprachen werden unterstützt?', a: 'Diese Website gibt es auf Deutsch, Englisch, Französisch, Italienisch und Spanisch. Die Bestellseite für Gäste ist in mehrere Sprachen übersetzt, die Team-Apps sind auf Englisch, und weitere Sprachen kommen gemeinsam mit unseren Designpartnern hinzu.' },
           { q: 'Wie wird MaSoVa berechnet?', a: 'Pro Standort und Monat, ohne Gebühren pro Mitarbeiter. Der Preis wird mit jeder Gruppe vor dem Start vereinbart.' },
           { q: 'Gibt es einen langen Vertrag?', a: 'Nein. Sie starten mit einem Pilot über 60 bis 90 Tage und machen nur weiter, wenn es für Sie funktioniert.' },
         ],
@@ -874,7 +874,7 @@ const de: SiteCopy = {
       { value: '12', label: 'Apps und Assistenten in der Familie' },
       { value: '8', label: 'Produktbereiche, die mit denselben Bestelldaten arbeiten' },
       { value: '26', label: 'Länder mit Standorteinrichtung und Landeswährung' },
-      { value: '16', label: 'Sprachen auf dieser Website' },
+      { value: '5', label: 'Sprachen auf dieser Website' },
     ],
     principlesTitle: 'Wie wir arbeiten',
     principles: [

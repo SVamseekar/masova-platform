@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react'
 import { Sparkles } from 'lucide-react'
+import { usePrefersReducedMotion } from './Effects'
 
 /**
  * Colour sets for the backdrop, all from the site palette: forest, ember, sand and sage.
@@ -34,11 +35,13 @@ export function Aurora({ tone = 'forest', className }: { tone?: AuroraTone; clas
  * with a `label`, screen readers get the items once as a plain list.
  */
 export function SparkRibbon({ items, label }: { items: readonly string[]; label?: string }) {
+  // With reduced motion nothing moves, so each item appears once
+  const reduced = usePrefersReducedMotion()
   if (items.length === 0) return null
   // Both rows carry every item (the second starts half way through), repeated so a track is always wider than the screen.
   const half = Math.ceil(items.length / 2)
   const shifted = [...items.slice(half), ...items.slice(0, half)]
-  const rows = [[...items, ...items], [...shifted, ...shifted]]
+  const rows = reduced ? [[...items]] : [[...items, ...items], [...shifted, ...shifted]]
   return (
     <>
       {label && (

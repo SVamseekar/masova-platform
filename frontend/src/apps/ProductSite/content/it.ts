@@ -3,7 +3,7 @@ import type { SiteCopy } from './types'
 const it: SiteCopy = {
   meta: {
     title: 'MaSoVa: il sistema operativo per i gruppi di ristoranti con più sedi',
-    description: 'Ordini, cassa, cucina, consegne, magazzino, turni e clienti in un unico sistema connesso, con otto assistenti IA, un Copilot per i responsabili e MaSoVa Voice che preparano le decisioni da approvare. Funziona accanto alla cassa che usate già.',
+    description: 'Ordini, cassa, cucina, consegne, magazzino, turni e clienti in un unico sistema connesso, con otto assistenti IA e un Copilot per i responsabili che preparano le decisioni da approvare, e MaSoVa Voice in anteprima. Funziona accanto alla cassa che usate già.',
   },
   pages: {
     home: {
@@ -64,7 +64,7 @@ const it: SiteCopy = {
     ai: {
       eyebrow: 'Assistenti IA',
       heading: 'L’IA prepara. Voi decidete.',
-      lead: 'Otto assistenti, un Copilot per i responsabili e MaSoVa Voice leggono giorno e notte i dati dei vostri ristoranti. Prevedono, preparano e spiegano. Ogni modifica la approva un responsabile.',
+      lead: 'Otto assistenti leggono giorno e notte i dati dei vostri ristoranti, e il Copilot e MaSoVa Voice rispondono quando chiedete. Prevedono, preparano e spiegano. Ogni modifica la approva un responsabile.',
     },
     solutions: {
       eyebrow: 'Soluzioni',
@@ -150,7 +150,7 @@ const it: SiteCopy = {
     eyebrow: 'Sistema operativo per ristoranti',
     titleLead: 'Il sistema operativo per ristoranti che pensa in anticipo.',
     titleAccent: 'L’IA prepara. Voi decidete.',
-    sub: 'Un unico sistema connesso per ordini, cucina, consegne, magazzino, personale e clienti. Otto assistenti IA e MaSoVa Voice ci lavorano tutto il giorno e preparano riordini, turni e risposte da approvare. Funziona accanto alla cassa che usate già.',
+    sub: 'Un unico sistema connesso per ordini, cucina, consegne, magazzino, personale e clienti. Otto assistenti IA ci lavorano tutto il giorno e preparano riordini, turni e risposte da approvare. Funziona accanto alla cassa che usate già.',
     secondary: 'Seguite un ordine',
     lifecycleLabel: 'La vita di un ordine',
     lifecycle: ['Ordine ricevuto', 'Cucina', 'Pronto', 'Rider assegnato', 'Consegnato', 'Dati registrati', 'Proposta pronta'],
@@ -855,7 +855,7 @@ const it: SiteCopy = {
       {
         title: 'Lingue e prezzi',
         items: [
-          { q: 'Quali lingue sono supportate?', a: 'Questo sito è in 16 lingue. L’ordinazione per i clienti è tradotta in più lingue, e le app del personale sono in inglese, con altre lingue in arrivo insieme ai nostri design partner.' },
+          { q: 'Quali lingue sono supportate?', a: 'Questo sito è in italiano, inglese, tedesco, francese e spagnolo. L’ordinazione per i clienti è tradotta in più lingue, e le app del personale sono in inglese, con altre lingue in arrivo insieme ai nostri design partner.' },
           { q: 'Come si paga MaSoVa?', a: 'Per sede al mese, senza costi per dipendente. Il prezzo è concordato con ogni gruppo prima di iniziare.' },
           { q: 'C’è un contratto lungo?', a: 'No. Iniziate con un progetto pilota di 60–90 giorni e continuate solo se funziona per voi.' },
         ],
@@ -874,7 +874,7 @@ const it: SiteCopy = {
       { value: '12', label: 'app e assistenti nella famiglia' },
       { value: '8', label: 'aree di prodotto che lavorano sugli stessi ordini' },
       { value: '26', label: 'paesi con configurazione del locale e valuta locale' },
-      { value: '16', label: 'lingue su questo sito' },
+      { value: '5', label: 'lingue su questo sito' },
     ],
     principlesTitle: 'Come lavoriamo',
     principles: [

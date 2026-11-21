@@ -1293,6 +1293,7 @@
 }
 .ms-prep-card.ms-on-dark { color: var(--ms-dark-text); }
 .ms-prep-copy { padding: 44px 44px 0; max-width: 560px; }
+.ms-prep-copy .ms-chip { margin-bottom: 12px; }
 .ms-prep-copy h3 { font-size: clamp(26px, 2.4vw, 34px); font-weight: 500; letter-spacing: -0.02em; line-height: 1.15; }
 .ms-prep-copy p { margin-top: 12px; font-size: 17px; line-height: 1.55; color: var(--ms-text-2); }
 .ms-prep-card.ms-on-dark .ms-prep-copy p { color: var(--ms-dark-text-2); }
@@ -1462,7 +1463,7 @@
 .ms-voice-answer[data-shown='false'] { opacity: 0; transform: translateY(8px); }
 
 /* ---------- Concierge: the guide in the corner ---------- */
-.ms-concierge { position: fixed; right: 24px; bottom: 24px; z-index: 60; display: flex; flex-direction: column; align-items: flex-end; gap: 12px; pointer-events: none; }
+.ms-concierge { position: fixed; right: 24px; bottom: 24px; z-index: 55; display: flex; flex-direction: column; align-items: flex-end; gap: 12px; pointer-events: none; }
 .ms-concierge > * { pointer-events: auto; }
 .ms-concierge-launcher {
   display: inline-flex; align-items: center; gap: 10px; padding: 8px 16px 8px 8px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.16);
@@ -1534,6 +1535,8 @@
   .ms-prep-copy { padding: 30px 24px 0; }
   .ms-prep-stage { padding: 28px 16px 0; }
   .dv-phone { width: 260px; }
+  .dv-island { width: 70px; margin-left: -35px; }
+  .dv-status { padding: 15px 18px 8px 26px; font-size: 13px; }
   .dv-line p { font-size: 16.5px; }
   .dv-tasks li { margin-left: 0; font-size: 14px; padding: 14px; }
   .dv-recorder { gap: 5px; }

@@ -3,15 +3,16 @@ import { ArrowUp, Check, Image as ImageIcon, MessageSquare, Mic, Pause, Search, 
 import { useSite } from '../SiteContext'
 import { Aurora, SparkRibbon, type AuroraTone } from './Aurora'
 import { BrandMark } from './Brand'
-import { SectionHead } from './Layout'
+import { SectionHead, StatusChip } from './Layout'
 import { usePrefersReducedMotion } from './Effects'
 
 /** A rounded product card: soft backdrop, a title and line of text, and a screen that runs off the edge. */
-function Card({ tone, title, text, dark, children }: { tone: AuroraTone; title: string; text: string; dark?: boolean; children: ReactNode }) {
+function Card({ tone, title, text, dark, preview, children }: { tone: AuroraTone; title: string; text: string; dark?: boolean; preview?: boolean; children: ReactNode }) {
   return (
     <li className={dark ? 'ms-prep-card ms-on-dark' : 'ms-prep-card'} data-rv>
       <Aurora tone={tone} />
       <div className="ms-prep-copy">
+        {preview && <StatusChip status="preview" />}
         <h3>{title}</h3>
         <p>{text}</p>
       </div>
@@ -61,7 +62,7 @@ function ChatScreen() {
 
   useEffect(() => {
     if (reduced) return
-    const id = window.setInterval(() => setStage((s) => (s + 1) % 4), 2200)
+    const id = window.setInterval(() => !document.hidden && setStage((s) => (s + 1) % 4), 2200)
     return () => window.clearInterval(id)
   }, [reduced])
 
@@ -109,7 +110,7 @@ function VoiceScreen() {
   useEffect(() => {
     if (reduced) return
     // types the answer, holds it for a moment, then starts again
-    const id = window.setInterval(() => setTick((c) => (c >= answer.length + 24 ? 0 : c + 1)), 55)
+    const id = window.setInterval(() => !document.hidden && setTick((c) => (c >= answer.length + 24 ? 0 : c + 1)), 55)
     return () => window.clearInterval(id)
   }, [reduced, answer])
 
@@ -152,7 +153,7 @@ function ApprovalScreen() {
 
   useEffect(() => {
     if (reduced) return
-    const id = window.setInterval(() => setStep((d) => (d >= items.length ? 0 : d + 1)), 1500)
+    const id = window.setInterval(() => !document.hidden && setStep((d) => (d >= items.length ? 0 : d + 1)), 1500)
     return () => window.clearInterval(id)
   }, [reduced, items.length])
 
@@ -185,7 +186,7 @@ export function ShowcaseSection() {
           <Card tone="sand" title={s.cards[1].title} text={s.cards[1].text}>
             <ChatScreen />
           </Card>
-          <Card tone="sage" title={s.cards[2].title} text={s.cards[2].text}>
+          <Card tone="sage" preview title={s.cards[2].title} text={s.cards[2].text}>
             <VoiceScreen />
           </Card>
           <Card tone="clay" title={s.cards[3].title} text={s.cards[3].text}>
