@@ -270,7 +270,7 @@
 @keyframes ms-drift { from { transform: scale(1.02); } to { transform: scale(1.1) translate(-1.5%, -1%); } }
 .ms-hero-scrim {
   position: absolute; inset: 0; z-index: -1;
-  background: linear-gradient(90deg, rgba(16, 27, 23, 0.97) 0%, rgba(16, 27, 23, 0.9) 40%, rgba(16, 27, 23, 0.42) 60%, rgba(16, 27, 23, 0.2) 100%),
+  background: linear-gradient(90deg, rgba(16, 27, 23, 0.97) 0%, rgba(16, 27, 23, 0.9) 42%, rgba(16, 27, 23, 0.62) 70%, rgba(16, 27, 23, 0.55) 100%),
     linear-gradient(0deg, rgba(16, 27, 23, 0.95) 0%, rgba(16, 27, 23, 0) 38%);
 }
 .ms-hero-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 48px; align-items: center; padding-top: 140px; padding-bottom: 56px; }

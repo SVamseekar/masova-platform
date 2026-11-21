@@ -1,95 +1,45 @@
 /** Scenes for the home page hero and the "From order to outcome" journey. */
-import { Bike, Check, Home, ShieldCheck, Sparkles, Store } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
-import { Photo, Scene, clock, cyc, prog, useScene } from './kit'
+import { Bike, Check, ChefHat, ShoppingBag, Sparkles, Star, Store, Home, Users } from 'lucide-react'
+import type { ReactNode } from 'react'
+import { BrandMark } from '../Brand'
+import { Photo, Scene, clock, cyc, prog, useScene, whole } from './kit'
 
-/* ---------- Hero: the restaurant photo itself, with MaSoVa's live tags pinned to what they are about ---------- */
+/* ---------- Hero: tonight, as it happens ---------- */
 
-type PinKind = 'guest' | 'team' | 'ai' | 'trust'
-type Pin = { x: number; y: number; kind: PinKind; title: string; sub: string }
-
-const PIN_LABEL: Record<PinKind, string> = { guest: 'Guest', team: 'Team', ai: 'AI proposal', trust: 'Privacy' }
-
-/** Four moments in the same dining room; x and y are percentages of the hero photo. Together they cover every area of MaSoVa. */
-const PIN_GROUPS: Pin[][] = [
-  [
-    { x: 75, y: 31, kind: 'team', title: 'Jonas K. on the pass', sub: 'Ticket #1046 ready in 11 min' },
-    { x: 80, y: 58, kind: 'guest', title: 'Table 6 · split 2 ways', sub: '€17.00 each · card and cash' },
-    { x: 84, y: 40, kind: 'ai', title: 'Tomatoes 3.2 kg left', sub: 'Reorder drafted for Friday' },
-  ],
-  [
-    { x: 72, y: 19, kind: 'team', title: 'Tonight · 214 orders', sub: '€6,920 · up 12% on last Friday' },
-    { x: 73, y: 52, kind: 'guest', title: 'Ana S. · 1,240 points', sub: 'Nut allergy on file · consent recorded' },
-    { x: 57, y: 29, kind: 'team', title: 'Dry store counted', sub: 'Sara · 2 items below par' },
-  ],
-  [
-    { x: 61, y: 56, kind: 'guest', title: 'Website order #1050', sub: 'Pickup 19:45 · paid online' },
-    { x: 52, y: 47, kind: 'team', title: 'Raj out with #1042', sub: '12 min · handover code ready' },
-    { x: 66, y: 41, kind: 'ai', title: 'Risotto +€0.50?', sub: 'Margin 69% · price suggestion' },
-  ],
-  [
-    { x: 66, y: 70, kind: 'ai', title: 'New 5-star review', sub: 'Reply drafted · send?' },
-    { x: 83, y: 17, kind: 'team', title: '3 sites · €, £ · 5 languages', sub: 'Old Town · Riverside · Station' },
-    { x: 74, y: 60, kind: 'trust', title: 'Data request from a guest', sub: 'Export sent · logged with a name' },
-  ],
+const EVENTS: { icon: ReactNode; title: string; sub: string; meta?: string; action?: string }[] = [
+  { icon: <ShoppingBag size={16} />, title: 'New order #1049', sub: 'Kiosk · 2 × Greek salad', meta: '€19.00' },
+  { icon: <ChefHat size={16} />, title: 'Ticket #1046 is ready', sub: 'Kitchen · cooked in 11 min' },
+  { icon: <Sparkles size={16} />, title: 'Reorder mozzarella?', sub: '30 kg for Friday · €246', action: 'Review' },
+  { icon: <Bike size={16} />, title: 'Raj delivered #1042', sub: 'Code confirmed at the door', meta: '2 min early' },
+  { icon: <Star size={16} />, title: 'New 5-star review', sub: 'Riverside · “Best risotto in town”' },
+  { icon: <Users size={16} />, title: 'Ana clocked in', sub: 'Counter · Old Town', meta: '17:00' },
 ]
 
-/** Where the cover-fitted hero photo sits inside the hero (object-position 60% center), so pins land on the right objects. */
-function useCoverBox(el: HTMLElement | null, w = 1536, h = 1024, posX = 0.6) {
-  const [box, setBox] = useState<{ left: number; top: number; width: number; height: number } | null>(null)
-  useEffect(() => {
-    if (!el || typeof ResizeObserver === 'undefined') return
-    const observer = new ResizeObserver(([entry]) => {
-      const { width: W, height: H } = entry.contentRect
-      const scale = Math.max(W / w, H / h)
-      setBox({ left: (W - w * scale) * posX, top: (H - h * scale) / 2, width: w * scale, height: h * scale })
-    })
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [el, w, h, posX])
-  return box
-}
-
-function PinCard({ pin }: { pin: Pin }) {
-  return (
-    <div className="sc-hotspot-card" data-kind={pin.kind}>
-      <span className="sc-hotspot-chip">{pin.kind === 'ai' ? <Sparkles size={11} /> : pin.kind === 'trust' ? <ShieldCheck size={11} /> : null}{PIN_LABEL[pin.kind]}</span>
-      <b>{pin.title}</b>
-      <small>{pin.sub}</small>
-    </div>
-  )
-}
-
-/** Laid over the hero photo: live tags pinned to the cook, the tables, the shelves and the guests. */
 export function HeroTonightScene() {
-  const { tick, ref, still } = useScene(2600)
-  const [el, setEl] = useState<HTMLElement | null>(null)
-  const sceneRef = useCallback((node: HTMLElement | null) => { ref(node); setEl(node) }, [ref])
-  const box = useCoverBox(el)
-  const group = PIN_GROUPS[still ? 0 : tick % PIN_GROUPS.length]
-  const style = box ? { left: box.left, top: box.top, width: box.width, height: box.height } : { inset: 0 }
+  const { tick, ref, still } = useScene(2000)
+  const newest = still ? 3 : tick + 3
+  const shown = [0, 1, 2, 3].map((k) => newest - k)
   return (
-    <Scene kind="pins" name="hero" sceneRef={sceneRef}>
-      <div className="sc-pins-photo" style={style}>
-        {group.map((pin, i) => (
-          <div key={`${tick}-${i}`} className="sc-hotspot" style={{ left: `${pin.x}%`, top: `${pin.y}%`, animationDelay: `${i * 180}ms` }} data-side={pin.x >= 78 ? 'l' : 'r'}>
-            <i className="sc-hotspot-dot" />
-            <PinCard pin={pin} />
-          </div>
-        ))}
+    <Scene kind="fragments" name="hero" sceneRef={ref}>
+      <div className="sc-card sc-hero-stat">
+        <header><BrandMark size={18} /><b>Tonight</b><span>3 sites</span><i className="sc-live-dot" /></header>
+        <strong className="ms-num">{whole(214 + tick)}</strong>
+        <small>orders · €{whole(6920 + tick * 24)} · up 12% on last Friday</small>
+        <div className="sc-hero-bars">{[38, 52, 46, 70, 88, 64, 92, 80].map((h, i) => <i key={i} style={{ height: `${h}%` }} />)}</div>
       </div>
+      <ul className="sc-hero-feed">
+        {shown.map((abs, k) => {
+          const e = EVENTS[((abs % EVENTS.length) + EVENTS.length) % EVENTS.length]
+          return (
+            <li key={abs} className="sc-card" data-new={k === 0 && !still} data-depth={k}>
+              <span className="sc-hero-icon">{e.icon}</span>
+              <div><b>{e.title}</b><small>{e.sub}</small></div>
+              {e.action ? <span className="sc-hero-action">{e.action}</span> : e.meta && <em>{e.meta}</em>}
+            </li>
+          )
+        })}
+      </ul>
     </Scene>
-  )
-}
-
-/** The same tags as a stack, for screens too narrow to pin them on the photo. */
-export function HeroPinsList() {
-  const { tick, ref, still } = useScene(2600)
-  const group = PIN_GROUPS[still ? 0 : tick % PIN_GROUPS.length]
-  return (
-    <div ref={ref} className="sc-pins-list" aria-hidden="true">
-      {group.map((pin, i) => <PinCard key={`${tick}-${i}`} pin={pin} />)}
-    </div>
   )
 }
 

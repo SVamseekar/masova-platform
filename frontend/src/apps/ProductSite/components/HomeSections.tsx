@@ -5,7 +5,7 @@ import { PRODUCT_AREAS } from '../locales'
 import { REGIONS, SITE_COUNTRIES } from '../content/shared'
 import { ROLE_APPS } from './Previews'
 import { ScenePaused } from './Devices'
-import { AreaThumbScene, HeroPinsList, HeroTonightScene, JourneyAiScene, JourneyDriverScene, JourneyKitchenScene, JourneyManagerScene, JourneyOrderScene, RoleScene } from './scenes'
+import { AreaThumbScene, HeroTonightScene, JourneyAiScene, JourneyDriverScene, JourneyKitchenScene, JourneyManagerScene, JourneyOrderScene, RoleScene } from './scenes'
 import { CountUp, useTilt } from './Effects'
 import { CountryLink, PAGE_ICONS, PageLink, SectionHead } from './Layout'
 import DecisionInbox from './DecisionInbox'
@@ -42,7 +42,6 @@ export function HeroSection() {
           <img src="/site/restaurant-interior.webp" alt="" width={1536} height={1024} fetchPriority="high" decoding="async" />
         </div>
         <div className="ms-hero-scrim" />
-        <HeroTonightScene />
 
         <div className="ms-wrap ms-hero-grid">
           <div className="ms-hero-copy">
@@ -65,7 +64,7 @@ export function HeroSection() {
           </div>
 
           <figure className="ms-hero-art" ref={artRef}>
-            <HeroPinsList />
+            <HeroTonightScene />
             <figcaption className="ms-sr">{hero.previewLabel}</figcaption>
             <p className="pv-sample" aria-hidden="true">{copy.ui.sampleData}</p>
           </figure>
