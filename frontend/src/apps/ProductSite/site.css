@@ -1549,4 +1549,3 @@
   .ms-ribbon-track:nth-child(2) { display: none; }
   .ms-voice-answer[data-shown='false'], .dv-msg[data-hidden='true'] { opacity: 1; transform: none; }
 }
-.ms-on-dark .ms-brand svg, .ms-nav .ms-brand svg { border-radius: 7px; box-shadow: 0 0 0 1px rgba(244, 245, 240, 0.18); }
