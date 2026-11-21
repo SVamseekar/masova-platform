@@ -353,7 +353,7 @@
 .ms-bento-card { border-radius: var(--ms-radius-dialog); background: var(--ms-canvas); border: 1px solid var(--ms-border); overflow: hidden; transition: transform 200ms var(--ms-ease), box-shadow 200ms, border-color 200ms; }
 .ms-bento-card:hover { transform: translateY(-4px); border-color: #c9cbc2; box-shadow: 0 24px 44px -30px rgba(16, 27, 23, 0.55); }
 .ms-bento-link { display: flex; flex-direction: column; height: 100%; }
-.ms-bento-visual { height: 190px; padding: 18px 18px 0; overflow: hidden; background: #dde9c7; border-bottom: 1px solid var(--ms-border); display: flex; justify-content: center; }
+.ms-bento-visual { height: 190px; padding: 18px 18px 0; overflow: hidden; background: #ffffff; border-bottom: 1px solid var(--ms-border); display: flex; justify-content: center; }
 .ms-bento-visual > * { width: 470px; flex-shrink: 0; transform-origin: top center; transform: scale(0.62); transition: transform 400ms var(--ms-ease); }
 .ms-bento-visual > .dv-phone { width: 190px; transform: scale(0.82); }
 .ms-bento-card:hover .ms-bento-visual > * { transform: scale(0.65) translateY(-6px); }

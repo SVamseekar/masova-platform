@@ -234,7 +234,7 @@
 .sc-t-meter i[data-low='true'] { background: #d08a1c; }
 .sc-t-meter span { position: absolute; top: -6px; bottom: -6px; width: 2px; background: var(--ms-ink); }
 .sc-t-stack { display: flex; }
-.sc-t-stack .sc-avatar { margin-left: -14px; box-shadow: 0 0 0 4px #dde9c7; animation: sc-pop 360ms var(--ms-ease); }
+.sc-t-stack .sc-avatar { margin-left: -14px; box-shadow: 0 0 0 4px #ffffff; animation: sc-pop 360ms var(--ms-ease); }
 .sc-t-stack .sc-avatar:first-child { margin-left: 0; }
 .sc-t-team p { font-size: 22px; color: var(--ms-text-2); } .sc-t-team p b { color: var(--ms-ink); font-size: 30px; }
 .sc-t-stars { display: flex; gap: 6px; color: var(--ms-border); }
@@ -586,3 +586,4 @@
 .sc-s-receive .sc-receiving { position: relative; left: auto; bottom: auto; width: min(420px, 100%); padding: 20px 22px 12px; transform: rotate(-1.2deg); }
 .sc-k-quality { display: grid; place-items: center; padding: 72px 24px 32px; }
 .sc-k-quality > .sc-float { position: relative; width: min(400px, 100%); padding: 18px 20px 12px; }
+.ms-bento-visual .sc-t-meter { background: #eceeeb; }
