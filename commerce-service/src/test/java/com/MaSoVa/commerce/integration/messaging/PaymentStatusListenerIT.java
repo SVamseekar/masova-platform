@@ -43,13 +43,16 @@ class PaymentStatusListenerIT extends BaseMessagingIntegrationTest {
         order.setStatus(Order.OrderStatus.RECEIVED);
         order.setOrderType(Order.OrderType.DELIVERY);
         order.setPaymentStatus(paymentStatus);
+        order.setTotal(new java.math.BigDecimal("25.00"));
+        order.setCurrency("EUR");
         return orderRepository.save(order);
     }
 
     private void publish(String orderId, String status) {
         rabbitTemplate.convertAndSend(MaSoVaRabbitMQConfig.PAYMENTS_EXCHANGE,
                 MaSoVaRabbitMQConfig.ORDER_PAYMENT_STATUS_KEY,
-                new OrderPaymentStatusEvent(UUID.randomUUID().toString(), orderId, "txn-1", status));
+                new OrderPaymentStatusEvent(UUID.randomUUID().toString(), orderId, "txn-1", status,
+                        new java.math.BigDecimal("25.00"), "EUR"));
     }
 
     @Test

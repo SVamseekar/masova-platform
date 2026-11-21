@@ -8,7 +8,9 @@ import com.MaSoVa.logistics.delivery.repository.DeliveryTrackingRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
@@ -63,6 +65,49 @@ public class ProofOfDeliveryService {
 
         log.info("Delivery OTP generated for order {}. Expires at {}", orderId, expiresAt);
         return otpString;
+    }
+
+    /**
+     * The delivery OTP already on the order, for its own customer to show the driver.
+     * commerce-service issues the OTP at dispatch; customers read it and never replace it.
+     * Ownership is enforced by commerce-service, which only returns a customer's own order.
+     *
+     * @return the OTP, or empty when none has been issued yet or it has expired
+     * @throws AccessDeniedException when the caller is not allowed to see the order
+     */
+    public Optional<String> findDeliveryOtpForCaller(String orderId) {
+        Map<String, Object> order;
+        try {
+            order = orderServiceClient.getOrderForCaller(orderId);
+        } catch (HttpClientErrorException.Forbidden | HttpClientErrorException.NotFound e) {
+            log.warn("Delivery OTP read refused for order {}: {}", orderId, e.getStatusCode());
+            throw new AccessDeniedException("Cannot access the delivery OTP of an order you do not own");
+        }
+        if (order == null) {
+            throw new IllegalStateException("Order service returned no body for order " + orderId);
+        }
+        Object otp = order.get("deliveryOtp");
+        if (otp == null) {
+            return Optional.empty();
+        }
+        if (isExpired(orderId, order.get("deliveryOtpExpiresAt"))) {
+            // verifyDeliveryOtp would reject it; the store or driver must issue a new one
+            return Optional.empty();
+        }
+        return Optional.of(otp.toString());
+    }
+
+    private static boolean isExpired(String orderId, Object expiresAt) {
+        if (expiresAt == null) {
+            return false;
+        }
+        try {
+            return LocalDateTime.parse(expiresAt.toString()).isBefore(LocalDateTime.now());
+        } catch (java.time.format.DateTimeParseException e) {
+            // Verification still enforces expiry; do not hide a usable OTP because of a format change
+            log.warn("Order {} has an unreadable deliveryOtpExpiresAt '{}'", orderId, expiresAt);
+            return false;
+        }
     }
 
     /**

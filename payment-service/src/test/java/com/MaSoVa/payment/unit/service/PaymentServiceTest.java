@@ -78,6 +78,9 @@ class PaymentServiceTest {
     @Mock
     private PaymentGateway stripeGateway;
 
+    @Mock
+    private com.MaSoVa.payment.client.OrderChargeClient orderChargeClient;
+
     @InjectMocks
     private PaymentService paymentService;
 
@@ -129,6 +132,14 @@ class PaymentServiceTest {
         successTransaction.setRazorpayPaymentId("pay_razorpay_001");
         successTransaction.setPaymentMethod(Transaction.PaymentMethod.CARD);
         successTransaction.setCreatedAt(LocalDateTime.now());
+
+        // The order's own total and currency, as commerce-service reports them
+        when(orderChargeClient.getOrderCharge(any())).thenReturn(
+                new com.MaSoVa.payment.client.OrderChargeClient.OrderCharge(new BigDecimal("500.00"), "INR"));
+        when(orderChargeClient.getOrderCharge("order-de-001")).thenReturn(
+                new com.MaSoVa.payment.client.OrderChargeClient.OrderCharge(new BigDecimal("45.00"), "EUR"));
+        when(paymentGatewayResolver.resolveForCurrency(any())).thenAnswer(inv ->
+                "INR".equals(inv.getArgument(0)) ? razorpayGateway : stripeGateway);
 
         when(paymentGatewayResolver.isIndiaStore(any())).thenAnswer(inv -> {
             String countryCode = inv.getArgument(0);
@@ -1122,5 +1133,61 @@ class PaymentServiceTest {
                 paymentService, "saveTransaction", tx))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessage("PG down");
+    }
+
+    @Nested
+    @DisplayName("server-side charge amount")
+    class ServerSideChargeTests {
+
+        @Test
+        @DisplayName("charges the order total from commerce, not a tampered client amount")
+        void chargesOrderTotalNotClientAmount() throws Exception {
+            paymentRequest.setAmount(new BigDecimal("1.00"));
+            when(transactionRepository.findByOrderId("order-123")).thenReturn(Optional.empty());
+            when(razorpayGateway.initiatePayment(any()))
+                    .thenReturn(new GatewayPaymentResult("RAZORPAY", "order_razorpay_001", null, "rzp_test_key"));
+            when(encryptionService.encrypt(anyString())).thenReturn("encrypted");
+            when(transactionRepository.save(any(Transaction.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            paymentService.initiatePayment(paymentRequest);
+
+            org.mockito.ArgumentCaptor<com.MaSoVa.payment.gateway.GatewayPaymentRequest> sent =
+                    org.mockito.ArgumentCaptor.forClass(com.MaSoVa.payment.gateway.GatewayPaymentRequest.class);
+            verify(razorpayGateway).initiatePayment(sent.capture());
+            assertThat(sent.getValue().getAmount()).isEqualByComparingTo("500.00");
+            verify(transactionRepository).save(org.mockito.ArgumentMatchers.<Transaction>argThat(
+                    t -> t.getAmount().compareTo(new BigDecimal("500.00")) == 0 && "INR".equals(t.getCurrency())));
+        }
+
+        @Test
+        @DisplayName("POS cash on an EUR order without a country code records EUR, not INR")
+        void cashUsesOrderCurrencyWithoutCountryCode() {
+            InitiatePaymentRequest cashRequest = InitiatePaymentRequest.builder()
+                    .orderId("order-de-001")
+                    .amount(new BigDecimal("45.00"))
+                    .customerId("cust-de")
+                    .storeId("store-de")
+                    .orderType("TAKEAWAY")
+                    .build();
+            when(transactionRepository.findByOrderId("order-de-001")).thenReturn(Optional.empty());
+            when(transactionRepository.save(any(Transaction.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            paymentService.recordCashPayment(cashRequest);
+
+            verify(transactionRepository).save(org.mockito.ArgumentMatchers.<Transaction>argThat(
+                    t -> "EUR".equals(t.getCurrency()) && t.getAmount().compareTo(new BigDecimal("45.00")) == 0));
+        }
+
+        @Test
+        @DisplayName("a caller commerce refuses cannot start a payment")
+        void refusedOrderCannotBePaid() {
+            when(transactionRepository.findByOrderId("order-123")).thenReturn(Optional.empty());
+            when(orderChargeClient.getOrderCharge("order-123"))
+                    .thenThrow(new org.springframework.security.access.AccessDeniedException("no"));
+
+            assertThatThrownBy(() -> paymentService.initiatePayment(paymentRequest))
+                    .isInstanceOf(org.springframework.security.access.AccessDeniedException.class);
+            verify(transactionRepository, never()).save(any());
+        }
     }
 }

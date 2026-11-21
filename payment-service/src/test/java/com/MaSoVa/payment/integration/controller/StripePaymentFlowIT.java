@@ -1,5 +1,7 @@
 package com.MaSoVa.payment.integration.controller;
 
+import com.MaSoVa.payment.client.OrderChargeClient;
+import com.MaSoVa.payment.client.OrderChargeClient.OrderCharge;
 import com.MaSoVa.payment.gateway.GatewayPaymentResult;
 import com.MaSoVa.payment.gateway.GatewayWebhookResult;
 import com.MaSoVa.payment.gateway.StripeGateway;
@@ -39,10 +41,17 @@ class StripePaymentFlowIT extends BaseFullIntegrationTest {
     @MockitoBean
     private RazorpayService razorpayService;
 
+    // payment-service charges the order's own total and currency, read from commerce-service;
+    // there is no commerce-service in this test, so the order charge is stubbed per test.
+    @MockitoBean
+    private OrderChargeClient orderChargeClient;
+
     @Test
     @WithMockUser(roles = "CUSTOMER")
     @DisplayName("POST /api/payments/initiate routes DE store to Stripe with EUR")
     void initiateGermany_returnsStripePaymentIntent() throws Exception {
+        when(orderChargeClient.getOrderCharge("ord-stripe-de-1"))
+                .thenReturn(new OrderCharge(new BigDecimal("42.50"), "EUR"));
         when(stripeGateway.initiatePayment(any())).thenReturn(
                 new GatewayPaymentResult("STRIPE", "pi_test_de", "pi_test_de_secret", "pk_test_de"));
 
@@ -75,8 +84,10 @@ class StripePaymentFlowIT extends BaseFullIntegrationTest {
 
     @Test
     @WithMockUser(roles = "CUSTOMER")
-    @DisplayName("POST /api/payments/initiate resolves HUF for Hungary when currency omitted")
+    @DisplayName("POST /api/payments/initiate charges a Hungarian order in its own currency, HUF")
     void initiateHungary_resolvesHufFromCountry() throws Exception {
+        when(orderChargeClient.getOrderCharge("ord-stripe-hu-1"))
+                .thenReturn(new OrderCharge(new BigDecimal("5000.00"), "HUF"));
         when(stripeGateway.initiatePayment(any())).thenAnswer(invocation -> {
             var req = invocation.getArgument(0, com.MaSoVa.payment.gateway.GatewayPaymentRequest.class);
             assertThat(req.getCurrency()).isEqualTo("HUF");
@@ -143,6 +154,8 @@ class StripePaymentFlowIT extends BaseFullIntegrationTest {
     @WithMockUser(roles = "MANAGER")
     @DisplayName("POST /api/payments/refund executes Stripe refund for SUCCESS DE transaction")
     void refundGermany_usesStripeGateway() throws Exception {
+        when(orderChargeClient.getOrderCharge("ord-stripe-refund-1"))
+                .thenReturn(new OrderCharge(new BigDecimal("30.00"), "EUR"));
         when(stripeGateway.initiatePayment(any())).thenReturn(
                 new GatewayPaymentResult("STRIPE", "pi_refund_de", "pi_refund_de_secret", "pk_test_de"));
         when(stripeGateway.getGatewayName()).thenReturn("STRIPE");
