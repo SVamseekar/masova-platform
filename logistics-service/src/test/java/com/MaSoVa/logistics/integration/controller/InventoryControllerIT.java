@@ -72,9 +72,9 @@ class InventoryControllerIT extends BaseFullIntegrationTest {
 
     @Test
     @WithMockUser(roles = "MANAGER")
-    @DisplayName("GET /api/delivery/track/{orderId} returns error for non-existent order")
+    @DisplayName("GET /api/delivery/track/{orderId} returns 404 for non-existent order")
     void trackOrder_returnsErrorForNonExistent() throws Exception {
         mockMvc.perform(get("/api/delivery/track/nonexistent"))
-            .andExpect(status().is5xxServerError());
+            .andExpect(status().isNotFound());
     }
 }

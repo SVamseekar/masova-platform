@@ -11,6 +11,12 @@ interface AddressAutocompleteProps {
   placeholder?: string;
   initialValue?: string;
   disabled?: boolean;
+  /** Optional controlled input for forms; existing callers retain local state. */
+  value?: string;
+  onInputChange?: (value: string) => void;
+  inputId?: string;
+  describedBy?: string;
+  invalid?: boolean;
 }
 
 interface NominatimSuggestion {
@@ -27,6 +33,11 @@ const GooglePlacesAutocomplete: React.FC<AddressAutocompleteProps> = ({
   placeholder = 'Enter delivery address...',
   initialValue = '',
   disabled = false,
+  value: controlledValue,
+  onInputChange,
+  inputId,
+  describedBy,
+  invalid,
 }) => {
   const [inputValue, setInputValue] = useState(initialValue);
   const searchBoxRef = useRef<google.maps.places.SearchBox | null>(null);
@@ -49,8 +60,11 @@ const GooglePlacesAutocomplete: React.FC<AddressAutocompleteProps> = ({
     >
       <input
         type="text"
-        value={inputValue}
-        onChange={(e) => setInputValue(e.target.value)}
+        id={inputId}
+        value={controlledValue ?? inputValue}
+        aria-invalid={invalid}
+        aria-describedby={describedBy}
+        onChange={(e) => { setInputValue(e.target.value); onInputChange?.(e.target.value); }}
         placeholder={placeholder}
         disabled={disabled}
         style={{
@@ -79,6 +93,11 @@ const NominatimAutocomplete: React.FC<AddressAutocompleteProps> = ({
   placeholder = 'Enter delivery address...',
   initialValue = '',
   disabled = false,
+  value: controlledValue,
+  onInputChange,
+  inputId,
+  describedBy,
+  invalid,
 }) => {
   const [inputValue, setInputValue] = useState(initialValue);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -90,6 +109,7 @@ const NominatimAutocomplete: React.FC<AddressAutocompleteProps> = ({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setInputValue(value);
+    onInputChange?.(value);
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
     searchTimeoutRef.current = setTimeout(async () => {
       if (value.length >= 3) {
@@ -137,7 +157,10 @@ const NominatimAutocomplete: React.FC<AddressAutocompleteProps> = ({
       <div style={{ position: 'relative' }}>
         <input
           type="text"
-          value={inputValue}
+          id={inputId}
+          value={controlledValue ?? inputValue}
+          aria-invalid={invalid}
+          aria-describedby={describedBy}
           onChange={handleInputChange}
           onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
           placeholder={placeholder}

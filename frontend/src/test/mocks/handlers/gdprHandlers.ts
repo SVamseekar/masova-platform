@@ -16,9 +16,9 @@ export const gdprHandlers = [
     HttpResponse.json({
       id: 'consent-1',
       userId: 'user-1',
-      consentType: 'COOKIES',
+      consentType: 'ANALYTICS_TRACKING',
       version: '1.0',
-      granted: true,
+      status: 'GRANTED',
       grantedAt: new Date().toISOString(),
     }),
   ),
@@ -27,9 +27,9 @@ export const gdprHandlers = [
     HttpResponse.json({
       id: 'consent-1',
       userId: 'user-1',
-      consentType: 'COOKIES',
+      consentType: 'ANALYTICS_TRACKING',
       version: '1.0',
-      granted: false,
+      status: 'REVOKED',
       revokedAt: new Date().toISOString(),
     }),
   ),

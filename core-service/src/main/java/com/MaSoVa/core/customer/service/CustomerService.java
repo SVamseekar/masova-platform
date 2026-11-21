@@ -132,6 +132,31 @@ public class CustomerService {
         return createCustomer(request);
     }
 
+    /**
+     * Get or create the profile of a signed-in customer (POST /api/customers/me).
+     * Unlike {@link #getOrCreateCustomer}, this never re-assigns an existing profile to the caller:
+     * account emails are not verified, so linking a profile by email would let anyone who registers
+     * with someone else's email take over that profile (orders, addresses, loyalty).
+     *
+     * @throws IllegalArgumentException when another profile already uses the email or phone
+     */
+    public Customer getOrCreateOwnCustomer(CreateCustomerRequest request) {
+        Optional<Customer> own = customerRepository.findByUserId(request.getUserId());
+        if (own.isPresent()) {
+            Customer existing = own.get();
+            if (request.getStoreId() != null && !request.getStoreId().isEmpty()
+                    && !existing.getStoreIds().contains(request.getStoreId())) {
+                existing.addStoreId(request.getStoreId());
+                return customerRepository.save(existing);
+            }
+            return existing;
+        }
+        if (customerRepository.findByEmail(request.getEmail()).isPresent()) {
+            throw new IllegalArgumentException("Another customer profile already uses this email");
+        }
+        return createCustomer(request);
+    }
+
     @CacheEvict(value = "customers", allEntries = true)
     public Customer createCustomer(CreateCustomerRequest request) {
         logger.info("Creating customer for userId: {}", request.getUserId());
@@ -141,18 +166,20 @@ public class CustomerService {
             throw new IllegalArgumentException("Customer with userId " + request.getUserId() + " already exists");
         }
         String storeId = request.getStoreId();
+        // Accounts without a phone (e.g. Google sign-in) must not collide with every other phone-less profile
+        boolean hasPhone = request.getPhone() != null && !request.getPhone().isBlank();
         if (storeId != null && !storeId.isEmpty()) {
             if (customerRepository.existsByStoreIdAndEmail(storeId, request.getEmail())) {
                 throw new IllegalArgumentException("Customer with email already exists in this store");
             }
-            if (customerRepository.existsByStoreIdAndPhone(storeId, request.getPhone())) {
+            if (hasPhone && customerRepository.existsByStoreIdAndPhone(storeId, request.getPhone())) {
                 throw new IllegalArgumentException("Customer with phone already exists in this store");
             }
         } else {
             if (customerRepository.findByEmail(request.getEmail()).isPresent()) {
                 throw new IllegalArgumentException("Customer with email " + request.getEmail() + " already exists");
             }
-            if (customerRepository.findByPhone(request.getPhone()).isPresent()) {
+            if (hasPhone && customerRepository.findByPhone(request.getPhone()).isPresent()) {
                 throw new IllegalArgumentException("Customer with phone " + request.getPhone() + " already exists");
             }
         }
@@ -165,7 +192,7 @@ public class CustomerService {
         }
         customer.setName(request.getName());
         customer.setEmail(request.getEmail());
-        customer.setPhone(request.getPhone());
+        customer.setPhone(hasPhone ? request.getPhone() : null);
         customer.setDateOfBirth(request.getDateOfBirth());
         customer.setGender(request.getGender());
         customer.setMarketingOptIn(request.isMarketingOptIn());
@@ -446,11 +473,18 @@ public class CustomerService {
         address.setCity(request.getCity());
         address.setState(request.getState());
         address.setPostalCode(request.getPostalCode());
-        address.setCountry(request.getCountry());
+        if (request.getCountry() != null) address.setCountry(request.getCountry());
         address.setLatitude(request.getLatitude());
         address.setLongitude(request.getLongitude());
         address.setLandmark(request.getLandmark());
 
+        if (request.isDefault()) {
+            markDefaultAddress(customer, address);
+        } else if (request.isDefaultSpecified() && address.isDefault()) {
+            CustomerAddress replacement = customer.getAddresses().stream()
+                    .filter(saved -> saved != address).findFirst().orElse(address);
+            markDefaultAddress(customer, replacement);
+        }
         return customerRepository.save(customer);
     }
 
@@ -461,34 +495,13 @@ public class CustomerService {
         Customer customer = customerRepository.findById(customerId)
                 .orElseThrow(() -> new NoSuchElementException("Customer not found with id: " + customerId));
 
-        int beforeSize = customer.getAddresses().size();
-        logger.info("Customer has {} addresses before removal", beforeSize);
-
-        // Log all address IDs for debugging
-        customer.getAddresses().forEach(addr ->
-            logger.info("Address: id={}, label={}, line1={}", addr.getId(), addr.getLabel(), addr.getAddressLine1())
-        );
-
-        boolean removed = customer.getAddresses().removeIf(addr -> {
-            boolean matches = addressId != null && addressId.equals(addr.getId());
-            if (matches) {
-                logger.info("Found matching address to remove: {}", addr.getId());
-            }
-            return matches;
-        });
-
-        int afterSize = customer.getAddresses().size();
-        logger.info("Customer has {} addresses after removal. Removed: {}", afterSize, removed);
+        boolean removed = customer.getAddresses().removeIf(addr -> addressId != null && addressId.equals(addr.getId()));
+        if (!removed) throw new NoSuchElementException("Address not found with id: " + addressId);
 
         // If removed address was default, set first address as default
         if (addressId.equals(customer.getDefaultAddressId()) && !customer.getAddresses().isEmpty()) {
             CustomerAddress firstAddr = customer.getAddresses().get(0);
-            // Ensure first address has an ID
-            if (firstAddr.getId() == null) {
-                firstAddr.setId(UUID.randomUUID().toString());
-            }
-            firstAddr.setDefault(true);
-            customer.setDefaultAddressId(firstAddr.getId());
+            markDefaultAddress(customer, firstAddr);
         } else if (customer.getAddresses().isEmpty()) {
             customer.setDefaultAddressId(null);
         }
@@ -505,26 +518,17 @@ public class CustomerService {
         Customer customer = customerRepository.findById(customerId)
                 .orElseThrow(() -> new NoSuchElementException("Customer not found with id: " + customerId));
 
-        boolean addressFound = false;
-        for (CustomerAddress address : customer.getAddresses()) {
-            // Handle null IDs by generating one if needed
-            if (address.getId() == null) {
-                address.setId(UUID.randomUUID().toString());
-            }
-            if (addressId != null && addressId.equals(address.getId())) {
-                address.setDefault(true);
-                customer.setDefaultAddressId(addressId);
-                addressFound = true;
-            } else {
-                address.setDefault(false);
-            }
-        }
-
-        if (!addressFound) {
-            throw new NoSuchElementException("Address not found with id: " + addressId);
-        }
-
+        CustomerAddress address = customer.getAddresses().stream()
+                .filter(saved -> addressId != null && addressId.equals(saved.getId()))
+                .findFirst().orElseThrow(() -> new NoSuchElementException("Address not found with id: " + addressId));
+        markDefaultAddress(customer, address);
         return customerRepository.save(customer);
+    }
+
+    private void markDefaultAddress(Customer customer, CustomerAddress selected) {
+        if (selected.getId() == null) selected.setId(UUID.randomUUID().toString());
+        customer.getAddresses().forEach(address -> address.setDefault(address == selected));
+        customer.setDefaultAddressId(selected.getId());
     }
 
     // ===========================

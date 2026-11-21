@@ -250,6 +250,16 @@ async function main() {
             acceptsCashPayments: true,
             maxDeliveryTimeMinutes: 35,
             minimumOrderValueINR: 15,
+            // Demo zone fees in the store's own currency (field name is legacy)
+            serviceArea: {
+              centerLatitude: s.lat,
+              centerLongitude: s.lng,
+              usesPolygon: false,
+              acceptsDelivery: true,
+              zones: (s.currency === 'GBP' ? [2.49, 3.49, 4.99] : [1.99, 2.99, 3.99]).map((fee, i) => (
+                { zoneName: 'ABC'[i], minDistanceKm: [0, 3, 6][i], maxDistanceKm: [3, 6, 10][i], deliveryFeeINR: fee, estimatedDeliveryMinutes: [15, 25, 35][i], minimumOrderValueINR: 0, active: true }
+              )),
+            },
           },
           lastModified: t0,
         },
@@ -1229,14 +1239,15 @@ async function main() {
     custPool.slice(0, 40).map((c) => ({
       userId: c.userId,
       storeId: STORE,
-      consentType: 'MARKETING',
-      granted: true,
+      consentType: 'MARKETING_COMMUNICATIONS',
+      status: 'GRANTED',
+      version: '1.0',
       grantedAt: t0,
       notes: 'horizon',
     }))
   );
   await core.collection('gdpr_data_requests').insertMany([
-    { userId: custPool[0].userId, storeId: STORE, requestType: 'EXPORT', status: 'PENDING', notes: 'horizon', createdAt: t0 },
+    { userId: custPool[0].userId, storeId: STORE, requestType: 'DATA_PORTABILITY', status: 'PENDING', notes: 'horizon', createdAt: t0 },
     { userId: custPool[1].userId, storeId: STORE, requestType: 'ERASURE', status: 'PENDING', notes: 'horizon', createdAt: t0 },
   ]);
 

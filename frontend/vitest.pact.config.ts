@@ -14,19 +14,20 @@ export default defineConfig({
     environment: 'node',
     globals: true,
     include: ['src/pact/**/*.{test,spec}.{ts,tsx}'],
+    // On CI an interaction now and then fails with "request was expected but not received" even though
+    // the Pact core log shows that same request received and matched. It is a different interaction each
+    // time and never reproduces locally, so it looks like a timing race inside pact-js rather than a contract
+    // problem. A retry re-runs only the failed interaction; a real contract break still fails every attempt.
+    retry: 2,
     testTimeout: 15000,
     hookTimeout: 15000,
     pool: 'forks',
-    poolOptions: {
-      forks: {
-        maxForks: 2,
-        minForks: 1,
-      },
-    },
+    // Vitest 4 moved pool options to the top level; poolOptions is ignored
+    maxWorkers: 2,
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
+      '@': path.resolve(import.meta.dirname, './src'),
     },
   },
 });

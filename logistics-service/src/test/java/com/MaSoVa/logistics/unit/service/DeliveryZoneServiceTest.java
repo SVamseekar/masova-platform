@@ -318,27 +318,24 @@ class DeliveryZoneServiceTest {
         }
 
         @Test
-        @DisplayName("returns default zones when store not found")
-        void returnsDefaultZonesWhenStoreNull() {
+        @DisplayName("returns no zones when store not found, rather than INR defaults of unknown currency")
+        void returnsNoZonesWhenStoreNull() {
             mockStoreDetails(null);
 
             List<Map<String, Object>> result = deliveryZoneService.getDeliveryZones(STORE_ID);
 
-            assertThat(result).hasSize(3);
-            assertThat(result.get(0).get("zoneName")).isEqualTo("A");
+            assertThat(result).isEmpty();
         }
 
         @Test
-        @DisplayName("returns default zones when restTemplate throws (getStoreDetails catches and returns null)")
-        void returnsDefaultZonesOnException() {
+        @DisplayName("returns no zones when the store lookup fails")
+        void returnsNoZonesOnException() {
             mockStoreDetailsThrows(new RuntimeException("Network error"));
 
-            // getStoreDetails catches the exception and returns null
-            // getDeliveryZones falls back to getDefaultZones() when storeData is null
+            // getStoreDetails catches the exception and returns null, so the store's currency is unknown
             List<Map<String, Object>> result = deliveryZoneService.getDeliveryZones(STORE_ID);
 
-            assertThat(result).hasSize(3);
-            assertThat(result.get(0).get("zoneName")).isEqualTo("A");
+            assertThat(result).isEmpty();
         }
     }
 
@@ -454,6 +451,75 @@ class DeliveryZoneServiceTest {
             boolean result = deliveryZoneService.isPincodeRestricted(STORE_ID, "400001");
 
             assertThat(result).isFalse();
+        }
+    }
+
+    @Nested
+    @DisplayName("store currency")
+    class StoreCurrency {
+
+        private Map<String, Object> euroStore(Object operatingConfig) {
+            return Map.of(
+                "id", STORE_ID,
+                "currency", "EUR",
+                "countryCode", "DE",
+                "address", Map.of("latitude", 52.5297, "longitude", 13.4015),
+                "operatingConfig", operatingConfig
+            );
+        }
+
+        @Test
+        @DisplayName("non-INR store without configured zones is not billed the INR defaults")
+        void euroStoreWithoutZonesIsNotPriced() {
+            mockStoreDetails(euroStore(Map.of("deliveryRadiusKm", 8.5)));
+
+            DeliveryFeeResponse response = deliveryZoneService.calculateDeliveryFee(STORE_ID, 52.5200, 13.3880);
+
+            assertThat(response.isSuccess()).isFalse();
+            assertThat(response.getError()).contains("not configured");
+            assertThat(response.getDeliveryFeeINR()).isZero();
+        }
+
+        @Test
+        @DisplayName("non-INR store is priced from its own zones served under operatingConfig")
+        void euroStoreUsesConfiguredZones() {
+            mockStoreDetails(euroStore(Map.of(
+                "deliveryRadiusKm", 8.5,
+                "deliveryZones", List.of(
+                    Map.of("zoneName", "A", "minDistanceKm", 0.0, "maxDistanceKm", 3.0,
+                           "deliveryFeeINR", 1.9, "estimatedDeliveryMinutes", 15, "active", true),
+                    Map.of("zoneName", "B", "minDistanceKm", 3.0, "maxDistanceKm", 6.0,
+                           "deliveryFeeINR", 2.9, "estimatedDeliveryMinutes", 25, "active", true)))));
+
+            DeliveryFeeResponse response = deliveryZoneService.calculateDeliveryFee(STORE_ID, 52.5200, 13.3880);
+
+            assertThat(response.isSuccess()).isTrue();
+            assertThat(response.getZoneName()).isEqualTo("A");
+            assertThat(response.getDeliveryFeeINR()).isEqualTo(1.9);
+            assertThat(response.getCurrency()).isEqualTo("EUR");
+        }
+
+        @Test
+        @DisplayName("non-INR store with no active zone for the distance is rejected, not billed built-in fees")
+        void euroStoreWithoutCoveringZoneIsRejected() {
+            mockStoreDetails(euroStore(Map.of(
+                "deliveryRadiusKm", 8.5,
+                "deliveryZones", List.of(
+                    Map.of("zoneName", "A", "minDistanceKm", 0.0, "maxDistanceKm", 3.0,
+                           "deliveryFeeINR", 1.9, "estimatedDeliveryMinutes", 15, "active", false)))));
+
+            DeliveryFeeResponse response = deliveryZoneService.calculateDeliveryFee(STORE_ID, 52.5200, 13.3880);
+
+            assertThat(response.isSuccess()).isFalse();
+            assertThat(response.getError()).contains("No active delivery zone");
+        }
+
+        @Test
+        @DisplayName("delivery radius is read from operatingConfig")
+        void radiusFromOperatingConfig() {
+            mockStoreDetails(euroStore(Map.of("deliveryRadiusKm", 1.0)));
+
+            assertThat(deliveryZoneService.isWithinDeliveryZone(STORE_ID, 52.5200, 13.3880)).isFalse();
         }
     }
 }

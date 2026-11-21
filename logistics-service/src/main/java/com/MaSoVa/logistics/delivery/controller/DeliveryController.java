@@ -192,12 +192,32 @@ public class DeliveryController {
     }
 
     /**
-     * GET /api/delivery/track/{orderId} — customer tracks order (public, no auth)
+     * GET /api/delivery/track/{orderId} — customer tracks order (public, no auth).
+     * Anyone holding an order id can call this, so the driver's phone number and id are not returned.
      */
     @GetMapping("/track/{orderId}")
     @Operation(summary = "Track delivery by order ID (public, no auth)")
     public ResponseEntity<TrackingResponse> trackOrder(@PathVariable String orderId) {
-        return ResponseEntity.ok(liveTrackingService.getOrderTracking(orderId));
+        TrackingResponse tracking = liveTrackingService.getOrderTracking(orderId);
+        if (tracking.getDriver() != null) {
+            tracking.getDriver().setDriverPhone(null);
+            tracking.getDriver().setDriverId(null);
+        }
+        return ResponseEntity.ok(tracking);
+    }
+
+    /**
+     * GET /api/delivery/orders/{orderId}/tracking — store staff view of a delivery, with the
+     * driver's contact details that the public tracking route leaves out. Limited to deliveries of
+     * the caller's own store.
+     */
+    @GetMapping("/orders/{orderId}/tracking")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER', 'STAFF')")
+    @Operation(summary = "Track delivery by order ID with driver contact (store staff)")
+    public ResponseEntity<TrackingResponse> trackOrderForStaff(@PathVariable String orderId, HttpServletRequest request) {
+        // Staff see deliveries of the store they are working in only.
+        String storeId = StoreContextUtil.getStoreIdFromHeaders(request);
+        return ResponseEntity.ok(liveTrackingService.getOrderTrackingForStore(orderId, storeId));
     }
 
     // ── VERIFICATION (OTP / PHOTO / SIGNATURE) ────────────────────────────────────
@@ -222,14 +242,31 @@ public class DeliveryController {
     }
 
     /**
-     * POST /api/delivery/{orderId}/otp — generate (or regenerate) OTP for delivery
+     * POST /api/delivery/{orderId}/otp — generate (or regenerate) OTP for delivery.
+     * Staff and drivers generate a new OTP. A customer only gets the OTP already issued on
+     * their own order (409 when none yet); a customer can never replace it.
      * Replaces: /{orderId}/generate-otp and /{orderId}/regenerate-otp
      */
     @PostMapping("/{orderId}/otp")
     @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER', 'STAFF', 'DRIVER', 'CUSTOMER')")
-    @Operation(summary = "Generate or regenerate delivery OTP")
-    public ResponseEntity<String> generateOtp(@PathVariable String orderId) {
+    @Operation(summary = "Generate or regenerate delivery OTP (customers: read own OTP)")
+    public ResponseEntity<String> generateOtp(@PathVariable String orderId, HttpServletRequest request) {
+        if (isCustomer(request)) {
+            return proofOfDeliveryService.findDeliveryOtpForCaller(orderId)
+                    .map(ResponseEntity::ok)
+                    .orElseGet(() -> ResponseEntity.status(HttpStatus.CONFLICT)
+                            .body("No valid delivery OTP for this order yet; the store or driver issues a new one"));
+        }
         return ResponseEntity.ok(proofOfDeliveryService.generateDeliveryOtp(orderId));
+    }
+
+    /** A customer by role authority or by gateway user type; either one keeps the caller off the regenerate path. */
+    private static boolean isCustomer(HttpServletRequest request) {
+        org.springframework.security.core.Authentication auth =
+                org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        boolean customerAuthority = auth != null && auth.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_CUSTOMER".equals(a.getAuthority()));
+        return customerAuthority || "CUSTOMER".equalsIgnoreCase(StoreContextUtil.getUserTypeFromHeaders(request));
     }
 
     // ── DRIVER STATUS + PENDING DELIVERIES ────────────────────────────────────────

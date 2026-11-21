@@ -65,7 +65,8 @@ const localStorageMock = {
   removeItem: vi.fn(),
   clear: vi.fn(),
 };
-global.localStorage = localStorageMock as unknown as Storage;
+// Vitest 5 exposes localStorage as a getter-only property, so define it instead of assigning.
+Object.defineProperty(globalThis, 'localStorage', { value: localStorageMock as unknown as Storage, configurable: true, writable: true });
 
 // Mock sessionStorage
 const sessionStorageMock = {
@@ -74,7 +75,7 @@ const sessionStorageMock = {
   removeItem: vi.fn(),
   clear: vi.fn(),
 };
-global.sessionStorage = sessionStorageMock as unknown as Storage;
+Object.defineProperty(globalThis, 'sessionStorage', { value: sessionStorageMock as unknown as Storage, configurable: true, writable: true });
 
 // Suppress console errors/warnings in tests (optional - can remove if you want to see them)
 const originalError = console.error;

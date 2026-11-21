@@ -1,556 +1,129 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Button, Input, Checkbox } from '../../components/ui/neumorphic';
-import { colors, spacing, typography } from '../../styles/design-tokens';
-import { createNeumorphicSurface } from '../../styles/neumorphic-utils';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { AlertCircle, Clock, Eye, EyeOff, LockKeyhole, Mail } from 'lucide-react';
+import StaffAccessLayout from '../../components/common/StaffAccessLayout';
 import { useLoginMutation } from '../../store/api/authApi';
 import { getApiErrorMessage } from '../utils/apiError';
 import { useAppSelector } from '../../store/hooks';
-import { useToast } from '../../hooks/useToast';
-import { getSavedReturnUrl, clearReturnUrl } from '../../utils/security';
-import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
-import RestaurantIcon from '@mui/icons-material/Restaurant';
-import LocalShippingIcon from '@mui/icons-material/LocalShipping';
-import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
-import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount';
-import ShowChartIcon from '@mui/icons-material/ShowChart';
-import DeliveryDiningIcon from '@mui/icons-material/DeliveryDining';
-import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
-import KitchenIcon from '@mui/icons-material/Kitchen';
+import { clearReturnUrl, getDefaultDashboard, getSavedReturnUrl } from '../../utils/security';
 
-interface DemoAccount {
-  type: string;
-  email: string;
-  password: string;
-  Icon: React.ComponentType<{ style?: React.CSSProperties }>;
-  description: string;
-  route: string;
-  accentColor: string;
-}
-
-/** Berlin DOM001 demo accounts (scripts/reseed). Password Demo@1234; cashier PIN 12345. */
-const demoAccounts: DemoAccount[] = [
-  {
-    type: 'Manager',
-    email: 'manager.berlin@gmail.com',
-    password: 'Demo@1234',
-    Icon: ManageAccountsIcon,
-    description: 'Store Management Dashboard',
-    route: '/manager',
-    accentColor: '#7B1FA2',
-  },
-  {
-    type: 'Kitchen Staff',
-    email: 'kitchen.berlin@gmail.com',
-    password: 'Demo@1234',
-    Icon: RestaurantIcon,
-    description: 'Kitchen Display System',
-    route: '/kitchen',
-    accentColor: '#FF6B35',
-  },
-  {
-    type: 'Driver',
-    email: 'driver.berlin@gmail.com',
-    password: 'Demo@1234',
-    Icon: LocalShippingIcon,
-    description: 'Delivery Management',
-    route: '/driver',
-    accentColor: '#00B14F',
-  },
-  {
-    type: 'Cashier (POS)',
-    email: 'cashier.berlin@gmail.com',
-    password: 'Demo@1234',
-    Icon: PointOfSaleIcon,
-    description: 'Point of Sale Terminal · PIN 12345',
-    route: '/pos',
-    accentColor: '#2196F3',
-  },
-  {
-    type: 'Asst. Manager',
-    email: 'assistant.berlin@gmail.com',
-    password: 'Demo@1234',
-    Icon: SupervisorAccountIcon,
-    description: 'Operations Support',
-    route: '/manager',
-    accentColor: '#FF9800',
-  },
-];
-
-const LoginPage: React.FC = () => {
+export default function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [login, { isLoading }] = useLoginMutation();
   const { isAuthenticated, user } = useAppSelector(state => state.auth);
-  const [error, setError] = useState<string>('');
-  const [activeDemo, setActiveDemo] = useState<string>('');
-  const _toast = useToast();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showRecovery, setShowRecovery] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({ email: '', password: '' });
+  const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const emailRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
+  const pendingRef = useRef(false);
+  const requestRef = useRef<ReturnType<typeof login> | null>(null);
+  const mountedRef = useRef(true);
+  const sessionExpired = new URLSearchParams(location.search).get('reason') === 'session-expired';
+  const busy = submitting || isLoading;
 
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    rememberMe: true,
-  });
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; requestRef.current?.abort?.(); };
+  }, []);
 
-  const [showForgotPassword, setShowForgotPassword] = useState(false);
-  const [forgotEmail, setForgotEmail] = useState('');
-  const [forgotSubmitted, setForgotSubmitted] = useState(false);
-
-  const handleForgotPassword = () => {
-    if (!forgotEmail || !forgotEmail.includes('@')) {
-      setError('Please enter a valid email address');
+  // Redirect only after authenticated state arrives; the route guard owns authorization.
+  useEffect(() => {
+    if (!isAuthenticated || !user) return;
+    if (user.type === 'CUSTOMER') {
+      navigate('/customer-login', { replace: true });
       return;
     }
-    // In production: call POST /api/users/forgot-password
-    setForgotSubmitted(true);
-  };
-
-  // Redirect if already authenticated (staff login only)
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      const returnUrl = getSavedReturnUrl();
-      if (returnUrl) {
-        clearReturnUrl();
-        navigate(returnUrl, { replace: true });
-        return;
-      }
-
-      const userType = user.type?.toLowerCase();
-      if (userType?.includes('manager')) {
-        navigate('/manager', { replace: true });
-      } else if (userType?.includes('staff')) {
-        navigate('/kitchen', { replace: true });
-      } else if (userType?.includes('driver')) {
-        navigate('/driver', { replace: true });
-      } else if (userType?.includes('customer')) {
-        navigate('/checkout', { replace: true });
-      } else {
-        navigate('/', { replace: true });
-      }
-    }
+    const returnUrl = getSavedReturnUrl();
+    clearReturnUrl();
+    const destination = user.type === 'KIOSK' ? '/pos' : returnUrl || getDefaultDashboard(user.type, user.role);
+    navigate(destination, { replace: true });
   }, [isAuthenticated, user, navigate]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    if (error) setError('');
-  };
-
-  const handleLogin = async (email: string, password: string, rememberMe: boolean) => {
-    try {
-      setError('');
-      const result = await login({ email, password, rememberMe }).unwrap();
-
-      if (result.user.type === 'CUSTOMER') {
-        setError('Customers should use the customer login page. Redirecting...');
-        setTimeout(() => navigate('/customer-login'), 2000);
-        return;
-      }
-    } catch (err: unknown) {
-      console.error('Login error:', err);
-      const errorMessage = getApiErrorMessage(err, 'Login failed. Please check your credentials.');
-      setError(errorMessage);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!formData.email || !formData.password) {
-      setError('Please fill in all fields');
-      return;
-    }
-    if (!formData.email.includes('@')) {
-      setError('Please enter a valid email');
-      return;
-    }
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters');
-      return;
-    }
-
-    await handleLogin(formData.email, formData.password, formData.rememberMe);
-  };
-
-  const handleDemoLogin = async (account: DemoAccount): Promise<void> => {
-    setActiveDemo(account.type);
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (pendingRef.current || isLoading) return;
+    const trimmedEmail = email.trim();
+    const errors = {
+      email: !trimmedEmail ? 'Enter your work email.' : !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail) ? 'Enter a valid email address.' : '',
+      password: !password ? 'Enter your password.' : password.length < 6 || password.length > 50 ? 'Use between 6 and 50 characters.' : '',
+    };
+    setFieldErrors(errors);
     setError('');
-    setFormData({ email: account.email, password: account.password, rememberMe: true });
+    if (errors.email || errors.password) {
+      (errors.email ? emailRef : passwordRef).current?.focus();
+      return;
+    }
+    pendingRef.current = true;
+    setSubmitting(true);
+    const request = login({ email: trimmedEmail, password, rememberMe });
+    requestRef.current = request;
+    try {
+      await request.unwrap();
+    } catch (err: unknown) {
+      if (mountedRef.current) {
+        const status = err && typeof err === 'object' && 'status' in err ? err.status : null;
+        setError(status === 'FETCH_ERROR' || status === 'TIMEOUT_ERROR'
+          ? 'Could not connect. Check your connection and try again.'
+          : getApiErrorMessage(err, 'Sign-in failed. Check your details and try again.'));
+      }
+    } finally {
+      requestRef.current = null;
+      pendingRef.current = false;
+      if (mountedRef.current) setSubmitting(false);
+    }
+  }
 
-    setTimeout(async () => {
-      await handleLogin(account.email, account.password, true);
-      setActiveDemo('');
-    }, 500);
-  };
-
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-
-  // ─── Styles ───────────────────────────────────────────────────────────────
-
-  const containerStyles: React.CSSProperties = {
-    fontFamily: typography.fontFamily.primary,
-    minHeight: '100vh',
-    display: 'flex',
-    alignItems: 'stretch',
-    justifyContent: 'center',
-    background: colors.surface.background,
-  };
-
-  const outerGridStyles: React.CSSProperties = {
-    display: 'grid',
-    gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
-    width: '100%',
-    maxWidth: '1200px',
-    margin: '0 auto',
-    boxShadow: '0 25px 80px rgba(0,0,0,0.15)',
-    animation: 'slideIn 0.5s ease',
-  };
-
-  const leftPanelStyles: React.CSSProperties = {
-    background: '#111111',
-    color: '#ffffff',
-    padding: isMobile ? `${spacing[8]} ${spacing[6]}` : `${spacing[12]} ${spacing[10]}`,
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'space-between',
-    gap: spacing[8],
-    backgroundImage: `
-      repeating-linear-gradient(
-        0deg,
-        transparent,
-        transparent 40px,
-        rgba(255,255,255,0.025) 40px,
-        rgba(255,255,255,0.025) 41px
-      ),
-      repeating-linear-gradient(
-        90deg,
-        transparent,
-        transparent 40px,
-        rgba(255,255,255,0.025) 40px,
-        rgba(255,255,255,0.025) 41px
-      )
-    `,
-  };
-
-  const rightPanelStyles: React.CSSProperties = {
-    backgroundColor: colors.surface.primary,
-    padding: isMobile ? `${spacing[8]} ${spacing[6]}` : `${spacing[12]} ${spacing[10]}`,
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'center',
-  };
-
-  const errorMessageStyles: React.CSSProperties = {
-    ...createNeumorphicSurface('inset', 'base', 'lg'),
-    backgroundColor: colors.surface.primary,
-    color: colors.semantic.error,
-    padding: `${spacing[4]} ${spacing[5]}`,
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.semibold,
-    textAlign: 'center',
-    borderLeft: `4px solid ${colors.semantic.error}`,
-    marginBottom: spacing[6],
-  };
-
-  const features = [
-    { Icon: ShowChartIcon, text: 'Real-time Store Analytics' },
-    { Icon: KitchenIcon, text: 'Kitchen Management System' },
-    { Icon: DeliveryDiningIcon, text: 'Delivery Tracking & Orders' },
-    { Icon: PeopleAltIcon, text: 'Staff & Employee Management' },
-  ];
-
-  return (
-    <div style={containerStyles}>
-      <div style={outerGridStyles}>
-
-        {/* ─── LEFT: Dark Brand Panel ─────────────────────────────── */}
-        <div style={leftPanelStyles}>
-
-          {/* Brand identity */}
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: spacing[3], marginBottom: spacing[8] }}>
-              <div style={{
-                width: '44px', height: '44px',
-                background: colors.semantic.error,
-                borderRadius: '10px',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                flexShrink: 0,
-              }}>
-                <span style={{ color: '#fff', fontSize: '20px', fontWeight: '900', fontFamily: typography.fontFamily.primary }}>M</span>
-              </div>
-              <span style={{
-                fontSize: '22px', fontWeight: '800', letterSpacing: '-0.5px',
-                color: '#fff', fontFamily: typography.fontFamily.primary,
-              }}>MaSoVa</span>
-            </div>
-
-            <h1 style={{
-              fontSize: isMobile ? '28px' : '34px',
-              fontWeight: '800',
-              lineHeight: 1.2,
-              marginBottom: spacing[4],
-              color: '#fff',
-              fontFamily: typography.fontFamily.primary,
-              margin: `0 0 ${spacing[4]} 0`,
-            }}>
-              Restaurant Management,<br />
-              <span style={{ color: colors.semantic.error }}>Simplified.</span>
-            </h1>
-            <p style={{ fontSize: '15px', color: 'rgba(255,255,255,0.55)', lineHeight: 1.65, maxWidth: '340px', margin: 0 }}>
-              One platform for your kitchen, delivery, payments, and analytics.
-            </p>
-          </div>
-
-          {/* Demo role cards — 5 roles */}
-          <div>
-            <p style={{
-              fontSize: '11px', fontWeight: '700', textTransform: 'uppercase',
-              letterSpacing: '1.5px', color: 'rgba(255,255,255,0.4)',
-              marginBottom: spacing[4], margin: `0 0 ${spacing[4]} 0`,
-            }}>
-              Quick Demo Access
-            </p>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: spacing[3],
-            }}>
-              {demoAccounts.map((account) => (
-                <button
-                  key={account.type}
-                  onClick={() => handleDemoLogin(account)}
-                  disabled={isLoading}
-                  style={{
-                    background: activeDemo === account.type
-                      ? `rgba(${account.accentColor === '#00B14F' ? '0,177,79' : account.accentColor === '#7B1FA2' ? '123,31,162' : account.accentColor === '#FF6B35' ? '255,107,53' : account.accentColor === '#2196F3' ? '33,150,243' : '255,152,0'},0.15)`
-                      : 'rgba(255,255,255,0.05)',
-                    border: `1px solid ${activeDemo === account.type ? account.accentColor : 'rgba(255,255,255,0.1)'}`,
-                    borderRadius: '10px',
-                    padding: `${spacing[3]} ${spacing[3]}`,
-                    cursor: isLoading ? 'not-allowed' : 'pointer',
-                    textAlign: 'left',
-                    transition: 'all 0.15s ease',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: spacing[2],
-                    opacity: isLoading && activeDemo !== account.type ? 0.5 : 1,
-                  }}
-                  onMouseEnter={e => {
-                    if (!isLoading) e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
-                  }}
-                  onMouseLeave={e => {
-                    if (activeDemo !== account.type) e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
-                  }}
-                >
-                  <account.Icon style={{ color: account.accentColor, fontSize: '20px', flexShrink: 0 }} />
-                  <div>
-                    <div style={{ fontSize: '12px', fontWeight: '700', color: '#fff', lineHeight: 1.2 }}>
-                      {account.type}
-                    </div>
-                    <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.45)', marginTop: '2px' }}>
-                      {account.description}
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Feature list */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[2] }}>
-            {features.map(({ Icon, text }) => (
-              <div key={text} style={{
-                display: 'flex', alignItems: 'center', gap: spacing[3],
-                fontSize: '13px', color: 'rgba(255,255,255,0.5)', fontWeight: '500',
-              }}>
-                <Icon style={{ fontSize: '16px', color: 'rgba(255,255,255,0.3)', flexShrink: 0 }} />
-                <span>{text}</span>
-              </div>
-            ))}
-          </div>
+  return <StaffAccessLayout compact={sessionExpired}>
+    {sessionExpired ? <div className="staff-access__notice" role="status">
+      <Clock size={24} aria-hidden="true" />
+      <div><h1>Session expired</h1><p>Please sign in again to continue where you left off.</p></div>
+    </div> : <><h1>Staff sign in</h1><p className="staff-access__intro">Access your store to manage orders, menu, and operations.</p></>}
+    <form onSubmit={handleSubmit} noValidate aria-busy={busy}>
+      <div className="staff-access__field">
+        <label htmlFor="staff-email">Email</label>
+        <div className="staff-access__input-wrap">
+          <Mail className="staff-access__input-icon" size={18} aria-hidden="true" />
+          <input id="staff-email" ref={emailRef} type="email" autoComplete="username" required
+            placeholder="name@restaurant.example" value={email} disabled={busy}
+            aria-invalid={!!fieldErrors.email} aria-describedby={fieldErrors.email ? 'staff-email-error' : undefined}
+            onChange={event => { setEmail(event.target.value); setFieldErrors(prev => ({ ...prev, email: '' })); setError(''); }} />
         </div>
-
-        {/* ─── RIGHT: Login Form ─────────────────────────────────── */}
-        <div style={rightPanelStyles}>
-
-          {!showForgotPassword ? (
-            <>
-              <div style={{ marginBottom: spacing[8] }}>
-                <h2 style={{
-                  fontSize: typography.fontSize['3xl'],
-                  fontWeight: typography.fontWeight.extrabold,
-                  color: colors.text.primary,
-                  margin: `0 0 ${spacing[2]} 0`,
-                }}>
-                  Sign In
-                </h2>
-                <p style={{ color: colors.text.secondary, fontSize: typography.fontSize.base, margin: 0 }}>
-                  Access your MaSoVa management account
-                </p>
-              </div>
-
-              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: spacing[6] }}>
-                {error && <div style={errorMessageStyles}>{error}</div>}
-
-                <Input
-                  type="email"
-                  name="email"
-                  label="Email Address"
-                  placeholder="Enter your work email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  disabled={isLoading}
-                  size="lg"
-                  state={error && !formData.email ? 'error' : 'default'}
-                />
-
-                <Input
-                  type="password"
-                  name="password"
-                  label="Password"
-                  placeholder="Enter your password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  disabled={isLoading}
-                  size="lg"
-                  state={error && formData.password.length < 6 ? 'error' : 'default'}
-                  showPasswordToggle
-                />
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Checkbox
-                    label="Remember me"
-                    checked={formData.rememberMe}
-                    onChange={(e) => setFormData(prev => ({ ...prev, rememberMe: e.target.checked }))}
-                    disabled={isLoading}
-                    size="base"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => { setShowForgotPassword(true); setError(''); }}
-                    style={{
-                      background: 'none', border: 'none',
-                      color: colors.brand.primary,
-                      cursor: 'pointer',
-                      fontSize: typography.fontSize.sm,
-                      fontWeight: typography.fontWeight.semibold,
-                      padding: 0,
-                    }}
-                  >
-                    Forgot password?
-                  </button>
-                </div>
-
-                <Button
-                  type="submit"
-                  variant="primary"
-                  size="xl"
-                  isLoading={isLoading}
-                  disabled={isLoading}
-                  fullWidth
-                >
-                  {isLoading ? 'Signing In...' : 'Sign In to Store'}
-                </Button>
-              </form>
-
-              <div style={{
-                marginTop: spacing[6],
-                textAlign: 'center',
-                fontSize: typography.fontSize.sm,
-                color: colors.text.tertiary,
-              }}>
-                Click any demo role on the left for instant access
-              </div>
-            </>
-          ) : forgotSubmitted ? (
-            /* ── Forgot password: success state ── */
-            <div style={{ textAlign: 'center', padding: `${spacing[8]} 0` }}>
-              <div style={{
-                width: '64px', height: '64px',
-                borderRadius: '50%',
-                background: `${colors.semantic.success}22`,
-                border: `2px solid ${colors.semantic.success}`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                margin: `0 auto ${spacing[5]}`,
-              }}>
-                <span style={{ fontSize: '28px', color: colors.semantic.success, lineHeight: 1 }}>✓</span>
-              </div>
-              <h3 style={{ margin: `0 0 ${spacing[2]} 0`, color: colors.text.primary, fontWeight: '700' }}>
-                Check your email
-              </h3>
-              <p style={{ color: colors.text.secondary, marginBottom: spacing[8], fontSize: typography.fontSize.sm }}>
-                If <strong>{forgotEmail}</strong> has an account, a reset link has been sent.
-              </p>
-              <Button
-                variant="secondary"
-                onClick={() => { setShowForgotPassword(false); setForgotSubmitted(false); setForgotEmail(''); }}
-              >
-                Back to login
-              </Button>
-            </div>
-          ) : (
-            /* ── Forgot password: email input ── */
-            <div>
-              <button
-                type="button"
-                onClick={() => { setShowForgotPassword(false); setError(''); }}
-                style={{
-                  background: 'none', border: 'none',
-                  color: colors.text.secondary,
-                  cursor: 'pointer',
-                  fontSize: typography.fontSize.sm,
-                  padding: 0,
-                  display: 'flex', alignItems: 'center', gap: spacing[1],
-                  marginBottom: spacing[6],
-                }}
-              >
-                ← Back
-              </button>
-              <h2 style={{ margin: `0 0 ${spacing[2]} 0`, fontWeight: '800', color: colors.text.primary }}>
-                Reset Password
-              </h2>
-              <p style={{ color: colors.text.secondary, marginBottom: spacing[8], fontSize: typography.fontSize.sm }}>
-                Enter your email and we'll send a reset link.
-              </p>
-
-              {error && <div style={errorMessageStyles}>{error}</div>}
-
-              <Input
-                type="email"
-                label="Email Address"
-                placeholder="your@email.com"
-                value={forgotEmail}
-                onChange={e => { setForgotEmail(e.target.value); if (error) setError(''); }}
-                size="lg"
-              />
-
-              <div style={{ display: 'flex', gap: spacing[3], marginTop: spacing[6] }}>
-                <Button
-                  variant="secondary"
-                  onClick={() => { setShowForgotPassword(false); setError(''); }}
-                >
-                  Cancel
-                </Button>
-                <Button variant="primary" onClick={handleForgotPassword} fullWidth>
-                  Send Reset Link
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
+        {fieldErrors.email && <p className="staff-access__field-error" id="staff-email-error">{fieldErrors.email}</p>}
       </div>
-
-      <style>{`
-        @keyframes slideIn {
-          from { opacity: 0; transform: translateY(20px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-
-        @media (max-width: 768px) {
-          .login-grid { grid-template-columns: 1fr !important; }
-        }
-      `}</style>
-    </div>
-  );
-};
-
-export default LoginPage;
+      <div className="staff-access__field">
+        <label htmlFor="staff-password">Password</label>
+        <div className="staff-access__input-wrap">
+          <LockKeyhole className="staff-access__input-icon" size={18} aria-hidden="true" />
+          <input id="staff-password" ref={passwordRef} type={showPassword ? 'text' : 'password'} autoComplete="current-password"
+            required minLength={6} maxLength={50} placeholder="Your password" value={password} disabled={busy}
+            aria-invalid={!!fieldErrors.password} aria-describedby={fieldErrors.password ? 'staff-password-error' : undefined}
+            onChange={event => { setPassword(event.target.value); setFieldErrors(prev => ({ ...prev, password: '' })); setError(''); }} />
+          <button className="staff-access__password-toggle" type="button" disabled={busy}
+            aria-label={showPassword ? 'Hide password' : 'Show password'} aria-pressed={showPassword}
+            onClick={() => setShowPassword(value => !value)}>
+            {showPassword ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
+          </button>
+        </div>
+        {fieldErrors.password && <p className="staff-access__field-error" id="staff-password-error">{fieldErrors.password}</p>}
+      </div>
+      <div className="staff-access__options">
+        <label className="staff-access__remember"><input type="checkbox" checked={rememberMe} disabled={busy}
+          onChange={event => setRememberMe(event.target.checked)} />Remember me</label>
+        <button className="staff-access__text-button" type="button" disabled={busy}
+          aria-expanded={showRecovery} aria-controls="staff-recovery" onClick={() => setShowRecovery(value => !value)}>Forgot password?</button>
+      </div>
+      {error && <div className="staff-access__notice" role="alert"><AlertCircle size={20} aria-hidden="true" /><p>{error}</p></div>}
+      <button className="staff-access__submit" type="submit" disabled={busy}><span>{busy ? 'Signing in…' : 'Sign in'}</span></button>
+    </form>
+    {showRecovery && <div id="staff-recovery" className="staff-access__recovery" role="status">
+      Password recovery is not available here. Please contact your manager for help accessing your account.
+    </div>}
+  </StaffAccessLayout>;
+}

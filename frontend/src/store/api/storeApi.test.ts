@@ -4,6 +4,7 @@ import { http, HttpResponse } from 'msw';
 import { server } from '../../test/mocks/server';
 import { DefaultTestWrapper } from '../../test/TestWrapper';
 import {
+  useCheckDeliveryRadiusQuery,
   storeApi,
   useGetStoreQuery,
   useGetStoreByCodeQuery,
@@ -230,6 +231,28 @@ describe('storeApi', () => {
       });
 
       await waitFor(() => expect(result.current.isError).toBe(true));
+    });
+  });
+
+  describe('delivery area check', () => {
+    const inRange = [{ id: 'mongo-1', storeCode: 'DOM001', name: 'Berlin', operatingConfig: { deliveryRadiusKm: 8.5 } }];
+
+    it('treats a store in the server list as in range, matched by store code or id', async () => {
+      server.use(http.get(`${API}/stores`, () => HttpResponse.json(inRange)));
+      const byCode = renderHook(() => useCheckDeliveryRadiusQuery({ storeId: 'DOM001', latitude: 52.52, longitude: 13.39 }), { wrapper: DefaultTestWrapper });
+      await waitFor(() => expect(byCode.result.current.isSuccess).toBe(true));
+      expect(byCode.result.current.data).toMatchObject({ withinRadius: true, deliveryRadiusKm: 8.5 });
+      const byId = renderHook(() => useCheckDeliveryRadiusQuery({ storeId: 'mongo-1', latitude: 52.52, longitude: 13.38 }), { wrapper: DefaultTestWrapper });
+      await waitFor(() => expect(byId.result.current.isSuccess).toBe(true));
+      expect(byId.result.current.data?.withinRadius).toBe(true);
+    });
+
+    it('treats a store missing from the server list as out of range, with no radius figure', async () => {
+      server.use(http.get(`${API}/stores`, () => HttpResponse.json(inRange)));
+      const { result } = renderHook(() => useCheckDeliveryRadiusQuery({ storeId: 'DOM002', latitude: 52.52, longitude: 13.37 }), { wrapper: DefaultTestWrapper });
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+      expect(result.current.data?.withinRadius).toBe(false);
+      expect(result.current.data?.deliveryRadiusKm).toBeUndefined();
     });
   });
 });

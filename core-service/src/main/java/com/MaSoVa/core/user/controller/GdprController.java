@@ -78,7 +78,7 @@ public class GdprController {
      * Replaces: /consent/grant
      */
     @PostMapping("/consent")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasRole('MANAGER') or #request.userId == authentication.name")
     @Operation(summary = "Grant consent")
     public ResponseEntity<?> grantConsent(
             @Valid @RequestBody GdprConsentRequest request,
@@ -103,7 +103,7 @@ public class GdprController {
      * Replaces: /consent/revoke
      */
     @DeleteMapping("/consent")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasRole('MANAGER') or #body['userId'] == authentication.name")
     @Operation(summary = "Revoke consent (body: userId, consentType)")
     public ResponseEntity<?> revokeConsent(
             @RequestBody Map<String, String> body,
@@ -114,6 +114,11 @@ public class GdprController {
             GdprConsent consent = consentService.revokeConsent(
                     userId, consentType, getClientIp(httpRequest), httpRequest.getHeader("User-Agent"));
             return ResponseEntity.ok(consent);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Unknown consent type"));
+        } catch (IllegalStateException e) {
+            // Nothing to revoke: the consent was never granted or is already revoked.
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
         } catch (Exception e) {
             log.error("Error revoking consent", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", e.getMessage()));
@@ -127,7 +132,7 @@ public class GdprController {
      * Replaces: /request (POST)
      */
     @PostMapping("/request")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasRole('MANAGER') or #request.userId == authentication.name")
     @Operation(summary = "Submit GDPR request (body: userId, requestType=access|erasure|portability|rectification, reason)")
     public ResponseEntity<?> createRequest(
             @Valid @RequestBody GdprDataRequestDto request,

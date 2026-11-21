@@ -35,6 +35,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.mockito.ArgumentMatchers.any;
@@ -115,7 +116,7 @@ class OrderServiceCreateOrderTest {
 
         // Stub menu client to pass validation (fails-open, but explicit here for clarity)
         when(menuServiceClient.isMenuItemAvailable(anyString())).thenReturn(true);
-        when(menuServiceClient.validatePrice(anyString(), anyDouble())).thenReturn(true);
+        when(menuServiceClient.validatePrice(anyString(), anyDouble(), nullable(String.class), nullable(java.util.List.class), any(com.MaSoVa.shared.entity.Store.class))).thenReturn(true);
 
         // Stub storeServiceClient.getStore() to return an India store (null countryCode → GST path)
         when(storeServiceClient.getStore(anyString())).thenReturn(new Store());

@@ -70,6 +70,14 @@ public class PaymentController {
     public ResponseEntity<PaymentResponse> initiate(@Valid @RequestBody InitiatePaymentRequest request) {
         try {
             return ResponseEntity.ok(paymentService.initiatePayment(request));
+        } catch (AccessDeniedException e) {
+            // commerce-service refused the caller this order (not theirs, or another store's)
+            log.warn("Error initiating payment for order {}: {}", request.getOrderId(), e.getMessage());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        } catch (org.springframework.web.client.RestClientException e) {
+            // The order total could not be read from commerce-service; nothing was charged
+            log.error("Error initiating payment for order {}: commerce-service unavailable", request.getOrderId(), e);
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build();
         } catch (Exception e) {
             log.error("Error initiating payment", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -94,6 +102,14 @@ public class PaymentController {
     public ResponseEntity<PaymentResponse> cash(@Valid @RequestBody InitiatePaymentRequest request) {
         try {
             return ResponseEntity.ok(paymentService.recordCashPayment(request));
+        } catch (AccessDeniedException e) {
+            // commerce-service refused the caller this order (not theirs, or another store's)
+            log.warn("Error recording cash payment for order {}: {}", request.getOrderId(), e.getMessage());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        } catch (org.springframework.web.client.RestClientException e) {
+            // The order total could not be read from commerce-service; nothing was charged
+            log.error("Error recording cash payment for order {}: commerce-service unavailable", request.getOrderId(), e);
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build();
         } catch (Exception e) {
             log.error("Error recording cash payment", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();

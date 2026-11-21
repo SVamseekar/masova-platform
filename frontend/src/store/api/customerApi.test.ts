@@ -5,6 +5,7 @@ import {
   customerApi,
   useCreateCustomerMutation,
   useGetOrCreateCustomerMutation,
+  useEnsureMyCustomerProfileMutation,
   useGetCustomerByIdQuery,
   useGetCustomerByUserIdQuery,
   useGetCustomerByEmailQuery,
@@ -38,6 +39,8 @@ import {
   useDeleteCustomerMutation,
 } from './customerApi';
 import { TEST_API_BASE } from '../../test/testApiBase';
+import { http, HttpResponse } from 'msw';
+import { server } from '../../test/mocks/server';
 
 const API = TEST_API_BASE;
 
@@ -260,6 +263,28 @@ describe('customerApi', () => {
       getOrCreate({ userId: '1', name: 'Customer', email: 'test@example.com', phone: '555-0123' });
 
       await waitFor(() => expect(result.current[1].isSuccess).toBe(true));
+    });
+
+    it('ensures the signed-in customer profile via POST /customers/me, not the gateway-blocked get-or-create', async () => {
+      let seen: { url: string; body: unknown } | null = null;
+      server.use(
+        http.post(`${API}/customers/me`, async ({ request }) => {
+          seen = { url: request.url, body: await request.json() };
+          return HttpResponse.json({ id: 'cust-1', userId: '1' });
+        }),
+      );
+
+      const { result } = renderHook(() => useEnsureMyCustomerProfileMutation(), {
+        wrapper: DefaultTestWrapper,
+      });
+
+      const [ensure] = result.current;
+      ensure({ storeId: 'store-1' });
+
+      await waitFor(() => expect(result.current[1].isSuccess).toBe(true));
+      expect(seen).not.toBeNull();
+      expect(new URL(seen!.url).pathname).toMatch(/\/customers\/me$/);
+      expect(seen!.body).toEqual({ storeId: 'store-1' });
     });
 
     it('should update a customer', async () => {

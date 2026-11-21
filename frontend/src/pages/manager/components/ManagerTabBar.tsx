@@ -16,7 +16,7 @@ export interface ManagerTabBarProps {
 
 /**
  * Single shared tab bar for manager shell sections (Orders / Inventory / …).
- * Pill container + manager-tokens — matches Dashboard/Orders chrome.
+ * Underline tabs on a hairline rule, per the approved manager boards.
  */
 export const ManagerTabBar: React.FC<ManagerTabBarProps> = ({
   tabs,
@@ -30,13 +30,10 @@ export const ManagerTabBar: React.FC<ManagerTabBarProps> = ({
     data-testid="manager-tab-bar"
     style={{
       display: 'flex',
-      gap: 6,
+      gap: 0,
       marginBottom: 0,
-      background: t.bgMain,
-      padding: 6,
-      borderRadius: t.radius.md,
-      width: 'fit-content',
-      maxWidth: '100%',
+      borderBottom: `1px solid ${t.grayLight}`,
+      width: '100%',
       flexWrap: 'wrap',
       boxSizing: 'border-box',
     }}

@@ -45,6 +45,18 @@ public class PaymentGatewayResolver {
     }
 
     /**
+     * Resolve by the order's currency: INR orders go to Razorpay, every other currency to Stripe.
+     * The order's currency comes from its store, so this matches the store's country routing
+     * without trusting a country code sent by the client.
+     */
+    public PaymentGateway resolveForCurrency(String currency) {
+        if (currency == null || currency.isBlank() || "INR".equalsIgnoreCase(currency.trim())) {
+            return razorpayGateway;
+        }
+        return stripeGateway;
+    }
+
+    /**
      * Resolve by stored transaction gateway name ({@code STRIPE} / {@code RAZORPAY}).
      * Unknown or blank names default to Razorpay for India-legacy rows.
      */

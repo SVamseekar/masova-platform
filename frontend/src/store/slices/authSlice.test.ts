@@ -22,6 +22,12 @@ vi.mock('../api/authApi', () => ({
       logout: {
         matchFulfilled: () => false,
       },
+      googleLogin: {
+        matchFulfilled: (action: { type: string }) => action.type === 'test/googleLoginFulfilled',
+      },
+      googleRegister: {
+        matchFulfilled: (action: { type: string }) => action.type === 'test/googleRegisterFulfilled',
+      },
     },
   },
 }));
@@ -142,6 +148,16 @@ describe('authSlice', () => {
       );
 
       expect(localStorage.setItem).toHaveBeenCalledWith('auth_accessToken', 'token');
+    });
+  });
+
+  describe('Google sign-in and sign-up', () => {
+    it.each(['test/googleLoginFulfilled', 'test/googleRegisterFulfilled'])('signs the customer in on %s', (type) => {
+      const user = { id: 'u1', name: 'Anna', email: 'anna@example.com', type: 'CUSTOMER' };
+      const state = authReducer(undefined, { type, payload: { accessToken: 'access', refreshToken: 'refresh', user } });
+      expect(state.isAuthenticated).toBe(true);
+      expect(state.accessToken).toBe('access');
+      expect(state.user).toEqual(user);
     });
   });
 

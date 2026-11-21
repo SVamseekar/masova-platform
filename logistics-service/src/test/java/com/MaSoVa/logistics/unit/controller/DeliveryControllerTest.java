@@ -23,6 +23,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -226,6 +227,42 @@ class DeliveryControllerTest extends BaseServiceTest {
             mockMvc.perform(get("/api/delivery/track/order-1"))
                 .andExpect(status().isOk());
         }
+
+        @Test
+        @DisplayName("does not return the driver's phone number or id")
+        void hidesDriverContact() throws Exception {
+            TrackingResponse tracking = TrackingResponse.builder()
+                .orderId("order-1")
+                .driver(TrackingResponse.DriverInfo.builder().driverId("driver-1").driverName("Jonas K.").driverPhone("+491511000005").build())
+                .build();
+            when(liveTrackingService.getOrderTracking("order-1")).thenReturn(tracking);
+
+            mockMvc.perform(get("/api/delivery/track/order-1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.driver.driverName").value("Jonas K."))
+                .andExpect(jsonPath("$.driver.driverPhone").doesNotExist())
+                .andExpect(jsonPath("$.driver.driverId").doesNotExist());
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /api/delivery/orders/{orderId}/tracking")
+    class TrackOrderForStaff {
+
+        @Test
+        @DisplayName("returns the driver's contact details to staff of the caller's store")
+        void returnsDriverContact() throws Exception {
+            TrackingResponse tracking = TrackingResponse.builder()
+                .orderId("order-1")
+                .driver(TrackingResponse.DriverInfo.builder().driverId("driver-1").driverName("Jonas K.").driverPhone("+491511000005").build())
+                .build();
+            when(liveTrackingService.getOrderTrackingForStore("order-1", "DOM001")).thenReturn(tracking);
+
+            mockMvc.perform(get("/api/delivery/orders/order-1/tracking")
+                    .header("X-User-Type", "MANAGER").header("X-User-Store-Id", "DOM001").header("X-Selected-Store-Id", "DOM001"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.driver.driverPhone").value("+491511000005"));
+        }
     }
 
     @Nested
@@ -290,8 +327,54 @@ class DeliveryControllerTest extends BaseServiceTest {
         void returns200() throws Exception {
             when(proofOfDeliveryService.generateDeliveryOtp("order-1")).thenReturn("4321");
 
-            mockMvc.perform(post("/api/delivery/order-1/otp"))
+            mockMvc.perform(post("/api/delivery/order-1/otp")
+                    .header("X-User-Type", "DRIVER"))
                 .andExpect(status().isOk());
+        }
+
+        @Test
+        @DisplayName("CUSTOMER never replaces the OTP; the owner gets the OTP issued at dispatch")
+        void customerReadsExistingOtpWithoutRegenerating() throws Exception {
+            when(proofOfDeliveryService.findDeliveryOtpForCaller("order-1")).thenReturn(Optional.of("4321"));
+
+            mockMvc.perform(post("/api/delivery/order-1/otp")
+                    .header("X-User-Type", "CUSTOMER")
+                    .header("X-User-Id", "cust-1"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("4321")));
+
+            verify(proofOfDeliveryService, org.mockito.Mockito.never()).generateDeliveryOtp(anyString());
+        }
+
+        @Test
+        @DisplayName("a CUSTOMER-role caller with a blank X-User-Type still cannot regenerate the OTP")
+        void customerAuthorityWithoutHeaderCannotRegenerate() throws Exception {
+            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                    new org.springframework.security.authentication.UsernamePasswordAuthenticationToken("cust-1", null,
+                            List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_CUSTOMER"))));
+            try {
+                when(proofOfDeliveryService.findDeliveryOtpForCaller("order-1")).thenReturn(Optional.of("4321"));
+
+                mockMvc.perform(post("/api/delivery/order-1/otp").header("X-User-Type", ""))
+                    .andExpect(status().isOk());
+
+                verify(proofOfDeliveryService, org.mockito.Mockito.never()).generateDeliveryOtp(anyString());
+            } finally {
+                org.springframework.security.core.context.SecurityContextHolder.clearContext();
+            }
+        }
+
+        @Test
+        @DisplayName("CUSTOMER gets 409 when no OTP has been issued yet")
+        void customerWithoutIssuedOtpGets409() throws Exception {
+            when(proofOfDeliveryService.findDeliveryOtpForCaller("order-1")).thenReturn(Optional.empty());
+
+            mockMvc.perform(post("/api/delivery/order-1/otp")
+                    .header("X-User-Type", "CUSTOMER")
+                    .header("X-User-Id", "cust-1"))
+                .andExpect(status().isConflict());
+
+            verify(proofOfDeliveryService, org.mockito.Mockito.never()).generateDeliveryOtp(anyString());
         }
     }
 

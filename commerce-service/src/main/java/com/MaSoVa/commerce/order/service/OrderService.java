@@ -47,6 +47,7 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.security.SecureRandom;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.Comparator;
 
@@ -121,13 +122,35 @@ public class OrderService {
         this.orderPostgresOutboxRepository = orderPostgresOutboxRepository;
     }
 
+    /**
+     * The built-in delivery fee defaults are INR amounts. They only apply to stores that bill in INR
+     * (or legacy stores with no currency/country configured).
+     */
+    private static boolean usesLegacyInrDeliveryDefaults(Store store) {
+        if (store.getCurrency() != null) {
+            return "INR".equalsIgnoreCase(store.getCurrency());
+        }
+        return store.getCountryCode() == null || "IN".equalsIgnoreCase(store.getCountryCode());
+    }
+
     @Transactional
     @CacheEvict(value = "salesMetrics", allEntries = true)
     public Order createOrder(CreateOrderRequest request) {
         log.info("Creating new order for customer: {}", request.getCustomerName());
 
+        // Global-2: Route to EU VAT engine for non-India stores, GST for India stores.
+        // getStore() never throws (it catches its own errors and returns null), so a null result
+        // is the only failure signal here.
+        Store store = storeServiceClient.getStore(request.getStoreId());
+        if (store == null) {
+            // Can't tell an EU store from an India one when the lookup fails — defaulting to
+            // INR/GST here would silently mis-tax and mis-bill a real EU store's order (#125).
+            throw new BusinessException("STORE_LOOKUP_FAILED",
+                    "Could not verify store " + request.getStoreId() + " for tax and currency routing; order rejected");
+        }
+
         // Validate stock availability and pricing
-        validateOrderItems(request.getItems());
+        validateOrderItems(request.getItems(), store);
 
         // Convert request items to order items
         List<OrderItem> orderItems = request.getItems().stream()
@@ -139,6 +162,7 @@ public class OrderService {
                         .variant(item.getVariant())
                         .customizations(item.getCustomizations())
                         .category(item.getCategory())
+                        .notes(item.getNotes() == null || item.getNotes().isBlank() ? null : item.getNotes().trim())
                         .build())
                 .collect(Collectors.toList());
 
@@ -175,31 +199,36 @@ public class OrderService {
                     request.getDeliveryAddress().getLongitude()
                 );
 
+                if (!feeResult.isSuccess()) {
+                    // Logistics refused to price this address (e.g. outside every zone) — never treat that as free delivery.
+                    throw new BusinessException("DELIVERY_FEE_UNAVAILABLE",
+                            "Delivery cannot be priced for this address: " + feeResult.getError());
+                }
+                if (feeResult.isUsedDefault() && !usesLegacyInrDeliveryDefaults(store)) {
+                    // The built-in default fee is an INR amount; charging it in another currency mis-bills the order.
+                    throw new BusinessException("DELIVERY_FEE_UNAVAILABLE",
+                            "Delivery fee could not be calculated for store " + request.getStoreId()
+                                    + "; order rejected. Try again or choose pickup.");
+                }
+
                 deliveryFee = feeResult.getDeliveryFee();
                 estimatedDeliveryMinutes = feeResult.getEstimatedMinutes();
 
                 if (feeResult.isUsedDefault()) {
                     log.warn("Using default delivery fee for order - {}", feeResult.getError());
                 } else {
-                    log.info("Delivery fee calculated: ₹{} (Zone: {}, Distance: {} km)",
+                    log.info("Delivery fee calculated: {} (Zone: {}, Distance: {} km)",
                             deliveryFee, feeResult.getZoneName(), feeResult.getDistanceKm());
                 }
-            } else {
+            } else if (usesLegacyInrDeliveryDefaults(store)) {
                 // Fallback if address coordinates are missing - use base fee from configuration
                 deliveryFee = deliveryFeeConfiguration.getBaseFee();
                 log.warn("Delivery address coordinates missing, using fallback base fee: ₹{}", deliveryFee);
+            } else {
+                // Zone pricing needs a located address; the INR base fee must not be billed in another currency.
+                throw new BusinessException("DELIVERY_ADDRESS_NOT_LOCATED",
+                        "Delivery address could not be located to price delivery. Select the address from the suggestions or choose pickup.");
             }
-        }
-
-        // Global-2: Route to EU VAT engine for non-India stores, GST for India stores.
-        // getStore() never throws (it catches its own errors and returns null), so a null result
-        // is the only failure signal here.
-        Store store = storeServiceClient.getStore(request.getStoreId());
-        if (store == null) {
-            // Can't tell an EU store from an India one when the lookup fails — defaulting to
-            // INR/GST here would silently mis-tax and mis-bill a real EU store's order (#125).
-            throw new BusinessException("STORE_LOOKUP_FAILED",
-                    "Could not verify store " + request.getStoreId() + " for tax and currency routing; order rejected");
         }
 
         String countryCode = store.getCountryCode();
@@ -234,6 +263,11 @@ public class OrderService {
             tax = taxConfiguration.calculateTax(subtotal, state, true);
             total = subtotal + deliveryFee + tax;
             log.debug("India GST applied for state={}: tax={}", state, tax);
+        }
+
+        // Defence in depth behind the request validation: an order must cost something
+        if (!(total > 0)) {
+            throw new IllegalArgumentException("Order total must be greater than zero");
         }
 
         // Generate unique order number
@@ -450,16 +484,30 @@ public class OrderService {
      * Security remediation Task 6 — throws 403 when {@code customerId} does not match
      * {@code order.customerId}.
      */
+    /**
+     * Whether the authenticated user may act for the given order customer id: either the id is the
+     * user's own id, or it is one of the user's customer profiles (what the ordering clients send).
+     */
+    public boolean callerOwnsCustomerId(String callerUserId, String orderCustomerId) {
+        if (callerUserId == null || callerUserId.isBlank() || orderCustomerId == null) {
+            return false;
+        }
+        return orderCustomerId.equals(callerUserId)
+                || customerServiceClient.findCustomerIdsForUser(callerUserId).contains(orderCustomerId);
+    }
+
     public Order assertCustomerOwnsOrder(String orderId, String customerId) {
         Order order = getOrderById(orderId);
-        if (customerId == null || customerId.isBlank()
-                || order.getCustomerId() == null
-                || !order.getCustomerId().equals(customerId)) {
+        if (!callerOwnsCustomerId(customerId, order.getCustomerId())) {
             log.warn("Ownership violation: caller {} attempted to access order {} (owner={})",
                     customerId, orderId, order.getCustomerId());
             throw new AccessDeniedException("Cannot access an order you do not own");
         }
         return order;
+    }
+
+    public Optional<Order> findOrderByNumber(String orderNumber) {
+        return orderRepository.findByOrderNumber(orderNumber);
     }
 
     public Order getOrderByNumber(String orderNumber) {
@@ -851,6 +899,9 @@ public class OrderService {
         Order order = getOrderById(orderId);
         order.setPaymentStatus(paymentStatus);
         order.setPaymentTransactionId(transactionId);
+        if (paymentStatus == Order.PaymentStatus.PAID || paymentStatus == Order.PaymentStatus.REFUNDED) {
+            order.setPaymentReviewReason(null); // a matched payment or a refund settles any earlier review
+        }
 
         Order updatedOrder = orderRepository.save(order);
         syncToPostgres(updatedOrder);
@@ -867,7 +918,8 @@ public class OrderService {
      * Applies a payment status from payment-service. Idempotent and safe for out-of-order delivery:
      * REFUNDED is final, and a late FAILED never overrides PAID.
      */
-    public void applyPaymentStatusEvent(String orderId, String paymentStatus, String transactionId) {
+    public void applyPaymentStatusEvent(String orderId, String paymentStatus, String transactionId,
+                                        BigDecimal paidAmount, String paidCurrency) {
         Order.PaymentStatus target = Order.PaymentStatus.valueOf(paymentStatus);
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new AmqpRejectAndDontRequeueException("Order not found: " + orderId));
@@ -878,7 +930,52 @@ public class OrderService {
             log.info("Order {} payment status stays {} (event wanted {})", orderId, current, target);
             return;
         }
+        if (target == Order.PaymentStatus.PAID) {
+            String mismatch = chargeMismatch(order, paidAmount, paidCurrency);
+            if (mismatch != null) {
+                flagPaymentForReview(order, transactionId, mismatch);
+                return;
+            }
+        }
         updatePaymentStatus(orderId, target, transactionId);
+    }
+
+    /**
+     * The browser chooses the amount it sends to payment-service, so an order only becomes PAID when
+     * the charge equals the order's own total and currency, compared at two decimals.
+     *
+     * @return why the charge does not match, or null when it does
+     */
+    static String chargeMismatch(Order order, BigDecimal paidAmount, String paidCurrency) {
+        // Orders without a currency predate Global-3 and are India (INR) orders.
+        String orderCurrency = order.getCurrency() != null ? order.getCurrency() : "INR";
+        BigDecimal orderTotal = order.getTotal();
+        if (paidAmount == null || paidCurrency == null) {
+            return "Payment event carried no amount or currency, so it could not be checked against the order total "
+                    + orderTotal + " " + orderCurrency;
+        }
+        if (orderTotal == null) {
+            return "Order has no total to check the charged " + paidAmount + " " + paidCurrency + " against";
+        }
+        boolean matches = paidAmount.setScale(2, java.math.RoundingMode.HALF_UP)
+                .compareTo(orderTotal.setScale(2, java.math.RoundingMode.HALF_UP)) == 0
+                && paidCurrency.equalsIgnoreCase(orderCurrency);
+        return matches ? null : "Charged " + paidAmount + " " + paidCurrency
+                + " but the order total is " + orderTotal + " " + orderCurrency;
+    }
+
+    /**
+     * Keeps the order unpaid, records why on the order and tells the store, so staff can refund or
+     * re-charge. The event is consumed: a dead-letter queue nobody watches would hide a charged customer.
+     */
+    private void flagPaymentForReview(Order order, String transactionId, String reason) {
+        log.error("Order {} not marked PAID, needs payment review (transaction {}): {}",
+                order.getId(), transactionId, reason);
+        order.setPaymentTransactionId(transactionId);
+        order.setPaymentReviewReason(reason);
+        Order saved = orderRepository.save(order);
+        syncToPostgres(saved);
+        webSocketController.sendKitchenQueueUpdate(saved.getStoreId(), saved);
     }
 
     @Transactional
@@ -1067,7 +1164,7 @@ public class OrderService {
         }
     }
 
-    private void validateOrderItems(List<CreateOrderRequest.OrderItemRequest> items) {
+    private void validateOrderItems(List<CreateOrderRequest.OrderItemRequest> items, Store store) {
         for (CreateOrderRequest.OrderItemRequest item : items) {
             // Validate menuItemId is present
             if (item.getMenuItemId() == null || item.getMenuItemId().trim().isEmpty()) {
@@ -1085,7 +1182,8 @@ public class OrderService {
             }
 
             // Validate pricing
-            if (!menuServiceClient.validatePrice(item.getMenuItemId(), item.getPrice())) {
+            if (!menuServiceClient.validatePrice(item.getMenuItemId(), item.getPrice(),
+                    item.getVariant(), item.getCustomizations(), store)) {
                 throw new RuntimeException(
                     String.format("Invalid price for menu item '%s'", item.getName())
                 );

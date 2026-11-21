@@ -139,7 +139,10 @@ public class OrderPaymentSyncRelay {
 
     private void publish(Transaction transaction, OrderPaymentSync sync) throws Exception {
         OrderPaymentStatusEvent event = new OrderPaymentStatusEvent(
-                sync.getEventId(), transaction.getOrderId(), transaction.getId(), sync.getPaymentStatus());
+                sync.getEventId(), transaction.getOrderId(), transaction.getId(), sync.getPaymentStatus(),
+                transaction.getAmount(),
+                // Transactions without a currency predate Global-3 and are India (INR) payments.
+                transaction.getCurrency() != null ? transaction.getCurrency() : "INR");
         CorrelationData correlation = new CorrelationData(sync.getEventId());
         rabbitTemplate.convertAndSend(MaSoVaRabbitMQConfig.PAYMENTS_EXCHANGE,
                 MaSoVaRabbitMQConfig.ORDER_PAYMENT_STATUS_KEY, event, correlation);

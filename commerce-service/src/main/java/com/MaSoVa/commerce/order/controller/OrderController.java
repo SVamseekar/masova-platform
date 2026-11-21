@@ -168,27 +168,25 @@ public class OrderController {
             @RequestParam(name = "size", required = false) Integer size,
             HttpServletRequest request) {
 
+        String userType = StoreContextUtil.getUserTypeFromHeaders(request);
+        if (requiresCustomerOwnership(userType)) {
+            return ResponseEntity.ok(getOwnOrders(customerId, number, request));
+        }
+
         String resolvedStoreId = validateAndGetStoreId(request, storeId);
         int pageNum = page == null ? DEFAULT_PAGE : page;
         int pageSize = size == null ? DEFAULT_PAGE_SIZE : size;
         boolean paginate = page != null || size != null;
 
         if (number != null) {
-            return ResponseEntity.ok(orderService.getOrderByNumber(number));
+            Order order = orderService.getOrderByNumber(number);
+            enforceStaffStoreAccess(order, request);
+            return ResponseEntity.ok(order);
         }
         if (Boolean.TRUE.equals(kitchen)) {
             return ResponseEntity.ok(orderService.getKitchenQueue(resolvedStoreId));
         }
         if (customerId != null) {
-            String userType = StoreContextUtil.getUserTypeFromHeaders(request);
-            if (requiresCustomerOwnership(userType)) {
-                String callerId = StoreContextUtil.getUserIdFromHeaders(request);
-                if (callerId == null || !callerId.equals(customerId)) {
-                    log.warn("Cross-customer order list access attempt: caller={}, requestedCustomerId={}",
-                            callerId, customerId);
-                    throw new AccessDeniedException("Cannot access another customer's orders");
-                }
-            }
             return ResponseEntity.ok(orderService.getCustomerOrders(customerId));
         }
         if (search != null) {
@@ -211,6 +209,35 @@ public class OrderController {
         }
         // Default store list is always paged. Unbounded findByStoreId is tens of MB after horizon seed.
         return ResponseEntity.ok(orderService.getStoreOrdersPage(resolvedStoreId, pageNum, pageSize));
+    }
+
+    /**
+     * Customers may only read their own orders: by an owned customerId, or one owned order by number.
+     * Every store-wide filter (status, date, search, kitchen, or no filter) is denied.
+     */
+    private Object getOwnOrders(String customerId, String number, HttpServletRequest request) {
+        String callerId = StoreContextUtil.getUserIdFromHeaders(request);
+        if (number != null) {
+            // Same 404 for a missing order and another customer's order, so numbers cannot be probed
+            Order order = orderService.findOrderByNumber(number)
+                    .filter(found -> orderService.callerOwnsCustomerId(callerId, found.getCustomerId()))
+                    .orElseThrow(() -> {
+                        log.warn("Customer order number lookup found no owned order: caller={}, number={}",
+                                callerId, number);
+                        return new org.springframework.web.server.ResponseStatusException(HttpStatus.NOT_FOUND, "Order not found");
+                    });
+            return order;
+        }
+        if (customerId != null) {
+            if (!orderService.callerOwnsCustomerId(callerId, customerId)) {
+                log.warn("Cross-customer order list access attempt: caller={}, requestedCustomerId={}",
+                        callerId, customerId);
+                throw new AccessDeniedException("Cannot access another customer's orders");
+            }
+            return orderService.getCustomerOrders(customerId);
+        }
+        log.warn("Customer {} attempted a store-wide order listing", callerId);
+        throw new AccessDeniedException("Customers can only list their own orders");
     }
 
     // ── STATE MACHINE: explicit status transition (for KDS, staff) ────────────────
@@ -532,9 +559,16 @@ public class OrderController {
                 .body(Map.of("code", ex.getErrorCode(), "error", ex.getMessage()));
     }
 
+    @ExceptionHandler(org.springframework.web.server.ResponseStatusException.class)
+    public ResponseEntity<Map<String, String>> handleResponseStatus(org.springframework.web.server.ResponseStatusException ex) {
+        log.warn("Order request failed with {}: {}", ex.getStatusCode(), ex.getReason());
+        return ResponseEntity.status(ex.getStatusCode())
+                .body(Map.of("error", ex.getReason() != null ? ex.getReason() : "Request could not be completed"));
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, String>> handleRuntimeException(RuntimeException ex) {
         log.error("Error processing order request", ex);
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", ex.getMessage()));
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", ex.getMessage() != null ? ex.getMessage() : "Order request failed"));
     }
 }

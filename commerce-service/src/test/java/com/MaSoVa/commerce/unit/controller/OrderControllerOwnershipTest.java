@@ -154,6 +154,7 @@ class OrderControllerOwnershipTest extends BaseServiceTest {
     @Test
     @DisplayName("CUSTOMER can list own orders via ?customerId=")
     void customerCanListOwnOrders() throws Exception {
+        when(orderService.callerOwnsCustomerId("cust-1", "cust-1")).thenReturn(true);
         when(orderService.getCustomerOrders("cust-1")).thenReturn(List.of(buildOrder("o1", "cust-1", "store-a")));
 
         mockMvc.perform(get("/api/orders")
@@ -178,5 +179,86 @@ class OrderControllerOwnershipTest extends BaseServiceTest {
             .andExpect(status().isOk());
 
         verify(orderService).getCustomerOrders("cust-1");
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest(name = "CUSTOMER cannot list orders with ?{0}={1}")
+    @org.junit.jupiter.params.provider.CsvSource({
+            "search, pizza",
+            "status, RECEIVED",
+            "date, 2026-11-20",
+            "kitchen, true",
+            "startDate, 2026-11-01T00:00:00"
+    })
+    @DisplayName("CUSTOMER filters other than an owned customerId/number are denied")
+    void customerStoreWideFiltersDenied(String param, String value) throws Exception {
+        mockMvc.perform(get("/api/orders")
+                .param(param, value)
+                .param("endDate", "2026-11-30T00:00:00")
+                .header("X-User-Type", "CUSTOMER")
+                .header("X-User-Id", "cust-1")
+                .header("X-User-Store-Id", "store-a"))
+            .andExpect(status().isForbidden());
+
+        org.mockito.Mockito.verifyNoInteractions(orderService);
+    }
+
+    @Test
+    @DisplayName("CUSTOMER with no filter cannot list the store's orders")
+    void customerNoFilterDenied() throws Exception {
+        mockMvc.perform(get("/api/orders")
+                .header("X-User-Type", "CUSTOMER")
+                .header("X-User-Id", "cust-1")
+                .header("X-User-Store-Id", "store-a"))
+            .andExpect(status().isForbidden());
+
+        org.mockito.Mockito.verifyNoInteractions(orderService);
+    }
+
+    @Test
+    @DisplayName("CUSTOMER gets the same 404 for another customer's order number as for a missing one")
+    void customerOtherOrderByNumberDenied() throws Exception {
+        when(orderService.findOrderByNumber("ORD-001"))
+                .thenReturn(java.util.Optional.of(buildOrder("o1", "other-cust", "store-a")));
+        when(orderService.callerOwnsCustomerId("cust-1", "other-cust")).thenReturn(false);
+        when(orderService.findOrderByNumber("ORD-404")).thenReturn(java.util.Optional.empty());
+
+        mockMvc.perform(get("/api/orders")
+                .param("number", "ORD-001")
+                .header("X-User-Type", "CUSTOMER")
+                .header("X-User-Id", "cust-1"))
+            .andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/orders")
+                .param("number", "ORD-404")
+                .header("X-User-Type", "CUSTOMER")
+                .header("X-User-Id", "cust-1"))
+            .andExpect(status().isNotFound());
+        verify(orderService, never()).getOrderByNumber(org.mockito.ArgumentMatchers.anyString());
+    }
+
+    @Test
+    @DisplayName("CUSTOMER can look up own order by ?number=")
+    void customerOwnOrderByNumber() throws Exception {
+        when(orderService.findOrderByNumber("ORD-001"))
+                .thenReturn(java.util.Optional.of(buildOrder("o1", "cust-1", "store-a")));
+        when(orderService.callerOwnsCustomerId("cust-1", "cust-1")).thenReturn(true);
+
+        mockMvc.perform(get("/api/orders")
+                .param("number", "ORD-001")
+                .header("X-User-Type", "CUSTOMER")
+                .header("X-User-Id", "cust-1"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("MANAGER in store-a cannot look up a store-b order by ?number=")
+    void managerCrossStoreNumberDenied() throws Exception {
+        when(orderService.getOrderByNumber("ORD-001")).thenReturn(buildOrder("o1", "cust-1", "store-b"));
+
+        mockMvc.perform(get("/api/orders")
+                .param("number", "ORD-001")
+                .header("X-User-Type", "MANAGER")
+                .header("X-User-Store-Id", "store-a")
+                .header("X-Selected-Store-Id", "store-a"))
+            .andExpect(status().isForbidden());
     }
 }
