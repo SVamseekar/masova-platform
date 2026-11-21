@@ -140,7 +140,17 @@ public class StripeGateway implements PaymentGateway {
         String paymentMethodType = null;
 
         try {
-            var dataObject = event.getDataObjectDeserializer().getObject();
+            var deserializer = event.getDataObjectDeserializer();
+            var dataObject = deserializer.getObject();
+            if (dataObject.isEmpty()) {
+                // getObject() is empty when the webhook endpoint's API version differs from the one this
+                // SDK is pinned to (it changes on every major stripe-java upgrade). The fields read below
+                // exist in every version, so read the object anyway rather than drop the payment update.
+                log.warn("Stripe event {} uses API version {} but the SDK expects {}; reading its data anyway. "
+                        + "Set the webhook endpoint to the SDK version in the Stripe dashboard.",
+                        event.getId(), event.getApiVersion(), com.stripe.Stripe.API_VERSION);
+                dataObject = java.util.Optional.of(deserializer.deserializeUnsafe());
+            }
             if (dataObject.isPresent()) {
                 var obj = dataObject.get();
                 if (obj instanceof PaymentIntent pi) {
