@@ -9,7 +9,8 @@ export default function Brand() {
   return (
     <span className="ms-brand">
       <BrandMark />
-      <span>MaSoVa</span>
+      {/* Each syllable takes a colour from the mark: cream tile, teal bands, orange stem. Navy is left out because the wordmark always sits on dark. */}
+      <span className="ms-brand-word"><span className="ms-brand-ma">Ma</span><span className="ms-brand-so">So</span><span className="ms-brand-va">Va</span></span>
     </span>
   )
 }

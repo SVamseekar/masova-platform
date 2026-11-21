@@ -156,13 +156,13 @@ export function ShowcaseSection() {
           <Card tone="forest" dark title={s.cards[0].title} text={s.cards[0].text}>
             <SparkRibbon items={copy.ai.home.chips} />
           </Card>
-          <Card tone="sand" title={s.cards[1].title} text={s.cards[1].text}>
+          <Card tone="pistachio" title={s.cards[1].title} text={s.cards[1].text}>
             <ChatScreen />
           </Card>
           <Card tone="sage" preview title={s.cards[2].title} text={s.cards[2].text}>
             <VoiceScreen />
           </Card>
-          <Card tone="clay" title={s.cards[3].title} text={s.cards[3].text}>
+          <Card tone="pistachioPale" title={s.cards[3].title} text={s.cards[3].text}>
             <ApprovalScreen />
           </Card>
         </ul>
