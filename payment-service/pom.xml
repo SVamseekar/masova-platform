@@ -51,7 +51,7 @@
         <dependency>
             <groupId>com.stripe</groupId>
             <artifactId>stripe-java</artifactId>
-            <version>33.4.2</version>
+            <version>34.0.0</version>
         </dependency>
 
         <!-- Spring Boot Starter Actuator (for health checks) -->
@@ -172,7 +172,7 @@
         <dependency>
             <groupId>au.com.dius.pact.provider</groupId>
             <artifactId>spring6</artifactId>
-            <version>4.7.5</version>
+            <version>4.7.7</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
