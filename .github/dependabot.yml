@@ -27,6 +27,16 @@ updates:
       - dependency-name: org.springframework.boot:spring-boot-dependencies
         update-types:
           - version-update:semver-major
+      # Spring Boot 4 is a planned migration, not a dependency bump. The services pin Boot
+      # through the spring-boot.version property, which the rule above does not match
+      # (it let #232 through, and its backend tests failed). Hold every Boot artifact.
+      - dependency-name: "org.springframework.boot:*"
+        update-types:
+          - version-update:semver-major
+      # springdoc 3 requires Spring Boot 4 (#230 and #233 failed OpenAPI validation on Boot 3.5).
+      - dependency-name: "org.springdoc:*"
+        update-types:
+          - version-update:semver-major
       # Spring Cloud release trains move as "minor" versions but 2025.1+ needs Spring Boot 4
       - dependency-name: org.springframework.cloud:spring-cloud-dependencies
         update-types:
@@ -58,6 +68,12 @@ updates:
         update-types:
           - minor
           - patch
+    ignore:
+      # msw 3 changes the handler API; the frontend and Pact consumer tests fail on it (#234).
+      # Upgrade it on purpose together with the mocks.
+      - dependency-name: msw
+        update-types:
+          - version-update:semver-major
   # ── GitHub Actions (CI, deploy, contract validation) ──────────────────────
   - package-ecosystem: github-actions
     directory: /
