@@ -130,6 +130,9 @@
 .ms-nav-inner { display: flex; align-items: center; gap: 20px; height: 72px; }
 .ms-brand { display: inline-flex; align-items: center; gap: 10px; font-weight: 700; font-size: 21px; letter-spacing: -0.01em; }
 .ms-brand svg { width: 28px; height: 28px; flex-shrink: 0; }
+.ms-brand-ma { color: #FDF8F4; }
+.ms-brand-so { color: #00B7B0; }
+.ms-brand-va { color: #FE9401; }
 .ms-nav-links { display: flex; align-items: center; gap: 2px; }
 .ms-nav-link {
   display: inline-flex; align-items: center; gap: 4px; padding: 10px 12px; border-radius: var(--ms-radius-control);
