@@ -11,6 +11,8 @@ import au.com.dius.pact.provider.junitsupport.Provider;
 import au.com.dius.pact.provider.junitsupport.State;
 import au.com.dius.pact.provider.junitsupport.loader.PactFolder;
 import au.com.dius.pact.provider.spring.spring6.PactVerificationSpring6Provider;
+import com.MaSoVa.payment.client.OrderChargeClient;
+import com.MaSoVa.payment.client.OrderChargeClient.OrderCharge;
 import com.MaSoVa.payment.entity.Transaction;
 import com.MaSoVa.payment.repository.TransactionRepository;
 import com.MaSoVa.payment.service.RazorpayService;
@@ -63,6 +65,11 @@ class PaymentPactVerificationIT extends BaseFullIntegrationTest {
 
     @MockitoBean
     private RazorpayService razorpayService;
+
+    // payment-service reads the order's total and currency from commerce-service, which is not
+    // running here; each initiate interaction's order is an INR order costing what the consumer sent.
+    @MockitoBean
+    private OrderChargeClient orderChargeClient;
 
     @BeforeEach
     void before(PactVerificationContext context) {
@@ -129,6 +136,11 @@ class PaymentPactVerificationIT extends BaseFullIntegrationTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+
+        when(orderChargeClient.getOrderCharge("ORDER-PACT-1"))
+                .thenReturn(new OrderCharge(new java.math.BigDecimal("450.00"), "INR"));
+        when(orderChargeClient.getOrderCharge("order-1"))
+                .thenReturn(new OrderCharge(new java.math.BigDecimal("500.00"), "INR"));
 
         // This state is shared by multiple Pact interactions, so the callback runs once per
         // interaction - guard the seed so repeat invocations don't violate the _id unique index.

@@ -1,11 +1,11 @@
 {
-  "name": "MaSoVa Restaurant Management System",
+  "name": "MaSoVa",
   "short_name": "MaSoVa",
-  "description": "AI-native restaurant management for multi-store POS, kitchen, delivery, and operations.",
+  "description": "The restaurant operating system for multi-site groups, with AI assistants that prepare decisions for a manager to approve.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#080808",
-  "theme_color": "#080808",
+  "background_color": "#101B17",
+  "theme_color": "#101B17",
   "lang": "en-GB",
   "icons": [
     {
@@ -14,8 +14,24 @@
       "type": "image/svg+xml"
     },
     {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
       "src": "/favicon.ico",
-      "sizes": "48x48",
+      "sizes": "16x16 32x32 48x48",
       "type": "image/x-icon"
     }
   ]

@@ -81,4 +81,24 @@ class StripeGatewayTest {
                 .isInstanceOf(SecurityException.class)
                 .hasMessageContaining("Stripe");
     }
+
+    @Test
+    void parseWebhook_reads_event_whose_api_version_differs_from_the_sdk() throws Exception {
+        // A webhook endpoint left on an older API version after an SDK upgrade must still yield the payment.
+        String payload = """
+                {"id":"evt_1","object":"event","api_version":"2020-08-27","type":"payment_intent.succeeded",
+                 "data":{"object":{"id":"pi_123","object":"payment_intent","latest_charge":"ch_456"}}}
+                """;
+        long timestamp = java.time.Instant.now().getEpochSecond();
+        javax.crypto.Mac mac = javax.crypto.Mac.getInstance("HmacSHA256");
+        mac.init(new javax.crypto.spec.SecretKeySpec("whsec_test".getBytes(java.nio.charset.StandardCharsets.UTF_8), "HmacSHA256"));
+        byte[] digest = mac.doFinal((timestamp + "." + payload).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        String signature = "t=" + timestamp + ",v1=" + java.util.HexFormat.of().formatHex(digest);
+
+        var result = gateway.parseWebhook(payload, signature);
+
+        assertThat(result.getEventType()).isEqualTo(com.MaSoVa.payment.gateway.GatewayWebhookResult.EventType.PAYMENT_CAPTURED);
+        assertThat(result.getGatewayOrderId()).isEqualTo("pi_123");
+        assertThat(result.getGatewayPaymentId()).isEqualTo("ch_456");
+    }
 }

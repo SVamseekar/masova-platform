@@ -242,14 +242,31 @@ public class DeliveryController {
     }
 
     /**
-     * POST /api/delivery/{orderId}/otp — generate (or regenerate) OTP for delivery
+     * POST /api/delivery/{orderId}/otp — generate (or regenerate) OTP for delivery.
+     * Staff and drivers generate a new OTP. A customer only gets the OTP already issued on
+     * their own order (409 when none yet); a customer can never replace it.
      * Replaces: /{orderId}/generate-otp and /{orderId}/regenerate-otp
      */
     @PostMapping("/{orderId}/otp")
     @PreAuthorize("hasAnyRole('MANAGER', 'ASSISTANT_MANAGER', 'STAFF', 'DRIVER', 'CUSTOMER')")
-    @Operation(summary = "Generate or regenerate delivery OTP")
-    public ResponseEntity<String> generateOtp(@PathVariable String orderId) {
+    @Operation(summary = "Generate or regenerate delivery OTP (customers: read own OTP)")
+    public ResponseEntity<String> generateOtp(@PathVariable String orderId, HttpServletRequest request) {
+        if (isCustomer(request)) {
+            return proofOfDeliveryService.findDeliveryOtpForCaller(orderId)
+                    .map(ResponseEntity::ok)
+                    .orElseGet(() -> ResponseEntity.status(HttpStatus.CONFLICT)
+                            .body("No valid delivery OTP for this order yet; the store or driver issues a new one"));
+        }
         return ResponseEntity.ok(proofOfDeliveryService.generateDeliveryOtp(orderId));
+    }
+
+    /** A customer by role authority or by gateway user type; either one keeps the caller off the regenerate path. */
+    private static boolean isCustomer(HttpServletRequest request) {
+        org.springframework.security.core.Authentication auth =
+                org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        boolean customerAuthority = auth != null && auth.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_CUSTOMER".equals(a.getAuthority()));
+        return customerAuthority || "CUSTOMER".equalsIgnoreCase(StoreContextUtil.getUserTypeFromHeaders(request));
     }
 
     // ── DRIVER STATUS + PENDING DELIVERIES ────────────────────────────────────────

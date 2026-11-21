@@ -8,7 +8,7 @@ import { useInitiatePaymentMutation, type PaymentResponse } from '../../store/ap
 import { getApiErrorMessage } from '../utils/apiError';
 import { useGeocoding } from '../../hooks/useGeocoding';
 import { defaultAddressCountry } from '../../utils/customerFormValidation';
-import { useGetCustomerByUserIdQuery, useGetOrCreateCustomerMutation, useUpdatePreferencesMutation } from '../../store/api/customerApi';
+import { useGetCustomerByUserIdQuery, useEnsureMyCustomerProfileMutation, useUpdatePreferencesMutation } from '../../store/api/customerApi';
 import { useCheckDeliveryRadiusQuery } from '../../store/api/storeApi';
 import {
   selectCartItems,
@@ -93,7 +93,7 @@ const PaymentPage: React.FC = () => {
 
   const [createOrder, { isLoading: isCreatingOrder }] = useCreateOrderMutation();
   const [initiatePayment, { isLoading: isInitiatingPayment }] = useInitiatePaymentMutation();
-  const [getOrCreateCustomer] = useGetOrCreateCustomerMutation();
+  const [ensureMyCustomerProfile] = useEnsureMyCustomerProfileMutation();
   const [updatePreferences] = useUpdatePreferencesMutation();
 
   const { data: customerProfile } = useGetCustomerByUserIdQuery(currentUser?.id || '', {
@@ -177,14 +177,8 @@ const PaymentPage: React.FC = () => {
       let customerId = customerProfile?.id;
       if (currentUser && !customerId) {
         try {
-          const phoneToUse = currentUser.phone || guestInfo?.phone || '';
-          const cleanPhone = phoneToUse.replace(/\D/g, '');
-          const customer = await getOrCreateCustomer({
-            userId: currentUser.id,
+          const customer = await ensureMyCustomerProfile({
             storeId: selectedStoreId || undefined,
-            name: currentUser.name,
-            email: currentUser.email || '',
-            phone: cleanPhone,
           }).unwrap();
           customerId = customer.id;
         } catch (err: unknown) {

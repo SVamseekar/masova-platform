@@ -104,9 +104,22 @@ export interface SiteCopy {
     roles: { role: string; text: string }[]
   }
   ai: {
-    home: { eyebrow: string; title: string; lead: string; cta: string }
+    /** `chips`: one short task per assistant, in the same order as `assistants`, shown as a drifting ribbon. */
+    home: { eyebrow: string; title: string; lead: string; cta: string; chips: string[] }
     cycle: { eyebrow: string; title: string; lead: string; alwaysOn: string }
-    assistants: { name: string; does: string; example: string; when: string }[]
+    team: { eyebrow: string; title: string; lead: string; readsLabel: string; proposalLabel: string }
+    /** `reads`: the data an assistant works from, in a few words. */
+    assistants: { name: string; does: string; example: string; when: string; reads: string }[]
+    voice: {
+      eyebrow: string
+      title: string
+      lead: string
+      listening: string
+      answering: string
+      note: string
+      /** Two sample exchanges: a guest first, then a manager. */
+      talks: { who: string; ask: string; answer: string }[]
+    }
     inbox: {
       eyebrow: string
       title: string
@@ -247,6 +260,35 @@ export interface SiteCopy {
     }
   }
   cta: { title: string; text: string; secondary: string }
+  /** Home: four product cards with realistic screens of what MaSoVa prepares. */
+  showcase: {
+    eyebrow: string
+    title: string
+    lead: string
+    cards: TitledText[]
+    chat: { name: string; role: string; ask: string; thinking: string; answer: string; input: string }
+  }
+  /** The pop-up guide in the corner of every page except contact. Answers are pre-written. */
+  concierge: {
+    open: string
+    close: string
+    title: string
+    greeting: string
+    intro: string
+    /** Same order as CONCIERGE_TOPICS: ai, pilot, sales, question. */
+    topics: string[]
+    back: string
+    aiAnswer: string
+    aiAction: string
+    pilotAnswer: string
+    sitesQuestion: string
+    salesAnswer: string
+    salesEmail: string
+    questionAnswer: string
+    questionAction: string
+    bookAction: string
+    note: string
+  }
   footer: {
     tagline: string
     columns: [string, string, string]

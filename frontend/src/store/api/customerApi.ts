@@ -236,6 +236,20 @@ export const customerApi = createApi({
       ],
     }),
 
+    // Signed-in customer's own profile; the server takes name/email/phone from the account.
+    // POST /customers/get-or-create is service-to-service only and blocked at the gateway.
+    ensureMyCustomerProfile: builder.mutation<Customer, { storeId?: string }>({
+      query: (data) => ({
+        url: '/me',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: (result) => [
+        'Customers',
+        ...(result?.userId ? [{ type: 'Customers' as const, id: `USER_${result.userId}` }] : []),
+      ],
+    }),
+
     getOrCreateCustomer: builder.mutation<Customer, CreateCustomerRequest>({
       query: (data) => ({
         url: '/get-or-create',
@@ -614,6 +628,7 @@ export const customerApi = createApi({
 export const {
   useCreateCustomerMutation,
   useGetOrCreateCustomerMutation,
+  useEnsureMyCustomerProfileMutation,
   useGetCustomerByIdQuery,
   useGetCustomerByUserIdQuery,
   useGetCustomerByEmailQuery,
