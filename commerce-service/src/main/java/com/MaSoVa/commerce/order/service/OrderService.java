@@ -47,6 +47,7 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.security.SecureRandom;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.Comparator;
 
@@ -505,6 +506,10 @@ public class OrderService {
         return order;
     }
 
+    public Optional<Order> findOrderByNumber(String orderNumber) {
+        return orderRepository.findByOrderNumber(orderNumber);
+    }
+
     public Order getOrderByNumber(String orderNumber) {
         return orderRepository.findByOrderNumber(orderNumber)
                 .orElseThrow(() -> new RuntimeException("Order not found: " + orderNumber));
@@ -894,6 +899,9 @@ public class OrderService {
         Order order = getOrderById(orderId);
         order.setPaymentStatus(paymentStatus);
         order.setPaymentTransactionId(transactionId);
+        if (paymentStatus == Order.PaymentStatus.PAID || paymentStatus == Order.PaymentStatus.REFUNDED) {
+            order.setPaymentReviewReason(null); // a matched payment or a refund settles any earlier review
+        }
 
         Order updatedOrder = orderRepository.save(order);
         syncToPostgres(updatedOrder);
@@ -910,7 +918,8 @@ public class OrderService {
      * Applies a payment status from payment-service. Idempotent and safe for out-of-order delivery:
      * REFUNDED is final, and a late FAILED never overrides PAID.
      */
-    public void applyPaymentStatusEvent(String orderId, String paymentStatus, String transactionId) {
+    public void applyPaymentStatusEvent(String orderId, String paymentStatus, String transactionId,
+                                        BigDecimal paidAmount, String paidCurrency) {
         Order.PaymentStatus target = Order.PaymentStatus.valueOf(paymentStatus);
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new AmqpRejectAndDontRequeueException("Order not found: " + orderId));
@@ -921,7 +930,52 @@ public class OrderService {
             log.info("Order {} payment status stays {} (event wanted {})", orderId, current, target);
             return;
         }
+        if (target == Order.PaymentStatus.PAID) {
+            String mismatch = chargeMismatch(order, paidAmount, paidCurrency);
+            if (mismatch != null) {
+                flagPaymentForReview(order, transactionId, mismatch);
+                return;
+            }
+        }
         updatePaymentStatus(orderId, target, transactionId);
+    }
+
+    /**
+     * The browser chooses the amount it sends to payment-service, so an order only becomes PAID when
+     * the charge equals the order's own total and currency, compared at two decimals.
+     *
+     * @return why the charge does not match, or null when it does
+     */
+    static String chargeMismatch(Order order, BigDecimal paidAmount, String paidCurrency) {
+        // Orders without a currency predate Global-3 and are India (INR) orders.
+        String orderCurrency = order.getCurrency() != null ? order.getCurrency() : "INR";
+        BigDecimal orderTotal = order.getTotal();
+        if (paidAmount == null || paidCurrency == null) {
+            return "Payment event carried no amount or currency, so it could not be checked against the order total "
+                    + orderTotal + " " + orderCurrency;
+        }
+        if (orderTotal == null) {
+            return "Order has no total to check the charged " + paidAmount + " " + paidCurrency + " against";
+        }
+        boolean matches = paidAmount.setScale(2, java.math.RoundingMode.HALF_UP)
+                .compareTo(orderTotal.setScale(2, java.math.RoundingMode.HALF_UP)) == 0
+                && paidCurrency.equalsIgnoreCase(orderCurrency);
+        return matches ? null : "Charged " + paidAmount + " " + paidCurrency
+                + " but the order total is " + orderTotal + " " + orderCurrency;
+    }
+
+    /**
+     * Keeps the order unpaid, records why on the order and tells the store, so staff can refund or
+     * re-charge. The event is consumed: a dead-letter queue nobody watches would hide a charged customer.
+     */
+    private void flagPaymentForReview(Order order, String transactionId, String reason) {
+        log.error("Order {} not marked PAID, needs payment review (transaction {}): {}",
+                order.getId(), transactionId, reason);
+        order.setPaymentTransactionId(transactionId);
+        order.setPaymentReviewReason(reason);
+        Order saved = orderRepository.save(order);
+        syncToPostgres(saved);
+        webSocketController.sendKitchenQueueUpdate(saved.getStoreId(), saved);
     }
 
     @Transactional

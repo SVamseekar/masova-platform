@@ -3,7 +3,7 @@
  * which stage, when each assistant runs, and the currency, site languages and
  * delivery marketplaces of each country. Text lives in the language files.
  */
-import type { CountryCode, ProductArea, SiteLanguage, SiteLocale, SitePage } from '../locales'
+import type { CountryCode, ProductArea, SiteLanguage, SitePage } from '../locales'
 import type { AppStatus } from './types'
 
 /** Stage of each app in the family. Keys match `apps.items[].key` in the copy. */
@@ -148,3 +148,6 @@ export const INTEGRATION_BRANDS: string[][] = [
   ['Uber Eats', 'Deliveroo', 'Just Eat', 'Wolt'],
   ['KassenSichV · TSE', 'NF525', 'RT', 'GKS', 'RKSV', 'Verifactu'],
 ]
+
+/** The concierge's topics, in the same order as `concierge.topics` in the copy. */
+export const CONCIERGE_TOPICS = ['ai', 'pilot', 'sales', 'question'] as const

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { useSite } from '../SiteContext'
 import type { ProductArea } from '../locales'
 
@@ -124,5 +124,28 @@ export function SectionRail({ area }: { area: ProductArea }) {
         </a>
       ))}
     </nav>
+  )
+}
+
+const REDUCED_QUERY = '(prefers-reduced-motion: reduce)'
+
+function subscribeReducedMotion(onChange: () => void): () => void {
+  const query = window.matchMedia?.(REDUCED_QUERY)
+  if (!query) return () => {}
+  if (typeof query.addEventListener === 'function') {
+    query.addEventListener('change', onChange)
+    return () => query.removeEventListener('change', onChange)
+  }
+  // Safari before 14 only has the older listener API
+  query.addListener?.(onChange)
+  return () => query.removeListener?.(onChange)
+}
+
+/** True when the visitor asks for less motion; false on the server and in old browsers. */
+export function usePrefersReducedMotion(): boolean {
+  return useSyncExternalStore(
+    subscribeReducedMotion,
+    () => Boolean(window.matchMedia?.(REDUCED_QUERY).matches),
+    () => false,
   )
 }

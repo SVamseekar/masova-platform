@@ -16,6 +16,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { logout, selectCurrentUser } from '../../store/slices/authSlice';
 import { selectCartItemCount } from '../../store/slices/cartSlice';
+import { getDefaultDashboard } from '../../utils/security';
 
 interface CustomerPageHeaderProps {
   onBack: () => void;
@@ -135,10 +136,7 @@ const CustomerPageHeader: React.FC<CustomerPageHeaderProps> = ({
             onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.opacity = '0.8'; }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.opacity = '1'; }}
             onClick={() => {
-              const t = currentUser?.type;
-              if (t === 'MANAGER' || t === 'ASSISTANT_MANAGER') navigate('/manager');
-              else if (t === 'DRIVER') navigate('/driver');
-              else navigate('/staff');
+              if (currentUser) navigate(getDefaultDashboard(currentUser.type, currentUser.role));
             }}
           >
             {currentUser?.name} → Dashboard

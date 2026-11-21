@@ -76,6 +76,8 @@ export interface Order {
   paymentStatus: PaymentStatus;
   paymentMethod?: PaymentMethod;
   paymentTransactionId?: string;
+  // Set when a payment did not match the order total/currency; staff must review (refund or re-charge)
+  paymentReviewReason?: string;
   priority: OrderPriority;
   preparationTime?: number;
   estimatedDeliveryTime?: string;

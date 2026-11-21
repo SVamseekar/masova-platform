@@ -35,6 +35,23 @@ public class OrderServiceClient {
     private String orderServiceUrl;
 
     /**
+     * Reads an order as the current caller, with the caller's JWT and user headers forwarded.
+     * commerce-service only returns a customer's own order, so a 403 or 404 means the caller may not
+     * see it. No retry or fallback: an empty fallback must not be mistaken for "no OTP yet", and
+     * a refusal is not a fault that should trip the circuit breaker.
+     */
+    public Map<String, Object> getOrderForCaller(String orderId) {
+        String url = orderServiceUrl + "/api/orders/" + orderId;
+        ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                url,
+                HttpMethods.GET,
+                null,
+                new ParameterizedTypeReference<Map<String, Object>>() {}
+        );
+        return response.getBody();
+    }
+
+    /**
      * Get order details by ID
      */
     @Retry(name = "orderService")
