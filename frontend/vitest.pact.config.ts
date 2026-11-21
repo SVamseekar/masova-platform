@@ -14,6 +14,8 @@ export default defineConfig({
     environment: 'node',
     globals: true,
     include: ['src/pact/**/*.{test,spec}.{ts,tsx}'],
+    // Only the Pact setup (no MSW): turns off HTTP keep-alive for calls to the mock servers
+    setupFiles: ['./src/pact/setup.ts'],
     testTimeout: 15000,
     hookTimeout: 15000,
     pool: 'forks',

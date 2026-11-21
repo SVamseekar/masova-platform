@@ -9,6 +9,13 @@ spring:
     port: 5672
     username: masova
     password: masova_secret
+    # Listeners stay off by default. Every IT context here connects to the same RabbitMQ
+    # container, and Spring caches contexts between test classes, so a cached context with
+    # running listeners competes for the analytics queues and takes the messages that
+    # AnalyticsConsumerIT's harness is waiting for. AnalyticsConsumerIT turns them back on.
+    listener:
+      simple:
+        auto-startup: false
   cache:
     type: none
 
