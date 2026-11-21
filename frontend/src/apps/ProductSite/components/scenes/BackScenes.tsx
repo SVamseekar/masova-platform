@@ -1,6 +1,6 @@
 /** Product-page scenes for stock and team. */
 import { AlertTriangle, Check, Copy, KeyRound } from 'lucide-react'
-import { Avatar, Photo, Scene, clock, cyc, eur, prog, useScene } from './kit'
+import { Avatar, Scene, clock, cyc, eur, prog, useScene } from './kit'
 
 /* ---------- Stock ---------- */
 
@@ -42,9 +42,8 @@ export function StockReceiveScene() {
   const t = still ? 99 : cyc(tick, 10)
   const checked = Math.min(DELIVERY.length, t)
   return (
-    <Scene kind="photo" name="s-receive" sceneRef={ref}>
-      <Photo src="/site/stock-produce.webp" />
-      <div className="sc-card sc-float--bl sc-receiving">
+    <Scene kind="receive" name="s-receive" sceneRef={ref}>
+      <div className="sc-card sc-receiving">
         <header className="sc-head"><b>Delivery · Caseificio Rossi</b><span className="sc-count">PO-0218</span></header>
         <ul>
           {DELIVERY.map(([item, ordered, got, unit], i) => {

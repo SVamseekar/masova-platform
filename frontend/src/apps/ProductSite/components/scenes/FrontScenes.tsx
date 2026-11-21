@@ -1,15 +1,15 @@
 /** Product-page scenes for ordering, counter and delivery. */
 import { Bike, Check, ChefHat, MapPin, Star } from 'lucide-react'
 import { BrandMark } from '../Brand'
-import { Avatar, Photo, Scene, cyc, eur, prog, useScene } from './kit'
+import { Avatar, Scene, cyc, eur, prog, useScene } from './kit'
 
 /* ---------- Ordering ---------- */
 
 const MENU = [
-  { img: '/site/dish-margherita-pizza.webp', name: 'Margherita', price: '€12.00', tags: ['Gluten', 'Milk'], nuts: false, veg: true },
-  { img: '/site/dish-chicken-tikka-masala.webp', name: 'Chicken tikka masala', price: '€15.00', tags: ['Milk', 'Nuts'], nuts: true, veg: false },
-  { img: '/site/dish-mushroom-risotto.webp', name: 'Mushroom risotto', price: '€14.50', tags: ['Milk', 'Celery'], nuts: false, veg: true },
-  { img: '/site/dish-greek-salad.webp', name: 'Greek salad', price: '€9.50', tags: ['Milk'], nuts: false, veg: true },
+  { img: '/site/menu/bruschetta.webp', name: 'Bruschetta', price: '€7.50', tags: ['Gluten'], nuts: false, veg: true },
+  { img: '/site/menu/gnocchi-pesto.webp', name: 'Gnocchi with pesto', price: '€13.00', tags: ['Gluten', 'Milk', 'Nuts'], nuts: true, veg: true },
+  { img: '/site/menu/grilled-beef-steak.webp', name: 'Grilled rib-eye', price: '€26.00', tags: ['Mustard'], nuts: false, veg: false },
+  { img: '/site/menu/caprese-salad.webp', name: 'Caprese salad', price: '€9.50', tags: ['Milk'], nuts: false, veg: true },
 ]
 
 /** The guest switches on "No nuts", then "Vegetarian"; dishes that don't fit step aside. */
@@ -53,11 +53,10 @@ export function OrderingCheckoutScene() {
   const shown = still ? BANNERS.length : Math.min(BANNERS.length, cyc(tick, 8))
   const latest = BANNERS[Math.max(0, shown - 1)]
   return (
-    <Scene kind="photo" name="o-lock" sceneRef={ref}>
-      <Photo src="/site/restaurant-table.webp" />
+    <Scene kind="lock" name="o-lock" sceneRef={ref}>
       <div className="sc-lock">
         <strong className="ms-num">{latest.time}</strong>
-        <small>Friday 21 November</small>
+        <small>Friday 20 November</small>
         <ul>
           {BANNERS.slice(0, shown).reverse().map((b) => (
             <li key={b.title}>
@@ -103,10 +102,10 @@ export function OrderingChannelsScene() {
 /* ---------- Counter ---------- */
 
 const TILES = [
-  { img: '/site/dish-margherita-pizza.webp', name: 'Margherita', price: 12 },
-  { img: '/site/dish-greek-salad.webp', name: 'Greek salad', price: 9.5 },
-  { img: '/site/dish-mushroom-risotto.webp', name: 'Risotto', price: 14.5 },
-  { img: '/site/dish-chicken-tikka-masala.webp', name: 'Tikka masala', price: 15 },
+  { img: '/site/menu/cappuccino.webp', name: 'Cappuccino', price: 3.4 },
+  { img: '/site/menu/croque-monsieur.webp', name: 'Croque monsieur', price: 8.9 },
+  { img: '/site/menu/cheesecake.webp', name: 'Cheesecake', price: 5.5 },
+  { img: '/site/menu/fresh-lemonade.webp', name: 'Lemonade', price: 4.2 },
 ]
 const TAPS = [0, 1, 0, 2]
 
@@ -131,7 +130,7 @@ export function CounterTapScene() {
         ))}
       </div>
       <div className="sc-card sc-rail">
-        <header><b>Table 6</b><small>Dine-in · Maria A.</small></header>
+        <header><b>Table 2</b><small>Dine-in · Maria A.</small></header>
         <ul>{[...counts].map(([i, c]) => <li key={i}><span>{c} × {TILES[i].name}</span><b>{eur(TILES[i].price * c)}</b></li>)}</ul>
         <footer><span>Total</span><b className="ms-num" key={total}>{eur(total)}</b></footer>
       </div>
@@ -234,7 +233,7 @@ export function DeliveryDeckScene() {
       <span className="sc-earn"><b className="ms-num">{eur(96.4 + round * 4.2)}</b> today</span>
       <div className="sc-deck-stack">
         {deck.map((j, k) => (
-          <div key={`${round}-${k}`} className="sc-card sc-job" data-pos={k} data-leaving={k === 0 && leaving}>
+          <div key={round + k} className="sc-card sc-job" data-pos={k} data-leaving={k === 0 && leaving}>
             <header><b>New delivery {j.id}</b><span>{j.pay}</span></header>
             <p><MapPin size={14} /> {j.where} · {j.km}</p>
             <div className="sc-job-btns"><span data-pressed={k === 0 && t === 2}>Accept</span><span>Pass</span></div>

@@ -9,8 +9,8 @@ function OrderingThumb() {
   return (
     <Scene kind="thumb" name="t-ordering" sceneRef={ref}>
       <div className="sc-card sc-t-dish">
-        <img src="/site/dish-margherita-pizza.webp" alt="" loading="lazy" decoding="async" />
-        <div><b>Margherita</b><small>San Marzano, fior di latte</small><em>€12.00</em></div>
+        <img src="/site/menu/pepperoni-pizza.webp" alt="" loading="lazy" decoding="async" />
+        <div><b>Pepperoni</b><small>Tomato, mozzarella, salami</small><em>€13.50</em></div>
         <span className="sc-t-add" key={count}>+</span>
       </div>
       <span className="sc-t-basket" key={`b${count}`}>Basket · {count}</span>
@@ -113,6 +113,10 @@ export function AreaThumbScene({ area }: { area: ProductArea }) {
     case 'stock': return <StockThumb />
     case 'team': return <TeamThumb />
     case 'guests': return <GuestsThumb />
-    default: return <InsightsThumb />
+    case 'insights': return <InsightsThumb />
+    default: {
+      const unhandled: never = area
+      return unhandled
+    }
   }
 }

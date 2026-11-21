@@ -22,9 +22,18 @@ const AREA_SCENES: Record<ProductArea, (() => ReactNode)[]> = {
   insights: [() => <InsightLiveScene />, () => <InsightMarginScene />, () => <InsightStoresScene />, () => <InsightAskScene />],
 }
 
-/** The scene for one feature group on a product page. */
+/** How many feature groups of an area have a scene. Must match the copy in every language. */
+export function areaSceneCount(area: ProductArea): number {
+  return AREA_SCENES[area].length
+}
+
+/** The scene for one feature group on a product page. A group without a scene is a bug: loud in dev, empty in production. */
 export function AreaScene({ area, group }: { area: ProductArea; group: number }) {
   const render = AREA_SCENES[area][group]
-  return render ? <>{render()}</> : null
+  if (!render) {
+    if (import.meta.env.DEV) throw new Error(`AreaScene: no scene for ${area} group ${group} (have ${AREA_SCENES[area].length})`)
+    return null
+  }
+  return <>{render()}</>
 }
 

@@ -133,7 +133,7 @@ function RoleGuestScene() {
   const slot = still ? 1 : cyc(tick, SLOTS.length)
   return (
     <Scene kind="photo" name="r-guest" sceneRef={ref}>
-      <Photo src="/site/restaurant-interior.webp" />
+      <Photo src="/site/menu/quattro-formaggi.webp" />
       <div className="sc-card sc-ahead">
         <header><Avatar name="Ana Silva" i={2} /><div><b>Pickup at Riverside</b><small><MapPin size={12} /> Canal Street 3</small></div></header>
         <div className="sc-slots">{SLOTS.map((s, i) => <span key={s} data-on={i === slot}>{s}</span>)}</div>
@@ -150,6 +150,9 @@ export function RoleScene({ index }: { index: number }) {
     case 2: return <RoleCounterScene />
     case 3: return <RoleKitchenScene />
     case 4: return <RoleDriverScene />
-    default: return <RoleGuestScene />
+    case 5: return <RoleGuestScene />
+    default:
+      if (import.meta.env.DEV) throw new Error(`RoleScene: no scene for role ${index}`)
+      return null
   }
 }

@@ -1,8 +1,11 @@
 import { render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ReactNode } from 'react'
-import { PRODUCT_AREAS } from '../../locales'
-import { AiCopilotScene, AiGuestChatScene, AreaScene, AreaThumbScene, HeroTonightScene, JourneyAiScene, JourneyDriverScene, JourneyKitchenScene, JourneyManagerScene, JourneyOrderScene, RoleScene } from '.'
+import { PRODUCT_AREAS, SITE_LOCALES } from '../../locales'
+import { getSiteCopy } from '../../content'
+import { AiCopilotScene, AiGuestChatScene, AreaScene, AreaThumbScene, HeroTonightScene, JourneyAiScene, JourneyDriverScene, JourneyKitchenScene, JourneyManagerScene, JourneyOrderScene, RoleScene, areaSceneCount } from '.'
+
+const COPY = getSiteCopy('en')
 
 function setReducedMotion(reduce: boolean) {
   window.matchMedia = vi.fn().mockImplementation((query: string) => ({
@@ -29,10 +32,10 @@ function placements(): [string, ReactNode][] {
     ['ai copilot', <AiCopilotScene />],
     ['ai guest chat', <AiGuestChatScene />],
   ]
-  for (let i = 0; i < 6; i++) list.push([`role ${i}`, <RoleScene index={i} />])
+  for (let i = 0; i < COPY.apps.roles.length; i++) list.push([`role ${i}`, <RoleScene index={i} />])
   for (const area of PRODUCT_AREAS) {
     list.push([`thumb ${area}`, <AreaThumbScene area={area} />])
-    for (let g = 0; g < 4; g++) list.push([`${area} ${g}`, <AreaScene area={area} group={g} />])
+    for (let g = 0; g < COPY.areas.items[area].groups.length; g++) list.push([`${area} ${g}`, <AreaScene area={area} group={g} />])
   }
   return list
 }
@@ -47,25 +50,30 @@ describe('product scenes', () => {
     for (const [where, node] of placements()) {
       const { container, unmount } = render(<>{node}</>)
       const root = container.querySelector('.sc')
-      if (root) {
-        const name = root.classList[2]
-        expect(seen.get(name), `${where} repeats ${name} from ${seen.get(name)}`).toBeUndefined()
-        seen.set(name, where)
-      }
+      expect(root, `${where} renders no scene`).not.toBeNull()
+      const name = root!.classList[2]
+      expect(seen.get(name), `${where} repeats ${name} from ${seen.get(name)}`).toBeUndefined()
+      seen.set(name, where)
       unmount()
     }
     expect(seen.size).toBeGreaterThanOrEqual(45)
   })
 
-  it('gives every product-page feature group a scene', () => {
-    const groups: Record<string, number> = { ordering: 3, counter: 3, kitchen: 3, delivery: 3, stock: 3, team: 4, guests: 4, insights: 4 }
-    for (const [area, count] of Object.entries(groups)) {
-      for (let g = 0; g < count; g++) {
-        const { container, unmount } = render(<AreaScene area={area as (typeof PRODUCT_AREAS)[number]} group={g} />)
-        expect(container.querySelector('.sc'), `${area} ${g}`).not.toBeNull()
-        unmount()
+  it('has exactly one scene for every feature group and role in every language', () => {
+    for (const locale of SITE_LOCALES) {
+      const copy = getSiteCopy(locale)
+      for (const area of PRODUCT_AREAS) {
+        expect(areaSceneCount(area), `${locale} ${area} groups`).toBe(copy.areas.items[area].groups.length)
       }
+      expect(copy.apps.roles.length, `${locale} roles`).toBe(6)
     }
+  })
+
+  it('refuses a group or role that has no scene instead of rendering a blank stage', () => {
+    const quiet = vi.spyOn(console, 'error').mockImplementation(() => {})
+    expect(() => render(<AreaScene area="ordering" group={areaSceneCount('ordering')} />)).toThrow(/no scene for ordering group 3/)
+    expect(() => render(<RoleScene index={6} />)).toThrow(/no scene for role 6/)
+    quiet.mockRestore()
   })
 
   it('shows finished states with reduced motion', () => {
@@ -83,7 +91,8 @@ describe('product scenes', () => {
     for (const [where, node] of placements()) {
       const { container, unmount } = render(<>{node}</>)
       const root = container.querySelector('.sc')
-      if (root) expect(root.getAttribute('aria-hidden'), where).toBe('true')
+      expect(root, where).not.toBeNull()
+      expect(root!.getAttribute('aria-hidden'), where).toBe('true')
       unmount()
     }
   })

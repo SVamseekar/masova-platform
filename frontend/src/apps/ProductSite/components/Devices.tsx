@@ -3,11 +3,21 @@
  * kitchen screen and kiosk, plus the app bar each MaSoVa screen carries. The frames are
  * decoration (aria-hidden); the caller describes the screen in text.
  */
-import { useEffect, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { BrandMark } from './Brand'
 import { usePrefersReducedMotion } from './Effects'
 
 type FrameRef = (node: HTMLElement | null) => void
+
+const PausedContext = createContext(false)
+
+/**
+ * Pauses every preview clock inside it. For previews that are on screen but not shown,
+ * such as the journey's stacked layers that are only faded out.
+ */
+export function ScenePaused({ value, children }: { value: boolean; children: ReactNode }) {
+  return <PausedContext.Provider value={value}>{children}</PausedContext.Provider>
+}
 
 /**
  * A step counter for a preview's animation. It counts only while the preview is on screen
@@ -16,13 +26,15 @@ type FrameRef = (node: HTMLElement | null) => void
  * finished state.
  */
 export function usePreviewClock(intervalMs = 1000): { tick: number; ref: FrameRef; still: boolean } {
-  const still = usePrefersReducedMotion()
+  // Without IntersectionObserver the clock cannot know when the scene is on screen, so show the finished state.
+  const still = usePrefersReducedMotion() || typeof IntersectionObserver === 'undefined'
   const [tick, setTick] = useState(0)
   const [node, setNode] = useState<HTMLElement | null>(null)
   const [onScreen, setOnScreen] = useState(false)
+  const paused = useContext(PausedContext)
 
   useEffect(() => {
-    if (!node || still || typeof IntersectionObserver === 'undefined') return
+    if (!node || still) return
     const observer = new IntersectionObserver((entries) => setOnScreen(entries.some((e) => e.isIntersecting)), { threshold: 0.15 })
     observer.observe(node)
     return () => {
@@ -32,12 +44,12 @@ export function usePreviewClock(intervalMs = 1000): { tick: number; ref: FrameRe
   }, [node, still])
 
   useEffect(() => {
-    if (!onScreen || still) return
+    if (!onScreen || still || paused) return
     const id = window.setInterval(() => {
       if (!document.hidden) setTick((t) => t + 1)
     }, intervalMs)
     return () => window.clearInterval(id)
-  }, [onScreen, still, intervalMs])
+  }, [onScreen, still, paused, intervalMs])
 
   return { tick: still ? 0 : tick, ref: setNode, still }
 }

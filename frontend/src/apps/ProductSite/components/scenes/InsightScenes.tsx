@@ -200,13 +200,13 @@ export function AiCopilotScene() {
   )
 }
 
-/** The guest chat on the restaurant's own site, over the dining room. */
+/** The guest chat on the restaurant's own site, over the dish the guest is asking about. */
 export function AiGuestChatScene() {
   const { tick, ref, still } = useScene(1100)
   const t = still ? 99 : cyc(tick, 10)
   return (
     <Scene kind="photo" name="a-guest" sceneRef={ref}>
-      <Photo src="/site/restaurant-exterior.webp" />
+      <Photo src="/site/menu/mushroom-risotto.webp" />
       <div className="sc-card sc-widget">
         <header><BrandMark size={18} /><b>Riverside Kitchen</b><small>Usually replies at once</small></header>
         <div className="sc-widget-body">

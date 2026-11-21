@@ -52,18 +52,16 @@ export function KitchenTicketsScene() {
   )
 }
 
-const QUALITY_CHECKS = ['Portion weighed', 'Allergen: nuts confirmed', 'Above 75 °C', 'Packaging sealed']
+const QUALITY_CHECKS = ['Portion weighed', 'Allergen: nuts confirmed', 'Core temperature 78 °C recorded', 'Packaging sealed']
 
-/** A chef at the pass; the quality checklist ticks itself off over the photo. */
+/** The cook works through the quality checklist at the pass; each check is signed by a person. */
 export function KitchenQualityScene() {
   const { tick, ref, still } = usePreviewClock(1000)
   const t = tick % 9
   const done = still ? QUALITY_CHECKS.length : Math.min(QUALITY_CHECKS.length, t)
-  const temp = still ? 78 : Math.min(78, 61 + t * 5)
   return (
-    <div ref={ref} className="sc sc-photo sc-k-quality" aria-hidden="true">
-      <img src="/site/kitchen-chef.webp" alt="" loading="lazy" decoding="async" />
-      <div className="sc-card sc-float sc-float--bl">
+    <div ref={ref} className="sc sc-checklist sc-k-quality" aria-hidden="true">
+      <div className="sc-card sc-float">
         <header className="sc-head"><BrandMark size={18} /><b>Quality check · #1043</b><span className="sc-count">{done}/{QUALITY_CHECKS.length}</span></header>
         <ul className="sc-checks">
           {QUALITY_CHECKS.map((c, i) => (
@@ -71,35 +69,33 @@ export function KitchenQualityScene() {
           ))}
         </ul>
       </div>
-      <div className="sc-card sc-chip sc-float--tr" data-ok={temp >= 75}>
+      <div className="sc-card sc-chip sc-float--tr" data-ok={done === QUALITY_CHECKS.length}>
         <Thermometer size={16} />
-        <b>{temp} °C</b>
-        <small>{temp >= 75 ? 'Safe to serve' : 'Heating'}</small>
+        <b>{done === QUALITY_CHECKS.length ? 'Signed off' : 'Checking'}</b>
+        <small>Jonas K. · 19:41</small>
       </div>
     </div>
   )
 }
 
-/** A big equipment screen running off the edge; a toast says the fryer is back. */
+/** The equipment log running off the edge: readings staff recorded, and a toast when the fryer is back. */
 export function KitchenEquipmentScene() {
   const { tick, ref, still } = usePreviewClock(1000)
   const t = tick % 10
   const back = still || t >= 5
-  const oven = 312 + (still ? 0 : Math.round(Math.sin(tick / 2) * 4))
-  const fridge = (3.4 + (still ? 0 : Math.sin(tick / 3) * 0.3)).toFixed(1)
   const rows: [string, string, string, 'ok' | 'info' | 'warn'][] = [
-    ['Pizza oven', `${oven} °C`, 'In use', 'ok'],
-    ['Walk-in fridge', `${fridge} °C`, 'In use', 'ok'],
-    ['Fryer 2', back ? '175 °C' : '—', back ? 'In use' : 'Cleaning', back ? 'ok' : 'info'],
+    ['Pizza oven', '312 °C · 19:30', 'In use', 'ok'],
+    ['Walk-in fridge', '3.4 °C · 19:30', 'In use', 'ok'],
+    ['Fryer 2', back ? '175 °C · 19:42' : '—', back ? 'In use' : 'Cleaning', back ? 'ok' : 'info'],
     ['Dishwasher', 'Service Tue', 'Maintenance', 'warn'],
-    ['Blast chiller', '-18.2 °C', 'In use', 'ok'],
+    ['Blast chiller', '-18.2 °C · 19:30', 'In use', 'ok'],
   ]
   return (
     <div ref={ref} className="sc sc-canvas sc-k-equipment" aria-hidden="true">
       <div className="sc-window">
-        <div className="sc-window-bar"><BrandMark size={18} /><b>Equipment</b><span className="sc-store">Old Town</span><span className="sc-live">Live</span></div>
+        <div className="sc-window-bar"><BrandMark size={18} /><b>Equipment</b><span className="sc-store">Old Town</span></div>
         <table className="sc-table">
-          <thead><tr><th>Machine</th><th>Reading</th><th>Status</th></tr></thead>
+          <thead><tr><th>Machine</th><th>Last reading</th><th>Status</th></tr></thead>
           <tbody>
             {rows.map(([name, reading, status, tone]) => (
               <tr key={name} data-flash={!still && name === 'Fryer 2' && t === 5}>

@@ -31,16 +31,16 @@ export const APP_GROUPS: string[][] = [
   ['manager', 'agents', 'copilot'],
 ]
 
-/** Photo, apps and assistants (by index in `ai.assistants`) for each product area. */
-export const AREA_META: Record<ProductArea, { image: string; apps: string[]; assistants: number[] }> = {
+/** Photo (only where one fits the area; each photo is used once on the site), apps and assistants (by index in `ai.assistants`) for each product area. */
+export const AREA_META: Record<ProductArea, { image?: string; apps: string[]; assistants: number[] }> = {
   ordering: { image: '/site/restaurant-table.webp', apps: ['web', 'kiosk', 'customer-app', 'support', 'voice'], assistants: [0, 6] },
-  counter: { image: '/site/restaurant-interior.webp', apps: ['counter', 'kiosk', 'staff-app'], assistants: [7] },
+  counter: { apps: ['counter', 'kiosk', 'staff-app'], assistants: [7] },
   kitchen: { image: '/site/kitchen-chef.webp', apps: ['kds', 'staff-app', 'manager'], assistants: [5, 0] },
-  delivery: { image: '/site/restaurant-exterior.webp', apps: ['driver', 'manager', 'staff-app', 'web'], assistants: [0, 2] },
+  delivery: { apps: ['driver', 'manager', 'staff-app', 'web'], assistants: [0, 2] },
   stock: { image: '/site/stock-produce.webp', apps: ['manager', 'agents'], assistants: [1, 0] },
-  team: { image: '/site/kitchen-oven.webp', apps: ['manager', 'counter', 'staff-app'], assistants: [2, 5] },
+  team: { apps: ['manager', 'counter', 'staff-app'], assistants: [2, 5] },
   guests: { image: '/site/guest-meal.webp', apps: ['manager', 'web', 'customer-app', 'support'], assistants: [3, 4] },
-  insights: { image: '/site/restaurant-interior.webp', apps: ['manager', 'agents', 'copilot'], assistants: [7, 0] },
+  insights: { apps: ['manager', 'agents', 'copilot'], assistants: [7, 0] },
 }
 
 /** Product menu columns: front of house, back of house, intelligence. */

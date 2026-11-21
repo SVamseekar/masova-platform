@@ -22,7 +22,7 @@ export function ProductPage() {
   const { copy } = useSite()
   return (
     <>
-      <PageHeader page="product" image="/site/kitchen-oven.webp" />
+      <PageHeader page="product" />
       <section className="ms-section" aria-labelledby="ms-map-title">
         <div className="ms-wrap">
           <h2 className="ms-sr" id="ms-map-title">{copy.areas.title}</h2>
@@ -304,7 +304,8 @@ export function AiPage() {
 
 /* ---------- Solutions ---------- */
 
-const SOLUTION_IMAGES = ['/site/restaurant-interior.webp', '/site/kitchen-oven.webp', '/site/restaurant-table.webp', '/site/restaurant-exterior.webp', '/site/guest-meal.webp']
+/* One dish that fits each kind of restaurant, in the same order as `solutions.types`. */
+const SOLUTION_IMAGES = ['/site/menu/lasagna-bolognese.webp', '/site/menu/crispy-chicken-burger.webp', '/site/menu/paella.webp', '/site/menu/chicken-biryani-plate.webp', '/site/menu/apple-strudel.webp']
 const SOLUTION_AREAS: ProductArea[][] = [['insights', 'team', 'stock'], ['counter', 'kitchen', 'ordering'], ['counter', 'guests', 'team'], ['ordering', 'delivery', 'insights'], ['counter', 'stock', 'guests']]
 
 export function SolutionsPage() {
@@ -314,7 +315,7 @@ export function SolutionsPage() {
   const current = s.types[index]
   return (
     <>
-      <PageHeader page="solutions" image="/site/restaurant-table.webp" />
+      <PageHeader page="solutions" />
       <section className="ms-section" aria-label={copy.pages.solutions.heading}>
         <div className="ms-wrap">
           <div className="ms-tabs" role="group" aria-label={copy.pages.solutions.eyebrow}>
@@ -367,7 +368,7 @@ export function CountriesPage() {
 
   return (
     <>
-      <PageHeader page="countries" image="/site/restaurant-exterior.webp">
+      <PageHeader page="countries">
         <label className="ms-find">
           <Search size={18} aria-hidden="true" />
           <span className="ms-sr">{c.find}</span>
@@ -419,7 +420,7 @@ export function CountryPage({ code }: { code: CountryCode }) {
   const integrations = copy.integrations.groups
   return (
     <>
-      <PageHeader page="countries" heading={info.name} lead={c.pageLead} eyebrow={<PageLink page="countries" className="ms-crumb"><ArrowLeft size={14} aria-hidden="true" />{c.back}</PageLink>} image="/site/restaurant-exterior.webp">
+      <PageHeader page="countries" heading={info.name} lead={c.pageLead} eyebrow={<PageLink page="countries" className="ms-crumb"><ArrowLeft size={14} aria-hidden="true" />{c.back}</PageLink>}>
         <div className="ms-page-head-actions">
           <PageLink page="contact" className="ms-btn ms-btn--accent">{copy.ui.bookCta}<ArrowRight size={18} aria-hidden="true" /></PageLink>
         </div>
@@ -662,7 +663,7 @@ export function PilotPage() {
   const p = copy.pilot
   return (
     <>
-      <PageHeader page="pilot" image="/site/restaurant-interior.webp" imageAlt={p.imageAlt}>
+      <PageHeader page="pilot">
         <p className="ms-page-head-note">{p.fit}</p>
       </PageHeader>
       <section className="ms-section" aria-label={copy.pages.pilot.heading}>
@@ -755,7 +756,7 @@ export function AboutPage() {
   const about = copy.about
   return (
     <>
-      <PageHeader page="about" image="/site/restaurant-interior.webp" />
+      <PageHeader page="about" />
       <section className="ms-section" aria-labelledby="ms-about-story">
         <div className="ms-wrap ms-about">
           <div className="ms-about-story" data-rv>

@@ -59,7 +59,7 @@ export function JourneyOrderScene() {
   const paid = still || t >= 6
   return (
     <Scene kind="photo" name="j-order" sceneRef={ref}>
-      <Photo src="/site/guest-meal.webp" />
+      <Photo src="/site/menu/margherita-pizza.webp" />
       <div className="sc-receipt">
         <header><b>Riverside Kitchen</b><small>Order #1042 · delivery</small></header>
         <ul>

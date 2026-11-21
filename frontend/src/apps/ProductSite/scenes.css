@@ -329,9 +329,9 @@
 .sc-map-store, .sc-map-driver { position: absolute; display: grid; place-items: center; border-radius: 50%; box-shadow: 0 6px 14px -6px rgba(16, 27, 23, 0.6); }
 .sc-map-store { width: 38px; height: 38px; margin: -19px 0 0 -19px; background: var(--ms-forest); color: #fff; border: 3px solid #fff; }
 .sc-map-driver { width: 30px; height: 30px; margin: -15px 0 0 -15px; background: var(--ms-primary); color: #fff; border: 2.5px solid #fff; }
-.sc-map-driver--1 { animation: sc-d1 12s ease-in-out infinite; }
-.sc-map-driver--2 { animation: sc-d2 15s ease-in-out infinite; }
-.sc-map-driver--3 { animation: sc-d3 18s ease-in-out infinite; }
+.sc-map-driver--1 { left: 52%; top: 46%; animation: sc-d1 12s ease-in-out infinite; }
+.sc-map-driver--2 { left: 30%; top: 70%; animation: sc-d2 15s ease-in-out infinite; }
+.sc-map-driver--3 { left: 70%; top: 72%; animation: sc-d3 18s ease-in-out infinite; }
 @keyframes sc-d1 { 0%, 100% { left: 52%; top: 46%; } 50% { left: 78%; top: 22%; } }
 @keyframes sc-d2 { 0%, 100% { left: 30%; top: 70%; } 50% { left: 44%; top: 56%; } }
 @keyframes sc-d3 { 0%, 100% { left: 70%; top: 72%; } 50% { left: 86%; top: 60%; } }
@@ -578,3 +578,11 @@
 @media (prefers-reduced-motion: reduce) {
   .sc *, .sc *::before, .sc *::after { animation: none !important; transition: none !important; }
 }
+
+/* Scenes that used to sit on a photo: each now has its own surface, so no photo repeats. */
+.sc-o-lock { overflow: hidden; border-radius: inherit; background: #1d3a2f; }
+.sc-o-lock .sc-lock { background: transparent; -webkit-backdrop-filter: none; backdrop-filter: none; }
+.sc-s-receive { display: grid; place-items: center; padding: 32px 24px; }
+.sc-s-receive .sc-receiving { position: relative; left: auto; bottom: auto; width: min(420px, 100%); padding: 20px 22px 12px; transform: rotate(-1.2deg); }
+.sc-k-quality { display: grid; place-items: center; padding: 72px 24px 32px; }
+.sc-k-quality > .sc-float { position: relative; width: min(400px, 100%); padding: 18px 20px 12px; }

@@ -1,6 +1,6 @@
 import { act, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { usePreviewClock } from './Devices'
+import { ScenePaused, usePreviewClock } from './Devices'
 
 type Callback = (entries: { isIntersecting: boolean }[]) => void
 let observers: Callback[] = []
@@ -90,5 +90,20 @@ describe('usePreviewClock', () => {
     Object.defineProperty(document, 'hidden', { configurable: true, value: true })
     act(() => { vi.advanceTimersByTime(3000) })
     expect(screen.getByTestId('probe').textContent).toBe('2')
+  })
+
+  it('shows the finished state when the browser cannot tell what is on screen', () => {
+    globalThis.IntersectionObserver = undefined as unknown as typeof IntersectionObserver
+    render(<Probe />)
+    expect(screen.getByTestId('probe').dataset.still).toBe('true')
+    act(() => { vi.advanceTimersByTime(5000) })
+    expect(screen.getByTestId('probe')).toHaveTextContent('0')
+  })
+
+  it('does not count while its layer is paused, even when on screen', () => {
+    render(<ScenePaused value={true}><Probe /></ScenePaused>)
+    trigger(true)
+    act(() => { vi.advanceTimersByTime(5000) })
+    expect(screen.getByTestId('probe')).toHaveTextContent('0')
   })
 })

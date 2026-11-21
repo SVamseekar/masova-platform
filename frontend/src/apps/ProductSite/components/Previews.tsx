@@ -12,11 +12,28 @@ import { AppBar, KioskFrame, KitchenScreen, LaptopFrame, PhoneFrame, TabletFrame
 
 type FrameRef = (node: HTMLElement | null) => void
 
-const DISHES = [
-  { img: '/site/dish-margherita-pizza.webp', name: 'Margherita', note: 'San Marzano, fior di latte', price: '€12.00', value: 12, tags: ['Gluten', 'Milk'] },
-  { img: '/site/dish-mushroom-risotto.webp', name: 'Mushroom risotto', note: 'Porcini, parmesan', price: '€14.50', value: 14.5, tags: ['Milk', 'Celery'] },
-  { img: '/site/dish-chicken-tikka-masala.webp', name: 'Chicken tikka masala', note: 'With basmati rice', price: '€15.00', value: 15, tags: ['Milk', 'Nuts'] },
-  { img: '/site/dish-greek-salad.webp', name: 'Greek salad', note: 'Feta, olives, oregano', price: '€9.50', value: 9.5, tags: ['Milk'] },
+type Dish = { img: string; name: string; note: string; price: string; value: number; tags: string[] }
+
+/* Each preview has its own dishes, so no food photo appears twice on the site. */
+const DISHES: Dish[] = [
+  { img: '/site/menu/chicken-tikka-masala.webp', name: 'Chicken tikka masala', note: 'With basmati rice', price: '€15.00', value: 15, tags: ['Milk', 'Nuts'] },
+  { img: '/site/menu/spaghetti-carbonara.webp', name: 'Spaghetti carbonara', note: 'Guanciale, pecorino', price: '€13.50', value: 13.5, tags: ['Gluten', 'Egg'] },
+  { img: '/site/menu/greek-salad.webp', name: 'Greek salad', note: 'Feta, olives, oregano', price: '€9.50', value: 9.5, tags: ['Milk'] },
+  { img: '/site/menu/tiramisu.webp', name: 'Tiramisu', note: 'Mascarpone, espresso', price: '€6.50', value: 6.5, tags: ['Egg', 'Milk'] },
+]
+
+const COUNTER_DISHES: Dish[] = [
+  { img: '/site/menu/classic-cheeseburger.webp', name: 'Cheeseburger', note: '', price: '€9.50', value: 9.5, tags: [] },
+  { img: '/site/menu/french-fries.webp', name: 'Fries', note: '', price: '€3.50', value: 3.5, tags: [] },
+  { img: '/site/menu/onion-rings.webp', name: 'Onion rings', note: '', price: '€4.50', value: 4.5, tags: [] },
+  { img: '/site/menu/cola.webp', name: 'Cola', note: '', price: '€2.80', value: 2.8, tags: [] },
+]
+
+const KIOSK_DISHES: Dish[] = [
+  { img: '/site/menu/masala-dosa.webp', name: 'Masala dosa', note: '', price: '€8.50', value: 8.5, tags: ['Mustard'] },
+  { img: '/site/menu/paneer-butter-masala.webp', name: 'Paneer butter masala', note: '', price: '€12.00', value: 12, tags: ['Milk', 'Nuts'] },
+  { img: '/site/menu/veg-biryani-plate.webp', name: 'Veg biryani', note: '', price: '€11.00', value: 11, tags: ['Nuts'] },
+  { img: '/site/menu/mango-lassi.webp', name: 'Mango lassi', note: '', price: '€4.50', value: 4.5, tags: ['Milk'] },
 ]
 
 /* ---------- Helpers ---------- */
@@ -206,10 +223,10 @@ export function OrderingPhone({ dishes = 3 }: { dishes?: number }) {
 /* ---------- Counter ---------- */
 
 const COUNTER_LINES = [
-  { label: '2 × Margherita', value: 24, dish: 0 },
-  { label: '1 × Greek salad', value: 9.5, dish: 3 },
-  { label: 'Extra basil', value: 0.5, dish: 0 },
-  { label: '1 × Mushroom risotto', value: 14.5, dish: 1 },
+  { label: '2 × Cheeseburger', value: 19, dish: 0 },
+  { label: '1 × Fries', value: 3.5, dish: 1 },
+  { label: 'Extra cheese', value: 1, dish: 0 },
+  { label: '1 × Onion rings', value: 4.5, dish: 2 },
 ]
 
 function CounterPreview() {
@@ -224,9 +241,9 @@ function CounterPreview() {
     <Screen device="tablet" title="Counter · New order" store="Old Town" user="Maria Alves" frameRef={ref}>
       <div className="pv-pos">
         <div>
-          <div className="pv-chips pv-chips--tabs"><span data-on="true">Pizza</span><span>Pasta</span><span>Salads</span><span>Drinks</span></div>
+          <div className="pv-chips pv-chips--tabs"><span data-on="true">Burgers</span><span>Sides</span><span>Drinks</span><span>Desserts</span></div>
           <div className="pv-pos-grid">
-            {DISHES.map((dish, i) => (
+            {COUNTER_DISHES.map((dish, i) => (
               <div key={dish.name} data-on={i === picked}>
                 <img src={dish.img} alt="" width={80} height={56} loading="lazy" decoding="async" />
                 <b>{dish.name}</b>
@@ -377,15 +394,15 @@ export function SupportPhone() {
 
 function KioskPreview() {
   const { tick, ref, still } = usePreviewClock(1300)
-  const picked = still ? 0 : tick % DISHES.length
+  const picked = still ? 0 : tick % KIOSK_DISHES.length
   const count = still ? 2 : 1 + (tick % 4)
-  const total = DISHES.slice(0, count).reduce((sum, d) => sum + d.value, 0)
+  const total = KIOSK_DISHES.slice(0, count).reduce((sum, d) => sum + d.value, 0)
   return (
     <KioskFrame className="pv" frameRef={ref}>
       <div className="pv-kiosk-head"><b>Order here</b><span>Eat in · Take away</span></div>
-      <div className="pv-chips pv-chips--tabs pv-kiosk-tabs"><span data-on="true">Popular</span><span>Pizza</span><span>Bowls</span><span>Drinks</span></div>
+      <div className="pv-chips pv-chips--tabs pv-kiosk-tabs"><span data-on="true">Popular</span><span>Dosa</span><span>Curries</span><span>Drinks</span></div>
       <div className="pv-kiosk-grid">
-        {DISHES.map((dish, i) => (
+        {KIOSK_DISHES.map((dish, i) => (
           <div key={dish.name} data-on={i === picked}>
             <img src={dish.img} alt="" width={120} height={84} loading="lazy" decoding="async" />
             <b>{dish.name}</b>

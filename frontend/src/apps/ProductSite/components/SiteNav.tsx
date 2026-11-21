@@ -278,7 +278,6 @@ export default function SiteNav(props: NavProps) {
               </div>
             ))}
             <div className="ms-mega-aside">
-              <img src="/site/kitchen-chef.webp" alt="" width={300} height={128} loading="lazy" decoding="async" />
               <div>
                 <p className="ms-mega-title">{nav.asideTitle}</p>
                 {ASIDE_LINKS.map((target) => (

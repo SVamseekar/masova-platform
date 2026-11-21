@@ -4,6 +4,7 @@ import { useSite } from '../SiteContext'
 import { PRODUCT_AREAS } from '../locales'
 import { REGIONS, SITE_COUNTRIES } from '../content/shared'
 import { ROLE_APPS } from './Previews'
+import { ScenePaused } from './Devices'
 import { AreaThumbScene, HeroTonightScene, JourneyAiScene, JourneyDriverScene, JourneyKitchenScene, JourneyManagerScene, JourneyOrderScene, RoleScene } from './scenes'
 import { CountUp, useTilt } from './Effects'
 import { CountryLink, PAGE_ICONS, PageLink, SectionHead } from './Layout'
@@ -181,7 +182,8 @@ export function JourneySection() {
             <div className="ms-story-frame">
               {journey.steps.map((step, i) => (
                 <div key={step.name} className="ms-story-layer" data-active={i === active}>
-                  <JourneyStage index={i} />
+                  {/* Faded-out layers still count as on screen, so pause them; the key restarts a scene from its first frame when its step comes up. */}
+                  <ScenePaused value={i !== active}><JourneyStage key={String(i === active)} index={i} /></ScenePaused>
                 </div>
               ))}
               <p className="ms-story-count ms-num">{copy.ui.stepLabel} {active + 1} / {journey.steps.length}</p>
