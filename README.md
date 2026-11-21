@@ -17,15 +17,17 @@
 
 **6 microservices · 8 AI agents · 6 web apps · 2 mobile apps**
 
+**Website: [getmasova.rest](https://getmasova.rest)** · [hello@getmasova.rest](mailto:hello@getmasova.rest)
+
 </div>
 
 ---
 
 ## What is MaSoVa?
 
-MaSoVa is a **production-grade, full-stack restaurant operating system** built for multi-store operations. It covers the entire restaurant lifecycle: customers browse menus, place orders, and track deliveries in real time. Kitchen staff manage live order queues on a dedicated display. Drivers receive assignments and confirm delivery via OTP on mobile. Managers get demand forecasting, staff scheduling, revenue analytics, and aggregator order normalisation — all from one unified platform.
+MaSoVa is a **full-stack restaurant operating system** for multi-store groups, with AI assistants that prepare decisions for a manager to approve. It covers the entire restaurant lifecycle: customers browse menus, place orders, and track deliveries in real time. Kitchen staff manage live order queues on a dedicated display. Drivers receive assignments and confirm delivery via OTP on mobile. Managers get demand forecasting, staff scheduling and revenue analytics, and can enter marketplace orders into the same kitchen queue, all from one platform.
 
-**Built for EU restaurant owners who need more than a POS.** MaSoVa handles what aggregators (Wolt, Deliveroo, Just Eat, Uber Eats), legacy POS terminals, and manual spreadsheets cannot — unified, compliant, and scalable across Europe.
+**Built for multi-site groups that need more than a POS.** MaSoVa runs alongside the till you already use and brings ordering, kitchen, delivery, stock, staff and guests into one system.
 
 ---
 
@@ -33,15 +35,14 @@ MaSoVa is a **production-grade, full-stack restaurant operating system** built f
 
 | Problem today | How MaSoVa solves it |
 |---|---|
-| Orders from multiple aggregators on separate tablets | All channels land in one unified kitchen queue |
+| Orders from several channels on separate screens | Web, kiosk, counter and staff-entered marketplace orders share one kitchen queue |
 | Kitchen doesn't know which order is urgent | Live KDS with per-item timers and automatic status updates |
 | Stockouts discovered too late | Inventory agent alerts and drafts reorder suggestions |
 | Weekend prep is guesswork | Demand forecasting predicts item-level sales from your history |
 | Customer feedback takes hours to respond to | Review response agent drafts personalised replies for manager approval |
 | Staff scheduling is manual every week | Shift optimisation agent recommends staffing from forecasted footfall |
 | Delivery fees inconsistent across channels | Zone-based pricing computed server-side, displayed in store currency |
-| VAT compliance is manual | EU VAT calculated per country, order type, and item category — 12 countries |
-| Fiscal signing differs by country | Automated fiscal signing for DE, FR, IT, BE, HU, GB at order completion |
+| VAT differs by country and order type | VAT calculated per country, order type and item category |
 | Multiple locations means double the chaos | Full multi-store support — each store has its own menu, staff, and analytics |
 
 👉 **[Demo guide →](docs/DEMO.md)**
@@ -143,12 +144,12 @@ Event-driven communication via RabbitMQ (`masova.orders.exchange`, `masova.notif
 - **11-state order lifecycle** — every transition publishes to `masova.orders.exchange`
 - **Multi-gateway payment routing** — Stripe for EU/international stores, Razorpay for India legacy
 - **207 canonical API endpoints** — validated in CI via integration matrix audit
-- **EU VAT engine** — 12-country, context-aware VAT (DINE_IN / TAKEAWAY / DELIVERY, FOOD / ALCOHOL / BEVERAGE)
-- **Fiscal compliance** — DE, FR, IT, BE, HU, GB signing at order completion
+- **VAT engine** — per-country, context-aware VAT (DINE_IN / TAKEAWAY / DELIVERY, FOOD / ALCOHOL / BEVERAGE)
+- **Fiscal signing interface** — pluggable `FiscalSigner` per country; the DE, FR, IT, BE and HU signers are stubs that fail closed until a certified partner is connected, and GB records a VAT ledger entry
 - **Allergen compliance** — 14 EU allergens enforced; items cannot go live without manager declaration
-- **Aggregator Hub** — Wolt, Deliveroo, Just Eat, Uber Eats normalised into one order queue
+- **Marketplace orders** — Wolt, Deliveroo, Just Eat and Uber Eats orders entered by staff join the same order queue (no live partner APIs)
 - **Multi-tenancy** — all data scoped to `storeId` with database-level isolation
-- **GDPR** — built-in data erasure flow across all services
+- **Data erasure** — built-in erasure flow across all services for GDPR requests
 
 ---
 
@@ -232,16 +233,19 @@ masova/
 
 | Capability | Status |
 |---|---|
-| 6-service microservice architecture | ✅ Live |
-| 207 canonical API endpoints | ✅ Live |
-| Dual-write MongoDB + PostgreSQL | ✅ Live |
-| Dark-premium customer web + neumorphic staff UI | ✅ Live |
-| Stripe + Razorpay multi-gateway payments | ✅ Live |
-| EU VAT + fiscal signing (12 countries) | ✅ Live |
-| Aggregator hub (Wolt, Deliveroo, Just Eat, Uber Eats) | ✅ Live |
-| AI agents (8 agents, propose-then-approve) | ✅ Live |
-| Staff + customer mobile apps | ✅ Live |
-| GCP Cloud Run deployment pipeline | ✅ Live |
+| 6-service microservice architecture | ✅ Built |
+| 207 canonical API endpoints | ✅ Built |
+| Dual-write MongoDB + PostgreSQL | ✅ Built |
+| Dark-premium customer web + neumorphic staff UI | ✅ Built |
+| Stripe + Razorpay multi-gateway payments | ✅ Built |
+| Per-country VAT | ✅ Built |
+| Certified fiscal signing (DE, FR, IT, BE, HU) | 🔜 Stub, needs a certified partner |
+| Marketplace orders (staff-entered) | ✅ Built |
+| Live marketplace APIs | 🔜 Not built |
+| AI agents (8 agents, propose-then-approve) | ✅ Built |
+| MaSoVa Voice (spoken support and Copilot) | 🧪 Prototype |
+| Staff + customer mobile apps | ✅ Built |
+| GCP Cloud Run deployment pipeline | ✅ Built |
 
 ---
 
