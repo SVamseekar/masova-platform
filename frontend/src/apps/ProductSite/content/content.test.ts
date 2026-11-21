@@ -3,7 +3,8 @@ import { SITE_COPY } from './index'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { COUNTRY_CODES, SITE_LEGAL_PATHS, SITE_LOCALES, SITE_PAGES, isSiteLocale } from '../locales'
-import { APP_GROUPS, APP_STATUS, AREA_META, ASSISTANT_SCHEDULE, INBOX_ASSISTANTS, SITE_COUNTRIES } from './shared'
+import { ASSISTANT_ICONS } from '../components/Layout'
+import { APP_GROUPS, APP_STATUS, AREA_META, ASSISTANT_SCHEDULE, CONCIERGE_TOPICS, INBOX_ASSISTANTS, SITE_COUNTRIES } from './shared'
 
 type Json = string | number | boolean | null | Json[] | { [key: string]: Json }
 
@@ -100,6 +101,9 @@ describe('site copy', () => {
 
   it.each(SITE_LOCALES)('%s has one assistant per schedule entry and one inbox item per inbox assistant', (locale) => {
     expect(SITE_COPY[locale].ai.assistants).toHaveLength(ASSISTANT_SCHEDULE.length)
+    expect(SITE_COPY[locale].ai.home.chips).toHaveLength(ASSISTANT_SCHEDULE.length)
+    expect(ASSISTANT_ICONS).toHaveLength(ASSISTANT_SCHEDULE.length)
+    expect(SITE_COPY[locale].concierge.topics).toHaveLength(CONCIERGE_TOPICS.length)
     expect(SITE_COPY[locale].ai.inbox.items).toHaveLength(INBOX_ASSISTANTS.length)
   })
 

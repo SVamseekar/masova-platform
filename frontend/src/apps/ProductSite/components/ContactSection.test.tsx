@@ -9,9 +9,9 @@ import { SITE_COPY } from '../content'
 const copy = SITE_COPY.en
 const form = copy.contact.form
 
-function renderForm() {
+function renderForm(path = '/') {
   return render(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={[path]}>
       <SiteContext.Provider value={{ locale: 'en', copy }}>
         <ContactSection />
       </SiteContext.Provider>
@@ -103,5 +103,17 @@ describe('ContactSection', () => {
 
     expect(fetchMock).not.toHaveBeenCalled()
     expect(screen.getByRole('status')).toHaveTextContent(form.successTitle)
+  })
+})
+
+describe('ContactSection prefill from the concierge', () => {
+  it('picks the site count the visitor chose', () => {
+    renderForm('/contact?sites=2')
+    expect(screen.getByLabelText(new RegExp(form.sites))).toHaveValue(form.sitesOptions[2])
+  })
+
+  it.each(['', 'abc', '-1', '99', '1e0', '2.0'])('ignores ?sites=%s', (value) => {
+    renderForm(`/contact?sites=${value}`)
+    expect(screen.getByLabelText(new RegExp(form.sites))).toHaveValue('')
   })
 })
