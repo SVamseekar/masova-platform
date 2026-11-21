@@ -18,6 +18,8 @@ import {
   PilotPage, PricingPage, ProductPage, SecurityPage, SolutionsPage,
 } from './components/Pages'
 import ContactSection from './components/ContactSection'
+import Concierge from './components/Concierge'
+import { ShowcaseSection } from './components/Showcase'
 import { usePointerGlow } from './components/Effects'
 
 function PageBody({ page, country }: { page: SitePage; country?: CountryCode }) {
@@ -27,6 +29,7 @@ function PageBody({ page, country }: { page: SitePage; country?: CountryCode }) 
       return (
         <>
           <HeroSection />
+          <ShowcaseSection />
           <JourneySection />
           <AreasGrid />
           <AiHomeSection />
@@ -108,6 +111,7 @@ export default function ProductSitePage({ locale = DEFAULT_SITE_LOCALE, page = '
           {page !== 'contact' && <CtaBand page={page} />}
         </main>
         <SiteFooter page={page} country={country} />
+        {page !== 'contact' && <Concierge />}
       </div>
     </SiteContext.Provider>
   )

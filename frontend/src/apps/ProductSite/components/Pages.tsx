@@ -10,6 +10,7 @@ import { APP_STATUS, AREA_META, ASSISTANT_SCHEDULE, DEFAULT_COUNTRY_FOR_LOCALE, 
 import { APP_ICONS, ASSISTANT_ICONS, CountryLink, PAGE_ICONS, PageHeader, PageLink, SectionHead, StatusChip } from './Layout'
 import { AreaPreview, CopilotPreview, SupportPhone } from './Previews'
 import DecisionInbox from './DecisionInbox'
+import { AgentGrid, AiHero, VoiceSection } from './AiShowcase'
 import SupportEmailLink from './SupportEmailLink'
 import { AreasGrid, JourneySection, RolesSection } from './HomeSections'
 import { AppMatrix, AppShowcase } from './AppFamily'
@@ -239,32 +240,12 @@ export function AiPage() {
   const moreVisuals = [<CopilotPreview key="c" />, <div className="ms-stage-phone" key="s"><SupportPhone /></div>]
   return (
     <>
-      <PageHeader page="ai" />
+      <AiHero />
       <AiCycle />
+      <AgentGrid />
+      <VoiceSection />
 
-      <section className="ms-section" aria-labelledby="ms-team-title">
-        <div className="ms-wrap">
-          <h2 className="ms-sr" id="ms-team-title">{copy.pages.ai.eyebrow}</h2>
-          <ul className="ms-agents">
-            {ai.assistants.map((assistant, i) => {
-              const Icon = ASSISTANT_ICONS[i]
-              return (
-                <li key={assistant.name} data-glow data-rv style={{ '--rv-delay': `${(i % 4) * 60}ms` } as React.CSSProperties}>
-                  <div className="ms-agents-top">
-                    <span className="ms-app-icon"><Icon size={20} aria-hidden="true" /></span>
-                    <small>{assistant.when}</small>
-                  </div>
-                  <h3>{assistant.name}</h3>
-                  <p>{assistant.does}</p>
-                  <blockquote>{assistant.example}</blockquote>
-                </li>
-              )
-            })}
-          </ul>
-        </div>
-      </section>
-
-      <section className="ms-section ms-section--alt" aria-labelledby="ms-inbox-title">
+      <section className="ms-section ms-section--alt" id="inbox" aria-labelledby="ms-inbox-title">
         <div className="ms-wrap">
           <SectionHead id="ms-inbox-title" eyebrow={ai.inbox.eyebrow} title={ai.inbox.title} lead={ai.inbox.lead} />
           <DecisionInbox

@@ -1,4 +1,5 @@
 import { useState, type ChangeEvent } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Link } from 'react-router-dom'
 import { CheckCircle2, Handshake, MessageSquareText, SlidersHorizontal } from 'lucide-react'
 import { useSite } from '../SiteContext'
@@ -37,7 +38,13 @@ export default function ContactSection() {
   const { copy, locale } = useSite()
   const c = copy.contact
   const f = c.form
-  const [form, setForm] = useState<FormState>(INITIAL)
+  const [searchParams] = useSearchParams()
+  // ?sites=<index> comes from the concierge: the visitor already said how many sites they run
+  const [form, setForm] = useState<FormState>(() => {
+    const index = Number(searchParams.get('sites'))
+    const sites = searchParams.has('sites') && Number.isInteger(index) ? f.sitesOptions[index] : undefined
+    return sites ? { ...INITIAL, sites } : INITIAL
+  })
   const [errors, setErrors] = useState<FieldErrors>({})
   const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'failed'>('idle')
   const [sentTo, setSentTo] = useState('')

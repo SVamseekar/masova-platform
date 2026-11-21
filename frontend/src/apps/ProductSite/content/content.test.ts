@@ -100,6 +100,8 @@ describe('site copy', () => {
 
   it.each(SITE_LOCALES)('%s has one assistant per schedule entry and one inbox item per inbox assistant', (locale) => {
     expect(SITE_COPY[locale].ai.assistants).toHaveLength(ASSISTANT_SCHEDULE.length)
+    expect(SITE_COPY[locale].ai.home.chips).toHaveLength(ASSISTANT_SCHEDULE.length)
+    expect(SITE_COPY[locale].concierge.topics).toHaveLength(4)
     expect(SITE_COPY[locale].ai.inbox.items).toHaveLength(INBOX_ASSISTANTS.length)
   })
 
