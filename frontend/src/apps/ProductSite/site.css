@@ -330,7 +330,7 @@
 .ms-story-steps p { color: var(--ms-text-2); font-size: 17px; margin-top: 10px; max-width: 460px; }
 .ms-story-inline { display: none; }
 .ms-story-stage { position: sticky; top: 104px; }
-.ms-story-frame { position: relative; height: min(600px, calc(100vh - 150px)); min-height: 440px; border-radius: var(--ms-radius-dialog); border: 1px solid var(--ms-border); background: radial-gradient(120% 90% at 50% 0%, #ffffff 0%, #eef0ea 70%); box-shadow: 0 30px 60px -40px rgba(16, 27, 23, 0.5); overflow: hidden; }
+.ms-story-frame { position: relative; height: min(600px, calc(100vh - 150px)); min-height: 440px; border-radius: var(--ms-radius-dialog); border: 1px solid var(--ms-border); background: #eef0ea; box-shadow: 0 30px 60px -40px rgba(16, 27, 23, 0.5); overflow: hidden; }
 .ms-story-layer { position: absolute; inset: 0; display: grid; place-items: center; padding: 32px 32px 48px; opacity: 0; transform: translateY(14px) scale(0.98); transition: opacity 420ms var(--ms-ease), transform 420ms var(--ms-ease); pointer-events: none; }
 .ms-story-layer[data-active='true'] { opacity: 1; transform: none; }
 .ms-story-count { position: absolute; left: 20px; bottom: 16px; font-size: 12.5px; font-weight: 600; color: var(--ms-text-2); }
@@ -351,7 +351,7 @@
 .ms-bento-card { border-radius: var(--ms-radius-dialog); background: var(--ms-canvas); border: 1px solid var(--ms-border); overflow: hidden; transition: transform 200ms var(--ms-ease), box-shadow 200ms, border-color 200ms; }
 .ms-bento-card:hover { transform: translateY(-4px); border-color: #c9cbc2; box-shadow: 0 24px 44px -30px rgba(16, 27, 23, 0.55); }
 .ms-bento-link { display: flex; flex-direction: column; height: 100%; }
-.ms-bento-visual { height: 190px; padding: 18px 18px 0; overflow: hidden; background: linear-gradient(180deg, #e9ece4 0%, #f3f3ee 100%); border-bottom: 1px solid var(--ms-border); display: flex; justify-content: center; }
+.ms-bento-visual { height: 190px; padding: 18px 18px 0; overflow: hidden; background: #ece6dc; border-bottom: 1px solid var(--ms-border); display: flex; justify-content: center; }
 .ms-bento-visual > * { width: 470px; flex-shrink: 0; transform-origin: top center; transform: scale(0.62); transition: transform 400ms var(--ms-ease); }
 .ms-bento-visual > .pv-phone { width: 210px; transform: scale(0.8); }
 .ms-bento-card:hover .ms-bento-visual > * { transform: scale(0.65) translateY(-6px); }
@@ -490,8 +490,8 @@
 .ms-features dt { display: flex; gap: 10px; font-weight: 600; font-size: 15.5px; }
 .ms-features dt svg { flex-shrink: 0; margin-top: 4px; color: var(--ms-success); }
 .ms-features dd { color: var(--ms-text-2); font-size: 15px; }
-.ms-stage { position: relative; margin: 0; border-radius: var(--ms-radius-dialog); border: 1px solid var(--ms-border); background: radial-gradient(120% 90% at 50% 0%, #ffffff 0%, #eef0ea 72%); padding: 36px 32px 44px; display: grid; place-items: center; min-height: 440px; }
-.ms-section--alt .ms-stage { background: radial-gradient(120% 90% at 50% 0%, #f6f5f1 0%, #e9ece4 72%); }
+.ms-stage { position: relative; isolation: isolate; overflow: hidden; margin: 0; border-radius: 24px; background: #efe6da; padding: 36px 32px 44px; display: grid; place-items: center; min-height: 440px; }
+.ms-section--alt .ms-stage { background: #e2e8df; }
 .ms-stage > .pv-window { width: 100%; max-width: 560px; }
 .ms-stage-note { position: absolute; right: 18px; bottom: 14px; font-size: 11.5px; color: var(--ms-text-2); }
 .ms-stage--pair { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.7fr); gap: 20px; align-items: center; }
@@ -996,7 +996,7 @@
   .ms-story { grid-template-columns: minmax(0, 1fr); }
   .ms-story-stage { display: none; }
   .ms-story-steps > li, .ms-story-steps > li:last-child { min-height: 0; opacity: 1; }
-  .ms-story-inline { display: grid; place-items: center; margin: 20px 0 0; padding: 24px; border-radius: var(--ms-radius-dialog); border: 1px solid var(--ms-border); background: radial-gradient(120% 90% at 50% 0%, #ffffff 0%, #eef0ea 70%); }
+  .ms-story-inline { display: grid; place-items: center; margin: 20px 0 0; padding: 24px; border-radius: var(--ms-radius-dialog); border: 1px solid var(--ms-border); background: #eef0ea; }
   .ms-bento, .ms-map, .ms-agents, .ms-grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ms-inbox, .ms-feature-grid, .ms-how, .ms-more, .ms-country, .ms-docs, .ms-price, .ms-measures, .ms-about, .ms-contact, .ms-area-foot { grid-template-columns: minmax(0, 1fr); gap: 36px; }
   .ms-feature-grid[data-flip='true'] > :first-child { order: 0; }
@@ -1105,7 +1105,7 @@
 .ms-show-areas > div { display: flex; flex-wrap: wrap; gap: 8px; }
 .ms-on-dark .ms-world-chip { background: rgba(244, 245, 240, 0.06); border-color: var(--ms-border-dark); color: var(--ms-dark-text); padding: 0 12px 0 14px; min-height: 36px; font-size: 14px; }
 .ms-on-dark .ms-world-chip:hover { border-color: var(--ms-accent-dark); color: var(--ms-accent-dark); }
-.ms-show-stage, .ms-roles-stage { position: relative; margin: 0; display: grid; place-items: center; padding: 36px 32px 44px; background: radial-gradient(90% 70% at 50% 40%, rgba(242, 139, 91, 0.16) 0%, rgba(242, 139, 91, 0) 70%), var(--ms-dark-2); overflow: hidden; }
+.ms-show-stage, .ms-roles-stage { position: relative; margin: 0; display: grid; place-items: center; padding: 36px 32px 44px; background: var(--ms-dark-2); overflow: hidden; }
 .ms-show-stage > :first-child, .ms-roles-stage > :first-child { animation: ms-device-in 520ms var(--ms-ease); }
 .ms-show-stage[data-wide='false'] > :first-child, .ms-roles-stage[data-wide='false'] > :first-child { width: 250px; }
 .ms-show-stage[data-wide='true'] > :first-child, .ms-roles-stage[data-wide='true'] > :first-child { width: 100%; max-width: 540px; }
@@ -1253,23 +1253,13 @@
  * Palette stays the site's own: forest, warm canvas, burnt orange; soft cards use sand, sage and clay.
  * ====================================================================== */
 
-/* Backdrop: a slow, grainy field of light. Dark tones sit behind light text; soft tones are pale. */
-.ms-aurora { position: absolute; inset: 0; z-index: -1; overflow: hidden; background: var(--ms-dark); pointer-events: none; }
-.ms-aurora i { position: absolute; width: 62%; aspect-ratio: 1; border-radius: 50%; filter: blur(80px); opacity: 0.4; will-change: transform; }
-.ms-aurora i:nth-child(1) { background: var(--au-1); right: -14%; top: -30%; animation: ms-au-1 26s ease-in-out infinite alternate; }
-.ms-aurora i:nth-child(2) { background: var(--au-2); left: 18%; bottom: -52%; opacity: 0.28; animation: ms-au-2 31s ease-in-out infinite alternate; }
-.ms-aurora i:nth-child(3) { background: var(--au-3); right: -20%; bottom: -30%; width: 46%; animation: ms-au-3 35s ease-in-out infinite alternate; }
-.ms-aurora i:nth-child(4) { background: var(--au-4); left: -24%; top: -24%; width: 56%; opacity: 0.3; animation: ms-au-2 39s ease-in-out infinite alternate-reverse; }
-.ms-aurora[data-variant='soft'] { background: #f2ede5; }
-.ms-aurora[data-variant='soft'] i { opacity: 0.75; filter: blur(70px); }
+/* Backdrop: one flat palette colour with a faint grain. */
+.ms-aurora { position: absolute; inset: 0; z-index: -1; overflow: hidden; background: var(--au-bg, var(--ms-dark)); pointer-events: none; }
 .ms-aurora-grain {
-  position: absolute; inset: 0; opacity: 0.16; mix-blend-mode: overlay;
+  position: absolute; inset: 0; opacity: 0.1; mix-blend-mode: overlay;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
-.ms-aurora[data-variant='soft'] .ms-aurora-grain { opacity: 0.35; mix-blend-mode: soft-light; }
-@keyframes ms-au-1 { to { transform: translate(-14%, 16%) scale(1.15); } }
-@keyframes ms-au-2 { to { transform: translate(12%, -10%) scale(1.1); } }
-@keyframes ms-au-3 { to { transform: translate(-18%, -14%) scale(0.92); } }
+.ms-aurora[data-variant='soft'] .ms-aurora-grain { opacity: 0.3; mix-blend-mode: soft-light; }
 
 /* Drifting chips with a small spark */
 .ms-ribbon { display: grid; gap: 14px; overflow: hidden; }
