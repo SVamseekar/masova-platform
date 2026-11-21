@@ -1549,3 +1549,70 @@
   .ms-ribbon-track:nth-child(2) { display: none; }
   .ms-voice-answer[data-shown='false'], .dv-msg[data-hidden='true'] { opacity: 1; transform: none; }
 }
+
+/* ======================================================================
+ * Device hardware for the product previews (Devices.tsx).
+ * Frames size from their container; inner parts use cqw so they scale with it.
+ * ====================================================================== */
+.dv-cam { position: absolute; left: 50%; width: 1cqw; min-width: 4px; aspect-ratio: 1; margin-left: -0.5cqw; border-radius: 50%; background: #262927; box-shadow: inset 0 0 0 1px #34403b; }
+
+/* Phone that fills its container */
+.dv-phone.dv-phone--fit { width: 100%; padding: 3.4%; border-radius: 17% / 8%; container-type: inline-size; }
+.dv-phone--fit::before { top: 19%; height: 8%; box-shadow: none; }
+.dv-phone--fit::after { top: 24%; height: 12%; }
+.dv-phone--fit .dv-phone-screen { height: auto; aspect-ratio: 9 / 19.5; border-radius: 13cqw; background: var(--ms-canvas); font-size: 11px; padding-bottom: 4cqw; }
+.dv-phone--fit .dv-status { padding: 4.6cqw 7cqw 2cqw 10cqw; font-size: max(9px, 4.4cqw); }
+.dv-phone--fit .dv-island { top: 3.4cqw; width: 30cqw; height: 8.6cqw; margin-left: -15cqw; }
+.dv-phone--fit .dv-status-icons { gap: 1.4cqw; }
+.dv-phone--fit .dv-status-icons svg { height: 3.4cqw; width: auto; }
+.dv-phone--fit .dv-home { width: 36cqw; height: 1.5cqw; margin-left: -18cqw; bottom: 2.2cqw; }
+
+/* Laptop */
+.dv-laptop { width: 100%; container-type: inline-size; filter: drop-shadow(0 30px 34px rgba(16, 27, 23, 0.24)); }
+.dv-laptop-lid { position: relative; margin: 0 5.5%; padding: 2.2% 2.2% 2.6%; border-radius: 2.8cqw 2.8cqw 0.6cqw 0.6cqw; background: #1b1d1c; box-shadow: inset 0 0 0 1px #464947, inset 0 0 0 3px #101211; }
+.dv-laptop-lid .dv-cam { top: 0.7cqw; }
+.dv-laptop-screen { border-radius: 0.5cqw; overflow: clip; background: #f9f9f6; aspect-ratio: 16 / 10; display: flex; flex-direction: column; }
+.dv-laptop-base { position: relative; height: 2.2cqw; background: linear-gradient(180deg, #e6e7e3 0%, #cdcfca 50%, #9ea19c 100%); border-radius: 0.3cqw 0.3cqw 3cqw 3cqw / 0.3cqw 0.3cqw 1.8cqw 1.8cqw; }
+.dv-laptop-base span { position: absolute; left: 50%; top: 0; width: 15%; height: 0.9cqw; margin-left: -7.5%; border-radius: 0 0 1cqw 1cqw; background: #b9bbb6; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2); }
+
+/* Tablet, optionally on a counter stand */
+.dv-tablet { position: relative; width: 100%; container-type: inline-size; isolation: isolate; }
+.dv-tablet-body { position: relative; z-index: 1; padding: 2.6%; border-radius: 4.4cqw; background: #1b1d1c; box-shadow: inset 0 0 0 1.5px #4a4d4b, inset 0 0 0 4px #121413, 0 40px 70px -36px rgba(16, 27, 23, 0.6); }
+.dv-tablet-body .dv-cam { top: 1cqw; }
+.dv-tablet-screen { border-radius: 2cqw; overflow: clip; background: var(--ms-canvas); aspect-ratio: 10 / 7; display: flex; flex-direction: column; font-size: 11px; color: var(--ms-ink); }
+.dv-stand { position: relative; height: 13cqw; }
+.dv-stand i { position: absolute; left: 50%; top: -5cqw; width: 13cqw; height: 16cqw; margin-left: -6.5cqw; z-index: -1; background: linear-gradient(90deg, #8f928d 0%, #d9dad6 45%, #aeb0ab 100%); clip-path: polygon(22% 0, 78% 0, 100% 100%, 0 100%); }
+.dv-stand b { position: absolute; left: 50%; bottom: 0; width: 42cqw; height: 2.6cqw; margin-left: -21cqw; border-radius: 1.4cqw; background: linear-gradient(180deg, #e2e3df 0%, #a7aaa5 100%); box-shadow: 0 16px 22px -12px rgba(16, 27, 23, 0.5); }
+
+/* Kitchen wall screen */
+.dv-kitchen { position: relative; width: 100%; container-type: inline-size; padding-top: 3cqw; }
+.dv-kitchen-mount { position: absolute; left: 50%; top: 0; width: 20cqw; height: 4cqw; margin-left: -10cqw; border-radius: 0.6cqw 0.6cqw 0 0; background: linear-gradient(180deg, #3a3d3b, #222523); }
+.dv-kitchen-body { position: relative; padding: 1.6% 1.6% 3.6%; border-radius: 1.4cqw; background: #151716; box-shadow: inset 0 0 0 1px #3a3d3b, 0 40px 70px -36px rgba(16, 27, 23, 0.6); }
+.dv-kitchen-screen { border-radius: 0.4cqw; overflow: clip; background: #141c19; aspect-ratio: 16 / 9; display: flex; flex-direction: column; }
+.dv-kitchen-led { position: absolute; left: 50%; bottom: 1.2%; width: 0.8cqw; min-width: 4px; aspect-ratio: 1; margin-left: -0.4cqw; border-radius: 50%; background: #3ecf7a; box-shadow: 0 0 5px rgba(62, 207, 122, 0.8); }
+
+/* Self-order kiosk */
+.dv-kiosk { width: 100%; max-width: 300px; margin: 0 auto; container-type: inline-size; display: flex; flex-direction: column; align-items: center; }
+.dv-kiosk-body { width: 100%; padding: 5cqw 5cqw 0; border-radius: 6cqw 6cqw 4cqw 4cqw; background: #ecebe6; box-shadow: inset 0 0 0 1px #d4d3cd, inset 0 -3px 0 #c9c8c1, 0 40px 60px -36px rgba(16, 27, 23, 0.55); }
+.dv-kiosk-screen { border: 3cqw solid #151716; border-radius: 3cqw; overflow: clip; background: var(--ms-canvas); aspect-ratio: 9 / 14; display: flex; flex-direction: column; font-size: 11px; color: var(--ms-ink); }
+.dv-kiosk-panel { height: 17cqw; display: flex; align-items: center; justify-content: center; gap: 9cqw; }
+.dv-kiosk-panel i { width: 18cqw; height: 7cqw; border-radius: 1.4cqw; background: #2a2d2b; box-shadow: inset 0 -2px 0 #3d403e; }
+.dv-kiosk-panel b { width: 26cqw; height: 1.6cqw; border-radius: 1cqw; background: #b9b8b1; }
+.dv-kiosk-neck { width: 30cqw; height: 14cqw; background: linear-gradient(90deg, #cfcec8 0%, #ecebe6 50%, #cfcec8 100%); }
+.dv-kiosk-foot { width: 72cqw; height: 4cqw; border-radius: 1.2cqw 1.2cqw 0.6cqw 0.6cqw; background: #d8d7d1; box-shadow: 0 18px 24px -14px rgba(16, 27, 23, 0.5); }
+
+/* App bar shared by every MaSoVa screen */
+.dv-appbar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; flex-shrink: 0; background: #fff; border-bottom: 1px solid var(--ms-border); font-size: 11.5px; color: var(--ms-ink); text-align: left; }
+.dv-appbar > svg { flex-shrink: 0; border-radius: 4px; }
+.dv-appbar > b { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.dv-store { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; background: var(--ms-selection); color: var(--ms-text-2); font-size: 10.5px; font-weight: 500; white-space: nowrap; }
+.dv-appbar-end { margin-left: auto; display: inline-flex; align-items: center; gap: 10px; }
+.dv-appbar .pv-live { display: inline-flex; align-items: center; gap: 5px; color: var(--ms-success); font-size: 10.5px; font-weight: 600; }
+.dv-user { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; flex-shrink: 0; background: #b98a62; color: #fff; font-size: 9px; font-weight: 700; }
+.dv-appbar--dark { background: #0c1411; color: var(--ms-dark-text); border-color: rgba(244, 245, 240, 0.1); }
+.dv-appbar--dark .dv-store { background: rgba(244, 245, 240, 0.08); color: var(--ms-dark-text-2); }
+.dv-appbar--dark .pv-live { color: #5fd39a; }
+@media (max-width: 640px) {
+  .dv-phone.dv-phone--fit { width: 100%; }
+  .dv-appbar .dv-store { display: none; }
+}
