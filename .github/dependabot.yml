@@ -74,6 +74,11 @@ updates:
       - dependency-name: msw
         update-types:
           - version-update:semver-major
+      # jsdom 31 changes how inline styles read back, and the tabs, skeleton and avatar
+      # style tests fail on it (#242). Upgrade it on purpose together with those tests.
+      - dependency-name: jsdom
+        update-types:
+          - version-update:semver-major
   # ── GitHub Actions (CI, deploy, contract validation) ──────────────────────
   - package-ecosystem: github-actions
     directory: /
