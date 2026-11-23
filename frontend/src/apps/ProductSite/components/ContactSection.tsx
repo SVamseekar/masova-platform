@@ -5,6 +5,7 @@ import { CheckCircle2, Handshake, MessageSquareText, SlidersHorizontal } from 'l
 import { useSite } from '../SiteContext'
 import { SITE_COUNTRIES } from '../content/shared'
 import { SUPPORT_EMAIL } from '../constants'
+import { trackEvent } from '../../../lib/analytics'
 import SupportEmailLink from './SupportEmailLink'
 
 interface FormState {
@@ -108,6 +109,8 @@ export default function ContactSection() {
       if (data.success === false || data.success === 'false' || data.ok === false || data.errors) {
         throw new Error(`Form provider rejected the request: ${data.message ?? JSON.stringify(data.errors)}`)
       }
+      // GA4 recommended lead event, so walkthrough requests show up as conversions. No personal data.
+      trackEvent('generate_lead', { form: 'walkthrough', country: form.country || 'not_given', sites: form.sites || 'not_given', language: locale })
       setSentTo(form.email.trim())
       setForm(INITIAL)
       setStatus('sent')
