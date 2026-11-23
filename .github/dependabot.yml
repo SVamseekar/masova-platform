@@ -12,6 +12,10 @@ updates:
       time: "09:00"
       timezone: Asia/Kolkata
     open-pull-requests-limit: 5
+    # Wait a week before proposing a newly published version: bad releases are usually
+    # pulled within days. Security updates are not delayed.
+    cooldown:
+      default-days: 7
     labels:
       - dependencies
       - java
@@ -58,6 +62,10 @@ updates:
       time: "09:30"
       timezone: Asia/Kolkata
     open-pull-requests-limit: 5
+    # Wait a week before proposing a newly published version: bad releases are usually
+    # pulled within days. Security updates are not delayed.
+    cooldown:
+      default-days: 7
     labels:
       - dependencies
       - frontend
@@ -74,6 +82,11 @@ updates:
       - dependency-name: msw
         update-types:
           - version-update:semver-major
+      # jsdom 31 changes how inline styles read back, and the tabs, skeleton and avatar
+      # style tests fail on it (#242). Upgrade it on purpose together with those tests.
+      - dependency-name: jsdom
+        update-types:
+          - version-update:semver-major
   # ── GitHub Actions (CI, deploy, contract validation) ──────────────────────
   - package-ecosystem: github-actions
     directory: /
@@ -83,6 +96,10 @@ updates:
       time: "09:00"
       timezone: Asia/Kolkata
     open-pull-requests-limit: 3
+    # Wait a week before proposing a newly published version: bad releases are usually
+    # pulled within days. Security updates are not delayed.
+    cooldown:
+      default-days: 7
     labels:
       - dependencies
       - ci
