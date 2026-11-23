@@ -19,7 +19,7 @@ import { CustomerLayout } from './components/customer/CustomerLayout';
 import { StoreLocaleSync } from './components/i18n/StoreLocaleSync';
 
 // Lazy load components
-const ProductSitePage = React.lazy(() => import('./apps/ProductSite/ProductSitePage'))
+import { CookiePolicy, PrivacyPolicy, ProductSitePage, RefundPolicy, TermsOfService } from './apps/ProductSite/lazyPages'
 import { COUNTRY_CODES, SITE_LOCALES, SITE_PAGES, SITE_REDIRECTS, countryPath, sitePath } from './apps/ProductSite/locales'
 
 const HomePage = React.lazy(() => import('./apps/PublicWebsite/HomePage'));
@@ -47,10 +47,6 @@ const DriverDashboard = React.lazy(() => import('./pages/driver/DriverDashboard'
 const POSSystem = React.lazy(() => import('./apps/POSSystem/POSSystem'));
 const KioskSetupPage = React.lazy(() => import('./pages/kiosk/KioskSetupPage'));
 const PrivacyPage = React.lazy(() => import('./pages/customer/PrivacyPage'));
-const PrivacyPolicy = React.lazy(() => import('./pages/PrivacyPolicy').then(m => ({ default: m.PrivacyPolicy })));
-const TermsOfService = React.lazy(() => import('./pages/TermsOfService').then(m => ({ default: m.TermsOfService })));
-const CookiePolicy = React.lazy(() => import('./pages/CookiePolicy').then(m => ({ default: m.CookiePolicy })));
-const RefundPolicy = React.lazy(() => import('./pages/RefundPolicy').then(m => ({ default: m.RefundPolicy })));
 // Kiosk mode hook
 import { useKioskMode } from './hooks/useKioskMode';
 

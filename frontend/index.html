@@ -8,6 +8,7 @@
     <link rel="manifest" href="/site.webmanifest" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#101B17" />
+    <!--seo:start: replaced per page by scripts/prerender-site.mjs-->
     <title>MaSoVa: restaurant operating system for multi-site groups</title>
     <meta name="description" content="Online ordering, counter, kitchen display, delivery, stock, rotas, guests and reports in one connected system, with AI assistants that prepare decisions for a manager to approve. Runs alongside the till you already use." />
     <meta name="keywords" content="restaurant management system, restaurant ordering system, kitchen display system, multi-store restaurant software, food delivery platform, MaSoVa" />
@@ -19,23 +20,25 @@
     <meta property="og:url" content="https://getmasova.rest/" />
     <meta property="og:title" content="MaSoVa: restaurant operating system for multi-site groups" />
     <meta property="og:description" content="Online ordering, counter, kitchen display, delivery, stock, rotas, guests and reports in one connected system, with AI assistants that prepare decisions for a manager to approve. Runs alongside the till you already use." />
-    <meta property="og:image" content="https://getmasova.rest/site/og-image.jpg" />
-    <meta property="og:image:alt" content="A warm restaurant dining room with the open kitchen behind" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="MaSoVa: restaurant operating system for multi-site groups" />
     <meta name="twitter:description" content="Online ordering, counter, kitchen display, delivery, stock, rotas, guests and reports in one connected system, with AI assistants that prepare decisions for a manager to approve. Runs alongside the till you already use." />
+    <!--seo:end-->
+    <meta property="og:image" content="https://getmasova.rest/site/og-image.jpg" />
+    <meta property="og:image:alt" content="A warm restaurant dining room with the open kitchen behind" />
     <meta name="twitter:image" content="https://getmasova.rest/site/og-image.jpg" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=DM+Sans:wght@300;400;500;600&family=Geist:wght@400;500;600;700&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   </head>
   <body>
-    <div id="root">
+    <div id="root"><!--app:start-->
       <main>
         <h1>MaSoVa: restaurant operating system for multi-site groups</h1>
         <p>Online ordering, counter, kitchen display, delivery, stock, rotas, guests and reports in one connected system, with AI assistants that prepare decisions for a manager to approve. Runs alongside the till you already use.</p>
       </main>
-    </div>
+    <!--app:end--></div>
+    <!--fallback-guard-->
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
