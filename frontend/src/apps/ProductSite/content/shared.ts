@@ -3,7 +3,7 @@
  * which stage, when each assistant runs, and the currency, site languages and
  * delivery marketplaces of each country. Text lives in the language files.
  */
-import type { CountryCode, ProductArea, SiteLanguage, SitePage } from '../locales'
+import type { CountryCode, ProductArea, SiteLanguage, SiteLocale, SitePage } from '../locales'
 import type { AppStatus } from './types'
 
 /** Stage of each app in the family. Keys match `apps.items[].key` in the copy. */
@@ -117,6 +117,17 @@ export const REGIONS: Region[] = ['europe', 'americas', 'asiaPacific']
 
 export function countryFacts(code: CountryCode): CountryFacts {
   return SITE_COUNTRIES.find((country) => country.code === code) ?? SITE_COUNTRIES[0]
+}
+
+/**
+ * Whether search engines may index a country page in this language: English (the default
+ * locale) and the languages restaurants in that country read. The other language versions
+ * stay published for visitors but carry noindex and stay out of the sitemap, because the
+ * country pages differ only in a few facts and 130 of them read to Google as duplicates.
+ * Type-only imports here keep this file loadable by scripts/generate-sitemap.mjs.
+ */
+export function isCountryPageIndexed(code: CountryCode, locale: SiteLocale): boolean {
+  return locale === 'en' || countryFacts(code).locales.includes(locale)
 }
 
 /** Country preselected in the contact form and highlighted on the countries page for each site language. */
