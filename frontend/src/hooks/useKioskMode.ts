@@ -32,6 +32,13 @@ const STORAGE_KEYS = {
   TERMINAL_ID: 'masova_terminalId',
 } as const;
 
+/** True when the URL has ?kiosk=true or this device was set up as a kiosk. */
+function isKioskModeRequested(): boolean {
+  const urlKioskMode = new URLSearchParams(window.location.search).get('kiosk') === 'true';
+  const storageKioskMode = localStorage.getItem(STORAGE_KEYS.KIOSK_MODE) === 'true';
+  return urlKioskMode || storageKioskMode;
+}
+
 export const useKioskMode = () => {
   const dispatch = useDispatch();
   const [kioskConfig, setKioskConfig] = useState<KioskConfig>({
@@ -39,22 +46,10 @@ export const useKioskMode = () => {
     kioskToken: null,
     terminalId: null,
   });
-  const [isLoading, setIsLoading] = useState(true);
+  // Loading only applies to a kiosk terminal. Elsewhere it starts false, so the first paint
+  // never shows the full-screen loader over a page that arrived already rendered.
+  const [isLoading, setIsLoading] = useState(isKioskModeRequested);
   const [error, setError] = useState<string | null>(null);
-
-  /**
-   * Check if kiosk mode is enabled
-   */
-  const checkKioskMode = useCallback((): boolean => {
-    // Check URL parameter
-    const urlParams = new URLSearchParams(window.location.search);
-    const urlKioskMode = urlParams.get('kiosk') === 'true';
-
-    // Check localStorage
-    const storageKioskMode = localStorage.getItem(STORAGE_KEYS.KIOSK_MODE) === 'true';
-
-    return urlKioskMode || storageKioskMode;
-  }, []);
 
   /**
    * Enable kiosk mode with tokens
@@ -157,11 +152,16 @@ export const useKioskMode = () => {
    */
   useEffect(() => {
     const initializeKioskMode = async () => {
-      setIsLoading(true);
+      const isKiosk = isKioskModeRequested();
 
-      const isKiosk = checkKioskMode();
+      if (!isKiosk) {
+        setIsLoading(false);
+        return;
+      }
 
-      if (isKiosk) {
+      // finally: a failed auto-login must not leave the full-screen loader up for good.
+      try {
+        setIsLoading(true);
         const token = localStorage.getItem(STORAGE_KEYS.KIOSK_TOKEN);
         const terminalId = localStorage.getItem(STORAGE_KEYS.TERMINAL_ID);
 
@@ -178,13 +178,13 @@ export const useKioskMode = () => {
           console.warn('[KioskMode] Kiosk mode enabled but missing token or terminal ID');
           disableKioskMode();
         }
+      } finally {
+        setIsLoading(false);
       }
-
-      setIsLoading(false);
     };
 
     initializeKioskMode();
-  }, [checkKioskMode, performKioskAutoLogin, disableKioskMode]);
+  }, [performKioskAutoLogin, disableKioskMode]);
 
   return {
     isKioskMode: kioskConfig.isKioskMode,

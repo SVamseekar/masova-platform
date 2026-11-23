@@ -63,6 +63,19 @@ describe('useKioskMode', () => {
     vi.restoreAllMocks();
   });
 
+  it('is not loading on the first render when no kiosk flag is present', () => {
+    const store = createMockStore();
+    const seen: boolean[] = [];
+    renderHook(() => {
+      const state = useKioskMode();
+      seen.push(state.isLoading);
+      return state;
+    }, { wrapper: createWrapper(store) });
+
+    // A prerendered page must not be swapped for the full-screen loader on first paint.
+    expect(seen).not.toContain(true);
+  });
+
   it('initializes with kiosk mode disabled when no flag present', async () => {
     const store = createMockStore();
 
