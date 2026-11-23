@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { COUNTRY_CODES, SITE_LEGAL_PATHS, SITE_LOCALES, SITE_PAGES, isSiteLocale } from '../locales'
 import { ASSISTANT_ICONS } from '../components/Layout'
-import { APP_GROUPS, APP_STATUS, AREA_META, ASSISTANT_SCHEDULE, CONCIERGE_TOPICS, INBOX_ASSISTANTS, SITE_COUNTRIES } from './shared'
+import { APP_GROUPS, APP_STATUS, AREA_META, ASSISTANT_SCHEDULE, CONCIERGE_TOPICS, INBOX_ASSISTANTS, SITE_COUNTRIES, isCountryPageIndexed } from './shared'
 
 type Json = string | number | boolean | null | Json[] | { [key: string]: Json }
 
@@ -133,11 +133,20 @@ describe('site structure', () => {
     for (const country of SITE_COUNTRIES) expect(country.locales.filter(isSiteLocale).length).toBeGreaterThan(0)
   })
 
-  it('has a sitemap with every page and country page in every published language, and no retired URLs', () => {
+  it('has a sitemap with every page in every published language, each country page in its indexed languages only, and no retired URLs', () => {
     const xml = readFileSync(resolve(process.cwd(), 'public/sitemap.xml'), 'utf8')
     const urls = xml.match(/<url>/g) ?? []
-    expect(urls).toHaveLength(SITE_LOCALES.length * (SITE_PAGES.length + COUNTRY_CODES.length) + SITE_LEGAL_PATHS.length)
+    const countryEntries = COUNTRY_CODES.reduce((sum, code) => sum + SITE_LOCALES.filter((locale) => isCountryPageIndexed(code, locale)).length, 0)
+    expect(urls).toHaveLength(SITE_LOCALES.length * SITE_PAGES.length + countryEntries + SITE_LEGAL_PATHS.length)
     const locs = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1])
     expect(locs.filter((loc) => /\/trust|stock-and-team|\/order$|\/menu$/.test(loc))).toEqual([])
+    expect(locs).toContain('https://getmasova.rest/de/countries/austria')
+    expect(locs).not.toContain('https://getmasova.rest/it/countries/austria')
+  })
+
+  it('indexes every country page in English and in the published languages read there', () => {
+    expect(SITE_LOCALES.filter((locale) => isCountryPageIndexed('CH', locale))).toEqual(['en', 'de', 'fr', 'it'])
+    expect(SITE_LOCALES.filter((locale) => isCountryPageIndexed('AU', locale))).toEqual(['en'])
+    for (const code of COUNTRY_CODES) expect(isCountryPageIndexed(code, 'en')).toBe(true)
   })
 })
