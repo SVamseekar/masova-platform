@@ -4,6 +4,7 @@ import { writeFileSync } from 'node:fs'
 import {
   COUNTRY_CODES, DEFAULT_SITE_LOCALE, SITE_LOCALES, SITE_LOCALE_TAGS, SITE_PAGES, countryPath, sitePath,
 } from '../src/apps/ProductSite/locales.ts'
+import { isCountryPageIndexed } from '../src/apps/ProductSite/content/shared.ts'
 
 const ORIGIN = 'https://getmasova.rest'
 const today = new Date().toISOString().slice(0, 10)
@@ -16,9 +17,9 @@ const SINGLE_PAGES = [
   ['/refunds', 'yearly', '0.4'],
 ]
 
-function entry(pathFor, locale, changefreq, priority) {
+function entry(pathFor, locale, changefreq, priority, locales = SITE_LOCALES) {
   const alternates = [
-    ...SITE_LOCALES.map((code) => `    <xhtml:link rel="alternate" hreflang="${SITE_LOCALE_TAGS[code]}" href="${ORIGIN}${pathFor(code)}"/>`),
+    ...locales.map((code) => `    <xhtml:link rel="alternate" hreflang="${SITE_LOCALE_TAGS[code]}" href="${ORIGIN}${pathFor(code)}"/>`),
     `    <xhtml:link rel="alternate" hreflang="x-default" href="${ORIGIN}${pathFor(DEFAULT_SITE_LOCALE)}"/>`,
   ]
   return ['  <url>', `    <loc>${ORIGIN}${pathFor(locale)}</loc>`, ...alternates, `    <lastmod>${today}</lastmod>`, `    <changefreq>${changefreq}</changefreq>`, `    <priority>${priority}</priority>`, '  </url>'].join('\n')
@@ -29,8 +30,10 @@ for (const page of SITE_PAGES) {
   const priority = page === 'home' ? '1.0' : page === 'product' || page === 'ai' || page === 'pricing' || page === 'contact' ? '0.9' : '0.8'
   for (const locale of SITE_LOCALES) urls.push(entry((code) => sitePath(code, page), locale, 'weekly', priority))
 }
+// Country pages: only the language versions open to indexing (English and the languages read there).
 for (const country of COUNTRY_CODES) {
-  for (const locale of SITE_LOCALES) urls.push(entry((code) => countryPath(code, country), locale, 'monthly', '0.6'))
+  const locales = SITE_LOCALES.filter((locale) => isCountryPageIndexed(country, locale))
+  for (const locale of locales) urls.push(entry((code) => countryPath(code, country), locale, 'monthly', '0.6', locales))
 }
 for (const [path, changefreq, priority] of SINGLE_PAGES) {
   urls.push(['  <url>', `    <loc>${ORIGIN}${path}</loc>`, `    <lastmod>${today}</lastmod>`, `    <changefreq>${changefreq}</changefreq>`, `    <priority>${priority}</priority>`, '  </url>'].join('\n'))

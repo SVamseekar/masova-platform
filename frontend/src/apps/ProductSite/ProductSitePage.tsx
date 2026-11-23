@@ -4,6 +4,7 @@ import './scenes.css'
 import { useLandingScrollRestore } from './hooks/useLandingScrollRestore'
 import { SiteContext } from './SiteContext'
 import { getSiteCopy } from './content'
+import { isCountryPageIndexed } from './content/shared'
 import {
   DEFAULT_SITE_LOCALE, PRODUCT_AREAS, SITE_LOCALES, SITE_LOCALE_TAGS, countryPath, sitePath,
   type CountryCode, type ProductArea, type SiteLocale, type SitePage,
@@ -81,13 +82,18 @@ export default function ProductSitePage({ locale = DEFAULT_SITE_LOCALE, page = '
   useReveal(`${locale}/${page}/${country ?? ''}`)
   usePointerGlow()
 
+  // A country page is indexed only in English and the languages read there (isCountryPageIndexed).
+  // Indexed versions link to each other with hreflang; the other versions are noindex and link to none.
+  const noindex = country !== undefined && !isCountryPageIndexed(country, locale)
   const alternates = useMemo(() => {
+    if (noindex) return []
     const urlFor = (code: SiteLocale) => `${SITE_URL}${country ? countryPath(code, country) : sitePath(code, page)}`
+    const indexed = SITE_LOCALES.filter((code) => !country || isCountryPageIndexed(country, code))
     return [
-      ...SITE_LOCALES.map((code) => ({ hrefLang: SITE_LOCALE_TAGS[code], href: urlFor(code) })),
+      ...indexed.map((code) => ({ hrefLang: SITE_LOCALE_TAGS[code], href: urlFor(code) })),
       { hrefLang: 'x-default', href: urlFor(DEFAULT_SITE_LOCALE) },
     ]
-  }, [page, country])
+  }, [page, country, noindex])
   const meta = copy.pages[page]
   const title = page === 'home' ? copy.meta.title : `${country ? copy.countries.list[country].name : meta.heading} | MaSoVa`
   const description = page === 'home' ? copy.meta.description : country ? `${copy.countries.list[country].name}: ${copy.countries.pageLead}` : meta.lead
@@ -102,6 +108,7 @@ export default function ProductSitePage({ locale = DEFAULT_SITE_LOCALE, page = '
           lang={SITE_LOCALE_TAGS[locale]}
           ogLocale={SITE_LOCALE_TAGS[locale].replace('-', '_')}
           alternates={alternates}
+          noindex={noindex}
           jsonLd={page === 'home'}
         />
         <a className="ms-skip" href="#main">{copy.ui.skip}</a>
