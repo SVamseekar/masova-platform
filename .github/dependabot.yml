@@ -12,6 +12,10 @@ updates:
       time: "09:00"
       timezone: Asia/Kolkata
     open-pull-requests-limit: 5
+    # Wait a week before proposing a newly published version: bad releases are usually
+    # pulled within days. Security updates are not delayed.
+    cooldown:
+      default-days: 7
     labels:
       - dependencies
       - java
@@ -58,6 +62,10 @@ updates:
       time: "09:30"
       timezone: Asia/Kolkata
     open-pull-requests-limit: 5
+    # Wait a week before proposing a newly published version: bad releases are usually
+    # pulled within days. Security updates are not delayed.
+    cooldown:
+      default-days: 7
     labels:
       - dependencies
       - frontend
@@ -88,6 +96,10 @@ updates:
       time: "09:00"
       timezone: Asia/Kolkata
     open-pull-requests-limit: 3
+    # Wait a week before proposing a newly published version: bad releases are usually
+    # pulled within days. Security updates are not delayed.
+    cooldown:
+      default-days: 7
     labels:
       - dependencies
       - ci
