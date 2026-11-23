@@ -68,6 +68,34 @@ describe('ContactSection', () => {
     expect(await screen.findByRole('status')).toHaveTextContent('ana@example.com')
   })
 
+  it('records a generate_lead analytics event without personal data once the request is sent', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({ success: 'true' }) }))
+    const gtag = vi.fn()
+    vi.stubGlobal('gtag', gtag)
+    renderForm()
+
+    const user = await fillRequired()
+    await user.click(screen.getByRole('button', { name: form.submit }))
+
+    await screen.findByRole('status')
+    expect(gtag).toHaveBeenCalledWith('event', 'generate_lead', expect.objectContaining({ form: 'walkthrough', language: 'en' }))
+    expect(JSON.stringify(gtag.mock.calls)).not.toMatch(/ana@example\.com|Ana Weber|Riverside/)
+  })
+
+  it('records no lead event when sending fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 500 }))
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    const gtag = vi.fn()
+    vi.stubGlobal('gtag', gtag)
+    renderForm()
+
+    const user = await fillRequired()
+    await user.click(screen.getByRole('button', { name: form.submit }))
+
+    await screen.findByRole('alert')
+    expect(gtag).not.toHaveBeenCalled()
+  })
+
   it('treats a 200 response that rejects the request as a failure', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({ success: 'false', message: 'This form needs Activation.' }) }))
     vi.spyOn(console, 'error').mockImplementation(() => {})
